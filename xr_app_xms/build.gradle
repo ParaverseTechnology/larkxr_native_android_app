@@ -1,0 +1,103 @@
+plugins {
+    id 'com.android.application'
+}
+
+apply from:"$projectDir/../config.gradle"
+
+android {
+    compileSdkVersion COMPILE_SDK_VERSION
+    buildToolsVersion BUILD_TOOS_VERSION
+    ndkVersion NDK_VERSION
+    defaultConfig {
+        applicationId "com.pxy.xr_app_xms"
+        minSdkVersion 25
+        targetSdkVersion 30
+        versionCode 1
+        versionName "3.1.8.1"
+        manifestPlaceholders = ["orientation" : "landscape"]
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        externalNativeBuild {
+            cmake {
+                cppFlags "-frtti -fexceptions -std=c++1y -DANDROID_NDK_BUILD=1"
+                targets 'lark_xr_xms'
+
+                arguments "-DANDROID_STL=c++_shared"
+            }
+            ndk {
+                abiFilters 'armeabi-v7a','arm64-v8a'
+            }
+            ndkBuild {
+                abiFilters 'armeabi-v7a','arm64-v8a'
+            }
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path "src/main/cpp/CMakeLists.txt"
+            version "3.10.2"
+        }
+    }
+
+    sourceSets {
+        main {
+            def base = "../"
+            def lib_prex = "lib/android/"
+            // let gradle pack the shared library into apk
+            jniLibs.srcDirs = [
+            ]
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    repositories {
+        flatDir {
+            dirs 'libs', '../lark_xr'
+        }
+    }
+
+    applicationVariants.all { variant ->
+        variant.outputs.all { output ->
+//            def date = new Date().format("mmss");
+            def build = 1
+            def abi = "all";
+            if (output.filters[0] != null) {
+                abi = output.filters[0].identifier
+            }
+            def type = "xms";
+            outputFileName =  "lark-xr-" +
+                    defaultConfig.versionName + "-build-" +
+                    build + "-" + type + "-beta-" + abi + ".apk"
+        }
+    }
+
+    packagingOptions {
+        pickFirst "lib/arm64-v8a/libglm.so"
+        pickFirst "lib/armeabi-v7a/libglm.so"
+
+        pickFirst "lib/arm64-v8a/libPocoFoundation.so"
+        pickFirst "lib/armeabi-v7a/libPocoFoundation.so"
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+
+    implementation project(':lib_pxygl')
+    implementation project(':lib_xr_common_ui')
+
+    implementation(name: 'svrApi-release', ext: 'aar')
+    implementation(name:'xdevice-api', ext:'aar')
+    implementation(name: 'larkxr-kit-3.1.8.0-build-1', ext: 'aar')
+}

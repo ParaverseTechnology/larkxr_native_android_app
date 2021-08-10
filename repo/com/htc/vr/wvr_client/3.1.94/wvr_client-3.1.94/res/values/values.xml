@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="lock_screen_text">Screen and key are locked.\nDisconnect Link HMD to unlock.</string>
+    <string name="wvr_vr_mode_component" translatable="false">com.htc.vr.core.server/com.htc.vr.core.server.VRListenerService</string>
+    <style name="Animation.Activity.fade_in_out" parent="@android:style/Animation.Activity">
+    <item name="android:activityOpenEnterAnimation">@anim/fade_in</item>
+    <item name="android:activityOpenExitAnimation">@anim/fade_out</item>
+    <item name="android:activityCloseEnterAnimation">@anim/fade_in</item>
+    <item name="android:activityCloseExitAnimation">@anim/fade_out</item>
+
+    <item name="android:taskOpenEnterAnimation">@anim/fade_in</item>
+    <item name="android:taskOpenExitAnimation">@anim/fade_out</item>
+    <item name="android:taskCloseEnterAnimation">@anim/fade_in</item>
+    <item name="android:taskCloseExitAnimation">@anim/fade_out</item>
+
+    <item name="android:taskToFrontEnterAnimation">@anim/fade_in</item>
+    <item name="android:taskToFrontExitAnimation">@anim/fade_out</item>
+    <item name="android:taskToBackEnterAnimation">@anim/fade_in</item>
+    <item name="android:taskToBackExitAnimation">@anim/fade_out</item>
+</style>
+    <style name="Theme.WaveVR.Base" parent="android:Theme.NoTitleBar.Fullscreen">
+    <item name="android:windowIsTranslucent">false</item>
+    <item name="android:windowActivityTransitions">false</item>
+    <item name="android:windowActionBar">false</item>
+    <item name="android:windowDisablePreview">true</item>
+    <item name="android:windowContentOverlay">@null</item>
+    <item name="android:windowAnimationStyle">@style/Animation.Activity.fade_in_out</item>
+</style>
+    <style name="Theme.WaveVR.Black" parent="Theme.WaveVR.Base">
+    <item name="android:windowBackground">@android:color/black</item>
+</style>
+    <style name="Theme.WaveVR.Loading" parent="Theme.WaveVR.Base">
+    <item name="android:windowBackground">@drawable/runtime_loading</item>
+</style>
+</resources>
