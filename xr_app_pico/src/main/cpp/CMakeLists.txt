@@ -80,10 +80,11 @@ target_link_libraries( # Specifies the target library.
     # pico
     lib_pico
 
-    # first party
+    # larkxr
     lib_lark_common
-    lib_lark_pxygl
     lib_lark_xr
+    # first party
+    lib_lark_pxygl
     lib_lark_xr_common_ui
     # Links the target library to the log library
     # included in the NDK.
