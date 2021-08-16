@@ -54,11 +54,9 @@ target_include_directories(lark_xr_pico PRIVATE
     ${project_base_dir}/lib_xr_common_ui/src/main/cpp
     # lib xr
     ${project_base_dir}/lark_xr/include
-    ${third_party_base_dir}/protobuf/include/src/
     ${third_party_base_dir}/freetype/include/
     ${third_party_base_dir}/glm/include/
     ${third_party_base_dir}/assimp/include/
-    ${third_party_base_dir}/poco/include/
 )
 
 find_library( # Sets the name of the path variable.
@@ -89,6 +87,4 @@ target_link_libraries( # Specifies the target library.
     # Links the target library to the log library
     # included in the NDK.
     lib_assimp_android_jniiosystem
-    # poco
-    libPocoFoundation
 )

@@ -11,7 +11,7 @@ android {
         minSdkVersion 25
         targetSdkVersion 30
         versionCode 1
-        versionName "1.0"
+        versionName "3.1.8.6"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
@@ -73,6 +73,21 @@ android {
         abortOnError false
     }
 
+    applicationVariants.all { variant ->
+        variant.outputs.all { output ->
+            def build = 1
+            def abi = "all";
+            if (output.filters[0] != null) {
+                abi = output.filters[0].identifier
+            }
+            def type = "nolo";
+
+            outputFileName =  "lark-xr-" +
+                    defaultConfig.versionName + "-build-" +
+                    build + "-" + type + "-beta-" + abi + ".apk"
+        }
+    }
+
     packagingOptions {
         pickFirst "lib/arm64-v8a/libglm.so"
         pickFirst "lib/armeabi-v7a/libglm.so"
@@ -85,20 +100,10 @@ android {
 
         pickFirst "lib/armeabi-v7a/liblark_pxygl.so"
         pickFirst "lib/arm64-v8a/liblark_pxygl.so"
-
-        pickFirst "lib/arm64-v8a/libPocoFoundation.so"
-        pickFirst "lib/armeabi-v7a/libPocoFoundation.so"
     }
 }
 
 dependencies {
-
-    implementation 'androidx.appcompat:appcompat:1.2.0'
-    implementation 'com.google.android.material:material:1.2.1'
-    testImplementation 'junit:junit:4.+'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.2'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
-
     implementation project(':lib_pxygl')
     implementation project(':lib_xr_common_ui')
     implementation(name: 'larkxr-kit-3.1.8.1-build-1', ext: 'aar')

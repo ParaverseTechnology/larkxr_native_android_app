@@ -5,6 +5,7 @@
 #include <lark_xr/xr_config.h>
 #include <env_context.h>
 #include <asset_files.h>
+#include <utils.h>
 #include "nolo_vr_utils.h"
 #include "larkxr_client.h"
 
@@ -30,10 +31,21 @@ void LarkxrClient::InitJava(JavaVM *vm) {
     xr_client_->Init(vm, false);
     xr_client_->RegisterObserver(this);
 //    app_list_task_ = std::make_shared<AppListTask>(this, false);
-    if (!xr_client_->InitSdkAuthorization("ee341e387e084583a30522b5b7b7859f")) {
-        LOGV("init sdk auth faild %d %s", xr_client_->last_error_code(),
-             xr_client_->last_error_message().c_str());
+// nolo kit ee341e387e084583a30522b5b7b7859f
+#ifdef LARK_SDK_SECRET
+    // 初始化 cloudlark sdk
+    std::string timestamp = utils::GetTimestampMillStr();
+    std::string signature = utils::GetSignature(LARK_SDK_ID, LARK_SDK_SECRET, timestamp);
+    if (!xr_client_->InitSdkAuthorization(LARK_SDK_ID, signature, timestamp)) {
+        LOGV("init sdk auth faild %d %s", xr_client_->last_error_code(), xr_client_->last_error_message().c_str());
+        Navigation::ShowToast(xr_client_->last_error_message());
     }
+#else
+    if (!xr_client_->InitSdkAuthorization(LARK_SDK_ID)) {
+        LOGV("init sdk auth faild %d %s", xr_client_->last_error_code(), xr_client_->last_error_message().c_str());
+        Navigation::ShowToast(xr_client_->last_error_message());
+    }
+#endif
 }
 
 bool LarkxrClient::InitGL() {

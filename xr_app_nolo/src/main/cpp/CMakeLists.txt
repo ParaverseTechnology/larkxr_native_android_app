@@ -34,7 +34,6 @@ target_include_directories(native-lib PRIVATE
         ${third_party_base_dir}/freetype/include/
         ${third_party_base_dir}/glm/include/
         ${third_party_base_dir}/assimp/include/
-        ${third_party_base_dir}/poco/include/
         ${third_party_base_dir}/nolo_dev_api/include/
         ${third_party_base_dir}/nolo_nibiru/include/
 )
