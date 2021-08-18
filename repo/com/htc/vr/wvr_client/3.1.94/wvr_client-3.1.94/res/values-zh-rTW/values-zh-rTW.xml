@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="lock_screen_text">螢幕與按鍵已被鎖定\n中斷 Link 頭戴式顯示器的連接以解鎖</string>
+</resources>

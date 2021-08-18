@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:scaleType="fitXY"
+    android:background="@drawable/link_lock_screen_bg">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="60dp"
+        android:layout_gravity="center_vertical"
+        android:gravity="center_horizontal"
+        android:fontFamily="sans-serif"
+        android:textColor="@android:color/white"
+        android:textSize="20sp"
+        android:lineSpacingExtra="12sp"
+        android:text="@string/lock_screen_text"/>
+
+    <TextView
+        android:id="@+id/loading_textview"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="120dp"
+        android:layout_gravity="center_vertical"
+        android:gravity="center_horizontal"
+        android:fontFamily="sans-serif"
+        android:textColor="#808080"
+        android:textSize="20sp"
+        android:lineSpacingExtra="12sp"
+        android:text="WaveVR Loading" />
+</FrameLayout>

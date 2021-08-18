@@ -1,0 +1,11 @@
+ext {
+    // build configs
+    COMPILE_SDK_VERSION = 30;
+    BUILD_TOOS_VERSION = "30.0.3";
+    MIN_SDK_VERSION = 19;
+    MIN_SDK_VERSION_XR = 21;
+    TARGET_SDK_VERSION = 28;
+//    NDK_VERSION = "21.3.6528147";
+    NDK_VERSION = "21.4.7075529";
+    JAVA_VERSION = JavaVersion.VERSION_1_8;
+}

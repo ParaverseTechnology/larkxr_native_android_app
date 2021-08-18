@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="lock_screen_text">屏幕和按键已锁定\n断开 Link 头戴式设备连接即可解锁</string>
+</resources>
