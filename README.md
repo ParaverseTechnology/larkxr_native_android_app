@@ -2,7 +2,7 @@
 
 本项目为使用云雀 VR Android SDK 接入 VR 云渲染的 Demo 项目。演示多种 VR 一体机头显设备接入的方式，包括 oculus quest 系列，htc focus 系列，pico neo 系列等。
 
-[云雀VRSDK文档](./doc/云雀VR_SDK.md)
+[云雀VRSDK文档](./lark_xr/doc/云雀VR_SDK.md)
 
 [平行云](https://www.pingxingyun.com/)
 
