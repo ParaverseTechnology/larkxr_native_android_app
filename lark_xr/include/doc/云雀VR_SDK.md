@@ -25,41 +25,14 @@ VR 一体机提供的其他开发平台如 Untiy3D 等，云雀虽然提供 C �
 
 ![云雀 VR SDK负责功能和软件结构](结构.png)
 
-## 目录结构
-
-本 SDK 目录结构如下:
-
-```path
--[cmake]---------------Demo中用到的辅助 cmake 脚本。
--[demo]----------------基于云雀SDK的原生Demo。
--[first_party]---------Demo中生成的库，主要为通用 ui 和 openg封装。
--[lark_xr]-------------云雀VR SDK，包括头文件，动态库文件，用于NDK编译。
--[third_party]---------第三方库目录。包括基础库如Poco，VR SDK 等。
-```
-
-### demo 项目结构
-
-demo 项目分为以下几个子项目。Demo 使用的 Android Studio 版本为 4.0.1，gradle plugin 版本为 4.0.1，gradle 版本为 6.1.1，NDK 版本为 21.3.6528147。
-
-不同版本的开发环境可能会导致编译问题，请尽量选择与 Demo 中相同的开发环境，否证可能需要手动修改项目配置。
-
-* lib_pxygl 通用 opengl 相关调用的封装
-
-* lib_xr_common_ui 所有 demo app 的 UI 和通用组件
-
-* xr_demo_htc htc 平台的 demo
-
-* xr_demo_oculus oculus 平台的 demo
-
-* xr_demo_pico pico 平台的 demo
 
 ### SDK 目录接口
 
-由于使用 NDK 开发，除了要在 gradle 中引用 larkxr-kit-3.1.0.0-build-1.aar 外，还要在 cmake 中配置 larkxr sdk 的头文件和动态库。
+由于使用 NDK 开发，除了要在 gradle 中引用 larkxr-kit-3.1.8.1-build-1.aar 外，还要在 cmake 中配置 larkxr sdk 的头文件和动态库。
 
 * include 头文件目录，包含 c++ 和 c 两套头文件
 * lib 动态库文件目录，目前只包含 Android 平台
-* larkxr-kit-3.1.0.0-build-1.aar Android 库文件
+* larkxr-kit-3.1.8.1-build-1.aar Android 库文件
 
 ## Java 接口（只用于初始化和生命周期）
 
