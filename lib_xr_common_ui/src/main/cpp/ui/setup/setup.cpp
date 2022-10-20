@@ -2,6 +2,7 @@
 // Created by fcx@pingixngyun.com on 2019/12/4.
 //
 
+#include <ui/localization.h>
 #include "setup.h"
 
 using namespace lark;
@@ -157,7 +158,7 @@ void Setup::Init() {
     // advance btn
     {
         glm::vec3 p(0, 1.5F, 0.01F);
-        advance_btn_ = std::make_shared<TextButton>(L"高级设置");
+        advance_btn_ = std::make_shared<TextButton>(localization::Loader::getResource().ui_setup_advance);
         advance_btn_->Move(p);
         advance_btn_->SetAABBPositon(glm::vec2(p.x, p.y - reset_btn_->GetSize().y / 2.0F));
         PushAABB(advance_btn_.get());
@@ -180,10 +181,12 @@ void Setup::Update() {
         if (group_ == SetupGroup_Normal) {
             // switch to advance group.
             group_ = SetupGroup_Advance;
-            advance_btn_->SetText(L"普通设置");
+            // 普通设置
+            advance_btn_->SetText(localization::Loader::getResource().ui_setup_normal);
         } else {
             group_ = SetupGroup_Normal;
-            advance_btn_->SetText(L"高级设置");
+            // 高级设置
+            advance_btn_->SetText(localization::Loader::getResource().ui_setup_advance);
         }
 
         for(const auto &i : items_) {

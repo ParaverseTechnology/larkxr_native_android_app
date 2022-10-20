@@ -4,6 +4,7 @@
 
 #include "lark_xr/xr_config.h"
 #include <input.h>
+#include <ui/localization.h>
 #include "haptics_feedback.h"
 
 namespace {
@@ -20,16 +21,16 @@ namespace {
 }
 
 UseHapticsFeedback::UseHapticsFeedback(int groupid): ItemBase(groupid) {
-    setTitle(L"是否开启手柄震动？");
+    setTitle(localization::Loader::getResource().ui_setup_advance_haptics_feedback_title);
 
     {
-        btn_on_ = std::make_shared<TextButton>(L"是");
+        btn_on_ = std::make_shared<TextButton>(localization::Loader::getResource().ui_setup_yes);
         btn_on_->Move(Base::position_.x + RES_1_POSITION_X, RES_1_POSITION_Y, RES_1_POSITION_Z);
         PushAABB(btn_on_.get());
         AddChild(btn_on_);
     }
     {
-        btn_off_ = std::make_shared<TextButton>(L"否");
+        btn_off_ = std::make_shared<TextButton>(localization::Loader::getResource().ui_setup_no);
         btn_off_->Move(Base::position_.x + RES_2_POSITION_X, RES_2_POSITION_Y, RES_2_POSITION_Z);
         PushAABB(btn_off_.get());
         AddChild(btn_off_);

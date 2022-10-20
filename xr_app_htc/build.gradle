@@ -11,7 +11,7 @@ android {
         minSdkVersion 25
         targetSdkVersion TARGET_SDK_VERSION
         versionCode 1
-        versionName "3.2.0.7"
+        versionName "3.2.2.1"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
@@ -20,7 +20,14 @@ android {
                 cppFlags "-frtti -fexceptions -std=c++1y -DANDROID_NDK_BUILD=1"
                 targets 'lark_xr_htc'
 
-                arguments "-DANDROID_STL=c++_shared"
+                if (BUILD_WITH_CLOUDXR_SUPPORT) {
+                    arguments "-DANDROID_STL=c++_shared",
+                            "-DCLOUDXR_LIBPATH=${project.rootDir}/third_party/cloudxr/CloudXR/jni",
+                            "-DCLOUDXR_INCLUDE=${project.rootDir}/third_party/cloudxr/CloudXR/include",
+                            "-DENABLE_CLOUDXR=1"
+                } else {
+                    arguments "-DANDROID_STL=c++_shared"
+                }
             }
             ndk {
                 abiFilters 'arm64-v8a'
@@ -34,9 +41,14 @@ android {
     }
 
     buildTypes {
+        String ENABLE_CLOUDXR = BUILD_WITH_CLOUDXR_SUPPORT ? "true" : "false";
+        debug {
+            buildConfigField "boolean","ENABLE_CLOUDXR",ENABLE_CLOUDXR
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            buildConfigField "boolean","ENABLE_CLOUDXR",ENABLE_CLOUDXR
         }
     }
 
@@ -68,6 +80,27 @@ android {
         }
     }
 
+    packagingOptions {
+        jniLibs {
+            pickFirsts += [
+                    'lib/arm64-v8a/libglm.so',
+                    'lib/armeabi-v7a/libglm.so',
+                    'lib/arm64-v8a/libPocoFoundation.so',
+                    'lib/armeabi-v7a/libPocoFoundation.so',
+                    'lib/arm64-v8a/libglm.so',
+                    'lib/armeabi-v7a/libglm.so',
+                    'lib/arm64-v8a/libPocoFoundation.so',
+                    'lib/armeabi-v7a/libPocoFoundation.so',
+                    'lib/arm64-v8a/libprotobuf.so',
+                    'lib/armeabi-v7a/libprotobuf.so',
+                    'lib/arm64-v8a/libc++_shared.so',
+                    'lib/armeabi-v7a/libc++_shared.so',
+                    'lib/arm64-v8a/libCloudXRClient.so',
+                    'lib/armeabi-v7a/libCloudXRClient.so'
+            ]
+        }
+    }
+
     applicationVariants.all { variant ->
         variant.outputs.all { output ->
             def build = 1
@@ -83,13 +116,6 @@ android {
         }
     }
 
-    packagingOptions {
-        pickFirst "lib/arm64-v8a/libglm.so"
-        pickFirst "lib/armeabi-v7a/libglm.so"
-
-        pickFirst "lib/arm64-v8a/libPocoFoundation.so"
-        pickFirst "lib/armeabi-v7a/libPocoFoundation.so"
-    }
 }
 
 dependencies {
@@ -100,6 +126,19 @@ dependencies {
     //
     implementation project(':lib_pxygl')
     implementation project(':lib_xr_common_ui')
+    implementation 'androidx.appcompat:appcompat:1.3.0'
+    implementation 'com.squareup.okhttp3:okhttp:3.12.+'
+    implementation(name: 'larkxr-kit-3.2.2.0-build-1', ext: 'aar')
 
-    implementation(name: 'larkxr-kit-3.2.0.2-build-1', ext: 'aar')
+    implementation 'androidx.recyclerview:recyclerview:1.1.0'
+    implementation 'com.github.bumptech.glide:glide:4.11.0'
+    implementation 'com.alibaba:fastjson:1.2.44'
+    implementation 'com.google.android.material:material:1.3.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
+
+    // WARNING
+    // enable cloudxr support must put your CloudXR.aar under larkar_android/libs dir
+    if (BUILD_WITH_CLOUDXR_SUPPORT) {
+        implementation files("${project.rootDir}/third_party/cloudxr/CloudXR.aar")
+    }
 }

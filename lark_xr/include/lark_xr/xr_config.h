@@ -18,6 +18,7 @@ const int LK_CONFIG_DEFAULT_RENDER_HEIGHT = 1440;
 const float LK_CONFIG_DEFAULT_RESOLUTION_SCALE = 1.0f;
 const int LK_CONFIG_DEFAULT_BITRATE = 40 * 1000;
 const int LK_CONFIG_DEFAULT_FPS = 72;
+const int LK_CONFIG_DEFAULT_REQUEST_POSE_FPS = 72 * 2;
 const float LK_CONFIG_DEFAULT_ROOM_HEIGHT = 0.0f;
 const float LK_CONFIG_DEFAULT_IPD = 0.064f;
 const larkxrRenderFov LK_CONFIG_DEFAULT_FOV[2] = {
@@ -36,6 +37,7 @@ const larkColorCorrention LK_CONFIG_DEFAULT_COLOR_CORRENTION = {};
 const larkStreamType LK_CONFIG_DEFAULT_STREAM_TYPE = larkStreamType_KCP;
 const bool LK_CONFIG_DEFAULT_USE_RENDER_QUEUE = false;
 const bool LK_CONFIG_DEFAULT_REPORT_FEC_FAILED = false;
+const larkHeadSetType LK_CONFIG_DEFAULT_FORCE_HEADSET_TYPE = larkHeadSetType_NONE;
 #ifdef WIN32
 const bool LK_CONFIG_DEFAULT_D3D11_TEXTURE_OUTPUT = true;
 #endif
@@ -104,6 +106,9 @@ public:
     static int bitrate;
     // 帧率
     static int fps;
+    // 请求姿态的帧率. 推荐设置为 fps 的 2 倍
+    static int request_pose_fps;
+
     // @Deprecated 已弃用.使用头盔姿态的 tracking origin 等功能和安全区域配合使用
     // steam vr 设置的初始房间高度
     static float room_height;
@@ -120,6 +125,7 @@ public:
     // 是否启用手柄的震动反馈
     static bool use_haptics_feedback;
     // 是否将视频画面左右眼渲染到同一纹理上
+    // AR 情况下强制渲染到两个纹理上 (AppliType_PXY_AR 设置 use_multiview 将会被强制关闭)
     static bool use_multiview;
     // 是否将视频画面翻转渲染
     // 上下翻转
@@ -140,8 +146,14 @@ public:
     static larkStreamType stream_type;
     // 是否使用渲染队列 (3.1.8.0新增)
     static bool use_render_queue;
+    // 当前采用那种快速配置组合
     static QuickConfigLevel quick_config_level;
-
+    // 强制转换头盔类型 默认为空
+    // 如实际头盔为 quest 类型，SDK 内部强制转换为 htc focus 类型，
+    // 注意，SDK 内部会对齐手柄的转换关系。如上面将 quset 类型手柄对应为 htc 类型手柄
+    // 实际输入的头盔和手柄的值还是 headset_desc 中的保持不变，SDK 内部进行转换
+    // 在进入应用之前设置有效
+    static larkHeadSetType force_headset_type;
 #ifdef WIN32
     static bool d3d11_texture_output;
 #endif // WIN32
@@ -151,6 +163,7 @@ public:
     static void set_render_height(int height);
     static void set_bitrate(int bitrate);
     static void set_fps(int fps);
+    static void set_request_pose_fps(int fps);
     static void set_room_height(float roomHeight);
     static void set_ipd(float ipd);
     static void set_use_kcp(bool useKcp);
@@ -166,6 +179,7 @@ public:
     static void set_foveated_rendering(const larkFoveatedRendering& foveatedRendering);
     static void set_color_corrention(const larkColorCorrention& colorCorrention);
     static void set_use_render_queue(bool use);
+    static void set_force_headset_type(larkHeadSetType type);
 
     static uint32_t align32(float value);
     static uint32_t align32ed_scaled_render_width();
@@ -175,6 +189,9 @@ public:
     static void QuickConfigWithDefaulSetup(QuickConfigLevel level);
     static void QuickConfig(const QuickConfigGroup& config);
     static larkVRVideoDesc GetVideoDesc();
+
+    // use project matrix to setup fov.
+    static void SetupFovWithProjectMatrix(larkxrEye eye, float* proj);
 };
 }
 #endif //CLOUDLARKXR_XR_CONFIG_H

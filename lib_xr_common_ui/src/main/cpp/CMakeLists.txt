@@ -18,6 +18,18 @@ set(third_party_base_dir ${project_base_dir}/third_party)
 set(STATIC_POCO_LIB OFF)
 include(${project_base_dir}/cmake/android_third_party.cmake)
 
+if (ENABLE_CLOUDXR STREQUAL "1")
+    message(STATUS "=========start cloudxr ${CLOUDXR_LIBPATH}")
+    # Import CloudXR
+    add_library(cloudxr-lib SHARED IMPORTED)
+    set_target_properties(cloudxr-lib PROPERTIES IMPORTED_LOCATION
+            ${CLOUDXR_LIBPATH}/${ANDROID_ABI}/libCloudXRClient.so
+            )
+    include_directories(${CLOUDXR_INCLUDE})
+
+    add_definitions(-DENABLE_CLOUDXR)
+endif()
+
 # source dir
 # source dir
 set(src_dir ${CMAKE_CURRENT_SOURCE_DIR})
@@ -83,6 +95,11 @@ set(src_files
     ${common_files}
 )
 
+if (ENABLE_CLOUDXR STREQUAL "1")
+    list(APPEND src_files cloudxr_client.h)
+    list(APPEND src_files cloudxr_client.cpp)
+endif()
+
 # header files
 set(header_files
 )
@@ -117,6 +134,7 @@ target_include_directories(${LIBNAME} PRIVATE
     ${third_party_base_dir}/freetype/include/
     ${third_party_base_dir}/glm/include/
     ${third_party_base_dir}/assimp/include/
+    ${third_party_base_dir}/oboe/include/
 )
 
 include(${project_base_dir}/cmake/utils.cmake)
@@ -136,6 +154,9 @@ target_link_libraries( # Specifies the target library.
     EGL
     GLESv3
 
+    # oboe
+    liboboe
+
     # first party
     lib_lark_common
     lib_lark_pxygl
@@ -147,3 +168,10 @@ target_link_libraries( # Specifies the target library.
     # glm
     lib_glm
 )
+
+if (ENABLE_CLOUDXR STREQUAL "1")
+    target_link_libraries( # Specifies the target library.
+            ${LIBNAME}
+            cloudxr-lib
+            )
+endif()

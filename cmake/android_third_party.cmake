@@ -79,8 +79,13 @@ ANDROID_THIRD_PARTY_SHARED(${project_base_dir} lib_xdevice xms libxdevice)
 
 # nolo
 ANDROID_THIRD_PARTY_SHARED(${project_base_dir} libgsxr_dev_lib nolo_dev_api libgsxr_dev_lib)
+ANDROID_THIRD_PARTY_SHARED(${project_base_dir} libconvert_value_with_hmd nolo_dev_api libconvert_value_with_hmd)
+ANDROID_THIRD_PARTY_SHARED(${project_base_dir} libapp_api nolo_dev_api libapp_api)
 ANDROID_THIRD_PARTY_SHARED(${project_base_dir} libnvr_local nolo_nibiru libnvr_local)
 ANDROID_THIRD_PARTY_SHARED(${project_base_dir} libnvr_ndk_helper nolo_nibiru libnvr_ndk_helper)
+
+# oboe
+ANDROID_THIRD_PARTY_SHARED(${project_base_dir} liboboe oboe liboboe)
 
 # tinyobj
 set(thirdparty_tinyobj_base ${thirdparty_base_dir}/tinyobj)

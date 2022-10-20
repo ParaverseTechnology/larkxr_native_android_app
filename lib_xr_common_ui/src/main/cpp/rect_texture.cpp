@@ -69,6 +69,7 @@ namespace  {
                                      "    ourColor = aColor;\n"
                                      "    TexCoord = aTexCoord;\n"
                                      "}";
+
     const char * fragmentShaderSource = "#version 300 es\n"
                                         "precision highp float;\n"
                                         "\n"
@@ -88,14 +89,14 @@ RectTexture::RectTexture() {
     name_ = "RectTexture";
     enable_ = false;
     InitGL();
+    //InitMixGL();
 }
 
-RectTexture::~RectTexture() {
-}
+RectTexture::~RectTexture() = default;
 
 void RectTexture::InitGL() {
-
     LoadShader("shader/vertex/rect_vertex.glsl", "shader/fragment/rect_fragment.glsl", vertexShaderSource, fragmentShaderSource);
+
     if (has_error_) {
         LOGW("loadShaderFromAsset rect texture has error");
         return;
@@ -122,8 +123,7 @@ void RectTexture::InitGL() {
     enable_ = true;
 }
 
-void
-RectTexture::Draw(lark::Object::Eye eye, const glm::mat4 &projection, const glm::mat4 &view) {
+void RectTexture::Draw(lark::Object::Eye eye, const glm::mat4 &projection, const glm::mat4 &view) {
     Object::Draw(eye, projection, view);
 
 //    LOGV("rect draw frameIndex %d; enable %d; hasError %d", frame_texture_, enable_, has_error_);
@@ -161,6 +161,7 @@ void RectTexture::DrawMultiview(const glm::mat4 &projection, const glm::mat4 &vi
     Object::DrawMultiview(projection, view);
     lark::VertexArrayObject * vao = vao_all_.get();
     shader_->UseProgram();
+
     glBindTexture(GL_TEXTURE_2D, frame_texture_);
     vao->BindVAO();
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
@@ -194,8 +195,7 @@ void RectTexture::InitVao(void *vertices, int verticesSize, void *indices, int i
     vao->UnbindArrayBuffer();
 }
 
-void
-RectTexture::DrawStereo(lark::Object::Eye eye, const glm::mat4 &projection, const glm::mat4 &view) {
+void RectTexture::DrawStereo(lark::Object::Eye eye, const glm::mat4 &projection, const glm::mat4 &view) {
     // LOGV("draw stereo %d %d %d %d %d", frame_texture_left_, frame_texture_right_, multiview_mode_, enable_, has_error_);
 
     if (multiview_mode_) {
@@ -204,6 +204,9 @@ RectTexture::DrawStereo(lark::Object::Eye eye, const glm::mat4 &projection, cons
     }
     if (!enable_ || has_error_ || !frame_texture_left_ || !frame_texture_right_)
         return;
+
+    glDisable(GL_DEPTH_TEST);
+    glDepthMask(GL_FALSE);
 
     Object::DrawMultiview(projection, view);
     lark::VertexArrayObject * vao = vao_all_.get();
@@ -215,9 +218,11 @@ RectTexture::DrawStereo(lark::Object::Eye eye, const glm::mat4 &projection, cons
     vao->UnbindVAO();
     glBindTexture(GL_TEXTURE_2D, 0);
 
+    glDepthMask(GL_TRUE);
+    glEnable(GL_DEPTH_TEST);
+
     if (HasGLError()) {
         LOGD("render cloudtexturehas error. %d", frame_texture_);
     }
 }
-
 

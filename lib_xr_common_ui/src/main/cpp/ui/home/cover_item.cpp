@@ -3,6 +3,8 @@
 //
 
 #include <env_context.h>
+#include <ui/localization.h>
+#include <utils.h>
 #include "cover_item.h"
 #include "log.h"
 #include "vertex_array_object.h"
@@ -22,6 +24,7 @@ CoverItem::CoverItem(Navigation * navigation, const std::wstring& title):
 //        , mOriPoint(0,0,0)
     title_(title),
     bg_color_(),
+    app_type_icon_(L""),
     tail_(L""),
     cover_url_(""),
 //        , cover_(nullptr)
@@ -64,6 +67,11 @@ CoverItem::CoverItem(Navigation * navigation, const std::wstring& title):
     tail_.SetFontSize(36);
     tail_.set_parent(this);
     tail_.set_position(vec3(0.04, 0.09, 0.0));
+
+    app_type_icon_.SetFontSize(10);
+    app_type_icon_.set_position(vec3(0.08f, titleH + coverH - 0.12f, 0.1));
+//    app_type_icon_.set_position(vec3(0, 0.075, 0));
+    app_type_icon_.set_parent(this);
 
     // init cover texure id
     glGenTextures(1, &cover_texture_id_);
@@ -111,7 +119,7 @@ void CoverItem::SetTail(const std::wstring& tail) {
     tail_.set_position(positon);
 }
 
-void CoverItem::SetCoverUrl(const std::string& coverUrl, bool isLocal) {
+void CoverItem::SetCoverUrl(const std::string & coverUrl, bool isLocal) {
     if (cover_url_ == coverUrl) {
         return;
     }
@@ -148,6 +156,8 @@ void CoverItem::Draw(Eye eye, const glm::mat4& projection, const glm::mat4& eyeV
             ap.z = z - 0.002F;
             active_border_->set_position(ap);
             active_border_->Draw(eye, projection, eyeView);
+//            test_border_->set_position(ap);
+//            test_border_->Draw(eye, projection, eyeView);
         }
         auto cp = cover_->GetPosition();
         cp.z = z;
@@ -161,9 +171,15 @@ void CoverItem::Draw(Eye eye, const glm::mat4& projection, const glm::mat4& eyeV
         tp.z = z;
         title_.set_position(tp);
 
+        auto ap = app_type_icon_.GetPosition();
+        ap.z = z;
+        ap.z += 0.1;
+        app_type_icon_.set_position(ap);
+
         bg_color_.Draw(eye, projection, eyeView);
         title_.Draw(eye, projection, eyeView);
         cover_->Draw(eye, projection, eyeView);
+        app_type_icon_.Draw(eye, projection, eyeView);
     }
 }
 
@@ -186,16 +202,28 @@ void CoverItem::HandleInput(glm::vec2 *point, int pointCount) {
         LOGV("=============enter app: %s", app_id_.c_str());
         navigation_->SetRouter(Navigation::LOADING);
         // TODO 进入应用
-        if (Application::instance() != nullptr)
-            Application::instance()->EnterAppli(app_id_);
+        if (Application::instance() != nullptr) {
+            const SetupServerAddr::RegionTestResult region = navigation_->selected_region_result();
+            LOGV("=============enter app region appid[%s] regionId[ %s] rtt[%d] selected[%d]",
+                 app_id_.c_str(), region.info.regionId.c_str(), region.rtt, region.selected);
+            // 选择某个区域
+            if (region.rtt != 0 && region.selected) {
+                lark::EnterAppliParams params = {};
+                params.appliId = app_id_;
+                params.regionId = region.info.regionId;
+                Application::instance()->EnterAppliParams(params);
+            } else {
+                Application::instance()->EnterAppli(app_id_);
+            }
+        }
     }
     if (picked_ && (intpuState.triggerShortPressed || intpuState.backButtonDown) && !app_id_.empty()) {
         larkxrSystemInfo systemInfo = lark::XRClient::system_info();
         if (systemInfo.platFromType == larkxrPlatFromType::Larkxr_Platform_PICO_NEO_2 ||
             systemInfo.platFromType == larkxrPlatFromType::Larkxr_Platform_Oculus_Quest) {
-            Navigation::ShowToast("使用手柄A或X键可进入应用");
+            Navigation::ShowToast(utils::WStringToString(localization::Loader::getResource().ui_home_trigger_hit_ax));
         } else {
-            Navigation::ShowToast("使用手柄Trackpad可进入应用");
+            Navigation::ShowToast(utils::WStringToString(localization::Loader::getResource().ui_home_trigger_hit));
         }
     }
 }
@@ -209,4 +237,18 @@ void CoverItem::OnImageLoadSuccess(const char *data, int size) {
 
 void CoverItem::OnImageLoadFailed(const std::string &err) {
     LOGW("load image failde %s", err.c_str());
+}
+
+void CoverItem::SetAppliType(larkAppliType type) {
+    if (type == appli_type_) {
+        return;
+    }
+    if (type == larkAppliType::AppliType_NV_VR || type == larkAppliType::AppliType_NV_AR) {
+        app_type_icon_.SetText(L"CloudXR");
+        LOGV("CoverItem app cloudxr type %d ", type);
+    } else {
+        app_type_icon_.SetText(L"");
+        LOGV("CoverItem app type %d", type);
+    }
+    appli_type_ = type;
 }

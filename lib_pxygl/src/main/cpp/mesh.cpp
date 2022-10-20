@@ -42,6 +42,7 @@ namespace {
 #else
                                         "#version 410 core\n"
 #endif
+                                        "precision mediump float;\n"
                                         "out vec4 FragColor;\n"
                                         "  struct Light {\n"
                                         "      vec3 position;\n"
@@ -200,27 +201,30 @@ void Mesh::Draw(Eye eye, const glm::mat4& projection, const glm::mat4& eyeView) 
     unsigned int specularNr = 1;
     unsigned int normalNr   = 1;
     unsigned int heightNr   = 1;
-//    for(unsigned int i = 0; i < textures_.size(); i++)
-    // shader only support 1 texture
-    for(unsigned int i = 0; i < 1; i++)
-    {
-        glActiveTexture(GL_TEXTURE0 + i); // active proper texture unit before binding
-        // retrieve texture number (the N in diffuse_textureN)
-        std::string number;
-        std::string name = textures_[i]->type_name();
-        if(name == "texture_diffuse")
-            number = std::to_string(diffuseNr++);
-        else if(name == "texture_specular")
-            number = std::to_string(specularNr++); // transfer unsigned int to stream
-        else if(name == "texture_normal")
-            number = std::to_string(normalNr++); // transfer unsigned int to stream
-        else if(name == "texture_height")
-            number = std::to_string(heightNr++); // transfer unsigned int to stream
 
-        // now set the sampler to the correct texture unit
-        glUniform1i(shader_->GetUniformLocation((name + number).c_str()), i);
-        // and finally bind the texture
-        textures_[i]->BindTexture();
+    if (!textures_.empty()) {
+        //    for(unsigned int i = 0; i < textures_.size(); i++)
+        // shader only support 1 texture
+        for(unsigned int i = 0; i < 1; i++)
+        {
+            glActiveTexture(GL_TEXTURE0 + i); // active proper texture unit before binding
+            // retrieve texture number (the N in diffuse_textureN)
+            std::string number;
+            std::string name = textures_[i]->type_name();
+            if(name == "texture_diffuse")
+                number = std::to_string(diffuseNr++);
+            else if(name == "texture_specular")
+                number = std::to_string(specularNr++); // transfer unsigned int to stream
+            else if(name == "texture_normal")
+                number = std::to_string(normalNr++); // transfer unsigned int to stream
+            else if(name == "texture_height")
+                number = std::to_string(heightNr++); // transfer unsigned int to stream
+
+            // now set the sampler to the correct texture unit
+            glUniform1i(shader_->GetUniformLocation((name + number).c_str()), i);
+            // and finally bind the texture
+            textures_[i]->BindTexture();
+        }
     }
 
     // draw mesh

@@ -4,6 +4,7 @@
 
 #include "lark_xr/xr_config.h"
 #include <input.h>
+#include <ui/localization.h>
 #include "kcp.h"
 #include "quick_config_setup.h"
 
@@ -29,7 +30,7 @@ namespace {
 }
 
 KCPSetup::KCPSetup(int groupid, QuickConfigSetup* setup):ItemBase(groupid), quick_config_setup_(setup) {
-    setTitle(L"传输类型");
+     setTitle(localization::Loader::getResource().ui_setup_advance_kcp_title);
 
     {
         glm::vec2 p{};
@@ -47,14 +48,14 @@ KCPSetup::KCPSetup(int groupid, QuickConfigSetup* setup):ItemBase(groupid), quic
     }
     {
         glm::vec2 p{};
-        btn_kcp_ = std::make_shared<TextButton>(L"增强 UDP");
+        btn_kcp_ = std::make_shared<TextButton>(localization::Loader::getResource().ui_setup_advance_kcp);
         btn_kcp_->Move(Base::position_.x + RES_3_POSITION_X, RES_3_POSITION_Y, RES_3_POSITION_Z);
         PushAABB(btn_kcp_.get());
         AddChild(btn_kcp_);
     }
     {
         glm::vec2 p{};
-        btn_th_udp_ = std::make_shared<TextButton>(L"调速 UDP");
+        btn_th_udp_ = std::make_shared<TextButton>(localization::Loader::getResource().ui_setup_advance_throttled_udp);
         btn_th_udp_->Move(Base::position_.x + RES_4_POSITION_X, RES_4_POSITION_Y, RES_4_POSITION_Z);
         PushAABB(btn_th_udp_.get());
         btn_th_udp_->set_active(false);

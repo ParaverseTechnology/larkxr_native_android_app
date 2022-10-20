@@ -8,8 +8,15 @@
 #include "application.h"
 #include "wvr_scene_local.h"
 #include "wvr_scene_cloud.h"
+#ifdef ENABLE_CLOUDXR
+#include <cloudxr_client.h>
+#endif
 
-class WaveApplication: public Application {
+class WaveApplication: public Application
+#ifdef ENABLE_CLOUDXR
+        ,public CloudXRClientObserver
+#endif
+{
 public:
     WaveApplication();
     ~WaveApplication();
@@ -32,6 +39,9 @@ public:
     virtual bool OnUpdate() override;
     // 进入应用
     virtual void EnterAppli(const std::string& appId) override;
+    // 可选区域id等参数进入应用
+    virtual void EnterAppliParams(const lark::EnterAppliParams& params) override;
+
     virtual void CloseAppli() override;
     // xr client callback
     virtual void OnConnected() override;
@@ -48,6 +58,17 @@ public:
     //
     virtual void RequestTrackingInfo() override;
     virtual void OnHapticsFeedback(bool isLeft, uint64_t startTime, float amplitude, float duration, float frequency) override;
+
+#ifdef ENABLE_CLOUDXR
+    virtual void OnCloudXRReady(const std::string& appServerIp, const std::string& preferOutIp) override;
+#endif
+
+#ifdef ENABLE_CLOUDXR
+    // cloudxr callback
+    virtual void UpdateClientState(cxrClientState state, cxrStateReason reason) override;
+    virtual void ReceiveUserData(const void* data, uint32_t size) override;
+    virtual void GetTrackingState(cxrVRTrackingState *state) override;
+#endif
 private:
     std::shared_ptr<WvrSceneLocal> scene_local_ = {nullptr};
     std::shared_ptr<WvrSceneCloud> scene_cloud_ = {nullptr};
@@ -61,5 +82,18 @@ private:
     void* right_eye_q_ = nullptr;
     std::vector<WvrFrameBuffer*> left_eye_fbo_{};
     std::vector<WvrFrameBuffer*> right_eye_fbo_{};
+
+#ifdef ENABLE_CLOUDXR
+    static const int MAXIMUM_TRACKING_FRAMES = 50;
+    typedef std::map<uint64_t, larkxrTrackingFrame> TRACKING_FRAME_MAP;
+    TRACKING_FRAME_MAP tracking_frame_map_{};
+    std::mutex tracking_frame_mutex_{};
+
+    uint64_t pre_controller_state[2] = {};
+    std::shared_ptr<CloudXRClient> cloudxr_client_ = nullptr;
+    std::string prepare_public_ip_ = "";
+    bool need_reconnect_public_ip_ = false;
+    bool need_recreat_cloudxr_client_ = false;
+#endif
 };
 #endif //CLOUDLARKXR_WAVE_APPLICATION_H

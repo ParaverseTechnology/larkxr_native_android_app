@@ -1,5 +1,5 @@
 #version 300 es
-#define DISABLE_MULTIVIEW 1
+precision mediump float;
 
 // uniform
 uniform vec4 uColor;

@@ -33,7 +33,7 @@ public:
     virtual void set_color(component::color color) override;
     virtual void SetPositionZ(float z) override;
 
-    void SetText(const std::wstring & txt);
+    void SetText(const std::wstring & txt, bool upateNow = true);
     std::wstring GetText();
     void SetFontSize(int fontSize);
     // aabb

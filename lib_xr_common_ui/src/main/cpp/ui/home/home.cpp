@@ -79,7 +79,9 @@ void Home::Init() {
     {
         glm::vec2 p{};
         setup_server_button_ = std::make_shared<TextButton>(localization::Loader::getResource().ui_home_setup_serveraddr);
-        p.x = 1.9F - setup_server_button_->GetSize().x / 2.0F;
+        setup_server_button_->SetFontSize(24);
+
+        p.x = 2.35F - setup_server_button_->GetSize().x / 2.0F;
         p.y = 1.325F - 0.3F;
         setup_server_button_->Move(p.x, p.y, 0);
         setup_server_button_->set_color(vec4(0.843F, 0.882F, 1.0F, 0.5F));
@@ -129,6 +131,7 @@ void Home::Init() {
     {
         glm::vec2 p{};
         advance_setup_button_ = std::make_shared<TextButton>(localization::Loader::getResource().ui_home_advance_setting);
+        advance_setup_button_->set_color(vec4(0.843F, 0.882F, 1.0F, 0.5F));
         p.x = 1.9F - advance_setup_button_->GetSize().x / 2.0F;
         p.y = -1.85F;
         advance_setup_button_->Move(p.x, p.y, 0);
@@ -137,6 +140,7 @@ void Home::Init() {
 //        PushAABB(advance_setup_button_.get());
 //        AddChild(advance_setup_button_);
     }
+
     larkxrSystemInfo systemInfo = lark::XRClient::system_info();
     // device name
     {
@@ -146,6 +150,23 @@ void Home::Init() {
         device_name_->Move(-2.37F, -1.6F, 0);
         device_name_->SetFontSize(22);
         AddChild(device_name_);
+    }
+    // quit 3d ui button
+    {
+        glm::vec2 p{};
+        quit_3d_ui_button_ = std::make_shared<TextButton>(localization::Loader::getResource().ui_home_quick_3d_ui);
+        quit_3d_ui_button_->set_color(vec4(0.843F, 0.882F, 1.0F, 0.5F));
+        p.x = 1.9F - quit_3d_ui_button_->GetSize().x / 2.0F;
+        p.y = -1.6F;
+        quit_3d_ui_button_->Move(p.x, p.y, 0);
+        // add to aabb
+        quit_3d_ui_button_->SetAABBPositon(glm::vec2(p.x, p.y));
+        quit_3d_ui_button_->ClearStatus();
+        PushAABB(quit_3d_ui_button_.get());
+        //隐藏按钮
+
+        AddChild(quit_3d_ui_button_);
+        quit_3d_ui_button_->set_active(false);
     }
     // mac 地址
     {
@@ -193,7 +214,8 @@ void Home::Init() {
     {
         empty_list_ = std::make_shared<Text>(L"");
         empty_list_->SetFontSize(24);
-        empty_list_->SetText(L"当前服务器上空空如也。");
+        // 当前服务器上空空如也。
+        empty_list_->SetText(localization::Loader::getResource().ui_home_empty_list);
         empty_list_->Move(-empty_list_->width() / 2.0F + 0.15F, -1.6F, 0);
         empty_list_->set_active(false);
         AddChild(empty_list_);
@@ -268,6 +290,9 @@ void Home::HandleInput(lark::Ray * rays, int rayCount) {
     if (page_down_button_->picked() && Input::IsInputEnter()) {
         ChangePage(true);
     }
+    if (quit_3d_ui_button_->active() && quit_3d_ui_button_->picked() && Input::IsInputEnter()) {
+        Application::instance()->Quit3DUI();
+    }
 }
 
 void Home::ChangePage(bool isDown) {
@@ -303,6 +328,35 @@ void Home::Update() {
         }
     }
     {
+        if (need_update_region_info_ && setup_server_button_) {
+            SetupServerAddr::RegionTestResult result = navigation_->selected_region_result();
+
+            glm::vec2  p = {};
+
+            if (result.selected && result.rtt != 0) {
+                std::ostringstream ss;
+                ss << " " << result.info.regionName << " "
+                   << result.rtt << " ms";
+                std::wstring region = utils::StringToWstring(ss.str());
+
+                setup_server_button_->SetText(localization::Loader::getResource().ui_home_setup_serveraddr + region);
+
+                p.x = 1.9F - setup_server_button_->GetSize().x / 2.0F;
+            } else {
+                setup_server_button_->SetText(localization::Loader::getResource().ui_home_setup_serveraddr);
+
+                p.x = 1.9F - setup_server_button_->GetSize().x / 2.0F;
+            }
+
+            p.y = 1.325F - 0.3F;
+            setup_server_button_->set_transform(glm::mat4(1.0f));
+            setup_server_button_->Move(p.x, p.y, 0);
+            setup_server_button_->SetAABBPositon(glm::vec2(p.x, p.y - setup_server_button_->GetSize().y / 2.0F));
+
+            need_update_region_info_ = false;
+        }
+    }
+    {
         std::lock_guard<std::mutex> lock(run_mode_change_mutex_);
         if (run_mode_change_) {
             UpdateRunMode();
@@ -334,18 +388,24 @@ void Home::UpdateAppList(int page) {
             coverItem->set_is_empty(true);
             continue;
         }
+
         lark::AppliInfo *item = &app_page_info_.list[i];
         if (coverItem != nullptr) {
             coverItem->set_app_id(item->appliId);
             coverItem->set_is_empty(false);
             coverItem->SetTitle(utils::StringToWstring(item->appliName));
+            coverItem->SetAppliType(static_cast<larkAppliType>(item->appliType));
 //            coverItem->SetCoverUrl("textures/ui/cover_10.png", true);
             if (item->picUrl.empty() || item->picUrl == "") {
 //                LOGV("update cover %s; use empty", item->picUrl.c_str());
                 coverItem->SetCoverUrl("textures/ui/cover_11.jpg", true);
             } else {
 //                LOGV("update cover %s", item->picUrl.c_str());
-                coverItem->SetCoverUrl(item->picUrl, false);
+                std::string urlpath="http://"+lark::XRClient::GetServerHost()+":"+
+                        std::to_string(lark::XRClient::GetServerPort())+
+                        item->picUrl;
+                LOGV("urlpath--%s",urlpath.c_str());
+                coverItem->SetCoverUrl(urlpath, false);
             }
         }
     }
@@ -457,4 +517,16 @@ void Home::ResetAppPageInfo() {
     app_page_info_ = {};
 
     app_list_task_.SetPage(1);
+}
+
+void Home::SetSupport2DUI() {
+    if (quit_3d_ui_button_) {
+        quit_3d_ui_button_->set_active(true);
+    }
+}
+
+void Home::UpdateRegion(const SetupServerAddr::RegionTestResult &result) {
+    LOGV("update region %ld %s", result.rtt, result.info.regionName.c_str());
+
+    need_update_region_info_ = true;
 }

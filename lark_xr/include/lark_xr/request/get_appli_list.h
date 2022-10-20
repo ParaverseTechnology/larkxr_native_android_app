@@ -71,9 +71,9 @@ public:
 	~GetAppliList();
 
 	// send sync
-	void Send();
+	void Send(const std::string& appliType = "");
 	// send async
-	void SendAsync();
+	void SendAsync(const std::string& appliType = "");
 
 	std::vector<AppliInfo> appli_info() const;
 	AppliPageInfo appli_page_info() const;

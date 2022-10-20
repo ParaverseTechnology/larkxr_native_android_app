@@ -17,6 +17,14 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "application.h"
 
+#ifndef CHECK
+#define CHECK(condition)                                                   \
+    if (!(condition)) {                                                      \
+        LOGE("*** CHECK FAILED at %d: %s", __LINE__, #condition); \
+        abort();                                                               \
+    }
+#endif
+
 // Return micro second.  Should always positive because now is bigger.
 #define timeval_subtract(now, last) \
     ((now.tv_sec - last.tv_sec) * 1000000LL + now.tv_usec - last.tv_usec)
@@ -68,6 +76,13 @@ namespace utils {
 
         uint64_t Current = (uint64_t)tv.tv_sec * 1000 * 1000 + tv.tv_usec;
         return Current;
+    }
+
+    static inline uint64_t GetTimestampNs()
+    {
+        struct timespec now;
+        clock_gettime( CLOCK_MONOTONIC, &now );
+        return now.tv_sec * 1e9 + now.tv_nsec;
     }
 
     static inline double GetTimeInSeconds()

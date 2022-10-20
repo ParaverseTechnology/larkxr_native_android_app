@@ -6,6 +6,9 @@
 #define MY_APPLICATION_APPLICATION_H
 
 #include <android_native_app_glue.h>
+#ifdef ENABLE_CLOUDXR
+#include <cloudxr_client.h>
+#endif
 #include "ovr_egl.h"
 #include "utils.h"
 #include "ovr_scene_local.h"
@@ -13,7 +16,11 @@
 #include "lark_xr/xr_client.h"
 #include "application.h"
 
-class OvrApplication: public Application {
+class OvrApplication: public Application
+#ifdef ENABLE_CLOUDXR
+        ,public CloudXRClientObserver
+#endif
+{
 public:
     static const int CPU_LEVEL			= 2;
     static const int GPU_LEVEL			= 3;
@@ -55,10 +62,25 @@ public:
     virtual void OnMediaReady(int nativeTextureLeft, int nativeTextureRight) override;
     virtual void RequestTrackingInfo() override;
     virtual void OnSyncPlayerSpace(larkxrPlaySpace* playSpace) override;
+#ifdef ENABLE_CLOUDXR
+    virtual void OnCloudXRReady(const std::string& appServerIp, const std::string& preferOutIp) override;
+#endif
 
     // handle network change
     virtual void OnNetworkAvailable() override;
     virtual void OnNetworkLost() override;
+
+    virtual void Quit3DUI() override;
+
+#ifdef ENABLE_CLOUDXR
+    // cloudxr callback
+    virtual void UpdateClientState(cxrClientState state, cxrStateReason reason) override;
+    virtual void ReceiveUserData(const void* data, uint32_t size) override;
+    virtual void GetTrackingState(cxrVRTrackingState *state) override;
+#endif
+
+    // back to 2d list when error
+    void JniCallbackOnError(int code, const std::string& msg);
 private:
     void CreateFrameBuffer(const ovrJava *java, const bool useMultiview);
     void DestoryFrameBuffer();
@@ -88,6 +110,14 @@ private:
     // frame buffer
     OvrFrameBuffer frame_buffer_[VRAPI_FRAME_LAYER_EYE_MAX];
     int			   num_buffers_;
+
+#ifdef ENABLE_CLOUDXR
+    uint64_t pre_controller_state[2] = {};
+    std::shared_ptr<CloudXRClient> cloudxr_client_ = nullptr;
+    std::string prepare_public_ip_ = "";
+    bool need_reconnect_public_ip_ = false;
+    bool need_recreat_cloudxr_client_ = false;
+#endif
 };
 
 

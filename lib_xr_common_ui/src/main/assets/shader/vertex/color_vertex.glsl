@@ -1,5 +1,4 @@
 #version 300 es
-#define DISABLE_MULTIVIEW 1
 
 layout (location = 0) in vec3 aPos;
 

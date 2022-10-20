@@ -12,7 +12,6 @@ namespace {
 const lark::AssetLists Assetlist = {
         // shader
         {
-                { lark::ShaderAssetType_File, "oes", "shader/vertex/oes_vertex.glsl", "shader/fragment/oes_fragment.glsl", "", ""},
                 { lark::ShaderAssetType_File, "object", "shader/vertex/color_vertex.glsl", "shader/fragment/color_fragment.glsl", "", ""},
                 { lark::ShaderAssetType_File, "text", "shader/vertex/text_vertex.glsl", "shader/fragment/text_fragment.glsl", "", ""},
                 { lark::ShaderAssetType_File, "text", "shader/vertex/image_vertex.glsl", "shader/fragment/image_fragment.glsl", "", ""},
@@ -43,7 +42,6 @@ const lark::AssetLists Assetlist = {
                 { lark::TextureAssetType_Local_Normal, "textures/ui/line.png" },
                 { lark::TextureAssetType_Local_Normal, "textures/ui/loading.png" },
                 { lark::TextureAssetType_Local_Normal, "textures/ui/logo.png" },
-                { lark::TextureAssetType_Local_Normal, "textures/ui/logo_china_unicom.png" },
                 { lark::TextureAssetType_Local_Normal, "textures/ui/page_left.png" },
                 { lark::TextureAssetType_Local_Normal, "textures/ui/page_left_hover.png" },
                 { lark::TextureAssetType_Local_Normal, "textures/ui/page_right.png" },

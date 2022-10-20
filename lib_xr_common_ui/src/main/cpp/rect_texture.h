@@ -12,6 +12,7 @@
 class RectTexture : public lark::Object {
 public:
     RectTexture();
+
     ~RectTexture();
 
     void InitGL();
@@ -35,6 +36,7 @@ public:
         frame_texture_left_ = 0;
         frame_texture_right_ = 0;
     }
+
     inline void set_frame_texture_(int texture) { frame_texture_ = texture; }
     inline void set_multiview_mode(bool multiview) { multiview_mode_ = multiview; }
 private:
@@ -48,5 +50,6 @@ private:
     int frame_texture_left_ = 0;
     int frame_texture_right_ = 0;
     bool multiview_mode_ = true;
+
 };
 #endif // RECT_TEXTURE_INCLUDE

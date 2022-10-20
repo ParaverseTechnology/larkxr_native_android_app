@@ -5,6 +5,7 @@
 #include "use_10bitencode.h"
 #include "lark_xr/xr_config.h"
 #include <input.h>
+#include <ui/localization.h>
 #include "setup.h"
 #include "quick_config_setup.h"
 
@@ -22,16 +23,16 @@ namespace {
 }
 
 Use10BitEncode::Use10BitEncode(int groupid, QuickConfigSetup* setup):ItemBase(groupid), quick_config_setup_(setup) {
-    setTitle(L"开启10Bit编码？");
+    setTitle(localization::Loader::getResource().ui_setup_advance_use_10bit_encode);
 
     {
-        btn_on_ = std::make_shared<TextButton>(L"是");
+        btn_on_ = std::make_shared<TextButton>(localization::Loader::getResource().ui_setup_yes);
         btn_on_->Move(Base::position_.x + RES_1_POSITION_X, RES_1_POSITION_Y, RES_1_POSITION_Z);
         PushAABB(btn_on_.get());
         AddChild(btn_on_);
     }
     {
-        btn_off_ = std::make_shared<TextButton>(L"否");
+        btn_off_ = std::make_shared<TextButton>(localization::Loader::getResource().ui_setup_no);
         btn_off_->Move(Base::position_.x + RES_2_POSITION_X, RES_2_POSITION_Y, RES_2_POSITION_Z);
         PushAABB(btn_off_.get());
         AddChild(btn_off_);

@@ -3,6 +3,7 @@
 //
 
 #include <input.h>
+#include <ui/localization.h>
 #include "quick_config_setup.h"
 #include "setup.h"
 
@@ -28,28 +29,32 @@ namespace {
 }
 
 QuickConfigSetup::QuickConfigSetup(int groupid, Setup* setup): ItemBase(groupid), setup_(setup) {
-    setTitle(L"快速配置");
+    setTitle(localization::Loader::getResource().ui_setup_advance_quick_config);
 
     {
-        btn_level_manual_ = std::make_shared<TextButton>(L"手动");
+        btn_level_manual_ = std::make_shared<TextButton>(localization::Loader::getResource().ui_setup_advance_quick_config_manual);
+        btn_level_manual_->SetFontSize(26);
         btn_level_manual_->Move(Base::position_.x + RES_1_POSITION_X, RES_1_POSITION_Y, RES_1_POSITION_Z);
         PushAABB(btn_level_manual_.get());
         AddChild(btn_level_manual_);
     }
     {
-        btn_level_fast_ = std::make_shared<TextButton>(L"流畅");
+        btn_level_fast_ = std::make_shared<TextButton>(localization::Loader::getResource().ui_setup_advance_quick_config_fast);
+        btn_level_fast_->SetFontSize(26);
         btn_level_fast_->Move(Base::position_.x + RES_2_POSITION_X, RES_2_POSITION_Y, RES_2_POSITION_Z);
         PushAABB(btn_level_fast_.get());
         AddChild(btn_level_fast_);
     }
     {
-        btn_level_normal_ = std::make_shared<TextButton>(L"标准");
+        btn_level_normal_ = std::make_shared<TextButton>(localization::Loader::getResource().ui_setup_advance_quick_config_normal);
+        btn_level_normal_->SetFontSize(26);
         btn_level_normal_->Move(Base::position_.x + RES_3_POSITION_X, RES_3_POSITION_Y, RES_3_POSITION_Z);
         PushAABB(btn_level_normal_.get());
         AddChild(btn_level_normal_);
     }
     {
-        btn_level_extreme_ = std::make_shared<TextButton>(L"超清");
+        btn_level_extreme_ = std::make_shared<TextButton>(localization::Loader::getResource().ui_setup_advance_quick_config_extreme);
+        btn_level_extreme_->SetFontSize(26);
         btn_level_extreme_->Move(Base::position_.x + RES_4_POSITION_X, RES_4_POSITION_Y, RES_4_POSITION_Z);
         PushAABB(btn_level_extreme_.get());
         AddChild(btn_level_extreme_);

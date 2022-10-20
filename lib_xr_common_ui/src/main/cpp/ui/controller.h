@@ -101,6 +101,21 @@ const ControllerConfig CONTROLLER_PICO_NEO_2 = {
         }
 };
 
+const ControllerConfig CONTROLLER_PICO_NEO_3 = {
+        "model/pico_neo_3/ppController_NEO3_L.obj",
+        "model/pico_neo_3/ppController_NEO3_R.obj",
+        glm::vec3(0, 0, 0),
+        glm::vec3(0, 0, 0),
+        0.01f,
+        0,
+        glm::vec3(0,0,0),
+        glm::vec4(1, 1, 1, 0.6),
+        {
+                lark::Model::MaterialTextureType_DIFFUSE,
+                "controller5_idle.jpg"
+        }
+};
+
 const ControllerConfig CONTROLLER_PICO_G2 = {
         "model/controller_pico_g2/controller2.obj",
         "model/controller_pico_g2/controller2.obj",

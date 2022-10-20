@@ -16,7 +16,7 @@
 #include "ui/setup_server/setup_server_addr.h"
 #include "view.h"
 
-class Navigation: public lark::Object {
+class Navigation: public lark::Object, public SetupServerAddrListener {
 public:
     // static routers.
     enum ROUTERS {
@@ -37,6 +37,18 @@ public:
     virtual void Update() override;
     void HandelInput(lark::Ray * rays, int rayCount);
     void SetLoadingTips(const std::wstring& tipstr);
+
+    void SetSupport2DUI();
+
+    virtual void OnUpdateRegion(const SetupServerAddr::RegionTestResult& result) override;
+
+    inline SetupServerAddr::RegionTestResult selected_region_result() {
+        if (setup_server_addr_) {
+            return setup_server_addr_->selected_region_result();
+        } else {
+            return { 0, false };
+        }
+    }
 private:
     // static faileds
     static std::string s_toast_str_;

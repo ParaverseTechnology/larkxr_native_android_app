@@ -54,6 +54,7 @@ bool WaveApplication::InitVR() {
             {WVR_InputId_Alias1_Trigger, WVR_InputType_Button , WVR_AnalogType_None},
             {WVR_InputId_Alias1_Digital_Trigger, WVR_InputType_Button , WVR_AnalogType_None}
     };
+
     WVR_SetInputRequest(WVR_DeviceType_HMD, inputIdAndTypes, sizeof(inputIdAndTypes) / sizeof(*inputIdAndTypes));
     WVR_SetInputRequest(WVR_DeviceType_Controller_Right, inputIdAndTypes, sizeof(inputIdAndTypes) / sizeof(*inputIdAndTypes));
     WVR_SetInputRequest(WVR_DeviceType_Controller_Left, inputIdAndTypes, sizeof(inputIdAndTypes) / sizeof(*inputIdAndTypes));
@@ -88,7 +89,7 @@ bool WaveApplication::InitVR() {
     scene_local_ = std::make_shared<WvrSceneLocal>();
     scene_local_->InitVR();
 
-    // init cloudxr setup.
+    // init larkxr setup.
     {
         float left, right, top, bottom;
         float aLeft, aRight, aTop, aBottom;
@@ -100,10 +101,12 @@ bool WaveApplication::InitVR() {
         LOGI("L left: %f; right: %f; top: %f; bottom: %f;aLeft: %f; aRight: %f; aTop: %f; aBotttom: %f",
              left, right, top, bottom,
              aLeft, aRight, aTop, aBottom);
+
         // setup left
         lark::XRConfig::fov[0] = {
                  abs(aLeft), abs(aRight), abs(aTop), abs(aBottom)
         };
+
         WVR_GetClippingPlaneBoundary(WVR_Eye_Right, &left, &right, &top, &bottom);
         aLeft = static_cast<float>(atanf(left) * 180.0f / M_PI);
         aRight = static_cast<float>(atanf(right) * 180.0f / M_PI);
@@ -137,6 +140,15 @@ bool WaveApplication::InitVR() {
         lark::XRConfig::use_render_queue = false;
 #endif
     }
+
+#ifdef ENABLE_CLOUDXR
+    // create cloudxr before scene cloud inited
+    cloudxr_client_ = std::make_shared<CloudXRClient>(this);
+    cloudxr_client_->InitRenderParamsWithLarkXRConfig();
+//    cloudxr_client_->Init();
+    need_recreat_cloudxr_client_ = true;
+#endif
+
     return true;
 }
 
@@ -189,6 +201,11 @@ bool WaveApplication::InitGL() {
     if (!scene_local_->InitGL(left_eye_q_, right_eye_q_, &left_eye_fbo_, &right_eye_fbo_))
         return false;
     scene_cloud_ = std::make_shared<WvrSceneCloud>();
+
+#ifdef ENABLE_CLOUDXR
+    scene_cloud_->SetCloudXRClient(cloudxr_client_);
+#endif
+
     if (!scene_cloud_->InitGL(left_eye_q_, right_eye_q_, &left_eye_fbo_, &right_eye_fbo_))
         return false;
 
@@ -227,20 +244,12 @@ void WaveApplication::InitJava() {
     xr_client_ = std::make_shared<lark::XRClient>();
     xr_client_->Init(Context::instance()->vm());
     xr_client_->RegisterObserver(this);
-#ifdef LARK_SDK_SECRET
-    // 初始化 cloudlark sdk
-    std::string timestamp = utils::GetTimestampMillStr();
-    std::string signature = utils::GetSignature(LARK_SDK_ID, LARK_SDK_SECRET, timestamp);
-    if (!xr_client_->InitSdkAuthorization(LARK_SDK_ID, signature, timestamp)) {
-        LOGV("init sdk auth faild %d %s", xr_client_->last_error_code(), xr_client_->last_error_message().c_str());
-        Navigation::ShowToast(xr_client_->last_error_message());
-    }
-#else
+
     if (!xr_client_->InitSdkAuthorization(LARK_SDK_ID)) {
         LOGV("init sdk auth faild %d %s", xr_client_->last_error_code(), xr_client_->last_error_message().c_str());
         Navigation::ShowToast(xr_client_->last_error_message());
     }
-#endif
+
     // 3dof controller system
     if (lark::XRClient::system_info().platFromType != Larkxr_Platform_HTC_FOCUS_PLUS) {
         WVR_SetArmModel(WVR_SimulationType_ForceOn);
@@ -249,6 +258,13 @@ void WaveApplication::InitJava() {
 }
 
 void WaveApplication::ShutdownVR() {
+    connected_ = false;
+
+    if (recording_stream_) {
+        recording_stream_->close();
+        recording_stream_.reset();
+    }
+
     xr_client_->UnRegisterObserver();
     xr_client_->Release();
     xr_client_.reset();
@@ -259,6 +275,12 @@ void WaveApplication::ShutdownGL() {
     // reset all state.
     Input::ResetInput();
     Navigation::ClearToast();
+
+#ifdef ENABLE_CLOUDXR
+    if (cloudxr_client_ && cloudxr_client_->IsConnectStarted()) {
+        cloudxr_client_->Teardown();
+    }
+#endif
 
     scene_local_->ShutdownGL();
     scene_local_.reset();
@@ -284,12 +306,87 @@ bool WaveApplication::OnUpdate() {
     time_t now = time(nullptr);
     // update controler battery info every 5s;
     if (now - check_timestamp_ > 5) {
-        int left = wvr::GetBatteryPrecent(WVR_GetBatteryStatus(WVR_DeviceType_Controller_Left));
-        int right = wvr::GetBatteryPrecent(WVR_GetBatteryStatus(WVR_DeviceType_Controller_Right));
+        int left = 0;
+        WVR_BatteryStatus leftstatus=WVR_GetBatteryStatus(WVR_DeviceType_Controller_Left);
+        if (leftstatus>0){
+            left =wvr::GetBatteryPrecent(leftstatus);
+        }
+
+        int right =0;
+        WVR_BatteryStatus rightstatus=WVR_GetBatteryStatus(WVR_DeviceType_Controller_Right);
+        if (rightstatus>0){
+            right =wvr::GetBatteryPrecent(rightstatus);
+        }
         LOGV("battery level left %d right %d", left, right);
         lark::XRClient::SetControlerBatteryLevel(left, right);
         check_timestamp_ = now;
     }
+
+#ifdef ENABLE_CLOUDXR
+    if (need_recreat_cloudxr_client_) {
+        cloudxr_client_->Init();
+        need_recreat_cloudxr_client_ = false;
+    }
+
+    if (need_reconnect_public_ip_ && cloudxr_client_) {
+        // recreate recevier
+        cloudxr_client_->Init();
+        // try to connect to public ip.
+        cloudxr_client_->Connect(prepare_public_ip_);
+
+        need_reconnect_public_ip_ = false;
+        prepare_public_ip_ = "";
+    }
+    // cloudxr progess
+    if (cloudxr_client_ && cloudxr_client_->IsConnect()) {
+        // update input.
+        scene_cloud_->HandleInput();
+
+        cxrFramesLatched latched;
+        cxrError error = cloudxr_client_->Latch(latched);
+        if (error != cxrError_Success)
+        {
+            LOGV("Latching frame failed.");
+            if (error == cxrError_Frame_Not_Ready)
+            {
+                LOGW("LatchFrame failed, frame not ready for %d ms", 150);
+            }
+            else
+            {
+                LOGE("Error in LatchFrame [%0d] = %s", error, cxrErrorString(error));
+            }
+            // update with local render
+            scene_cloud_->Update();
+            return false;
+        }
+
+        larkxrTrackingFrame trackingFrame = {};
+        {
+            uint64_t frameIndex = latched.poseID;
+            std::lock_guard<std::mutex> lock(tracking_frame_mutex_);
+            auto it = tracking_frame_map_.find(frameIndex);
+            if (it != tracking_frame_map_.end()) {
+                trackingFrame = it->second;
+            } else {
+                if (!tracking_frame_map_.empty()) {
+                    LOGW("cant find new tracking frame in map. use old. size %ld; index %ld", tracking_frame_map_.size(), frameIndex);
+                    trackingFrame = tracking_frame_map_.cbegin()->second;
+                } else {
+                    LOGW("cant find tracking frame in map. size %ld; index %ld", tracking_frame_map_.size(), frameIndex);
+                    return false;
+                }
+            }
+        }
+
+        scene_cloud_->Render(trackingFrame);
+
+        cloudxr_client_->Release();
+        cloudxr_client_->Stats();
+
+        return false;
+    }
+#endif
+
 
     if (connected_) {
 #ifdef USE_RENDER_QUEUE
@@ -300,7 +397,7 @@ bool WaveApplication::OnUpdate() {
                 scene_cloud_->Update();
             } else {
                 scene_cloud_->HandleInput();
-                usleep(1);
+                usleep(1000);
             }
         } else {
             scene_cloud_->HandleInput();
@@ -315,7 +412,7 @@ bool WaveApplication::OnUpdate() {
                 xr_client_->Render(&trackingFrame);
                 scene_cloud_->Render(trackingFrame);
             } else {
-                usleep(1);
+                usleep(1000);
             }
         } else {
             scene_cloud_->Update();
@@ -329,21 +426,42 @@ bool WaveApplication::OnUpdate() {
 
 void WaveApplication::EnterAppli(const std::string &appId) {
     LOGI("==========EnterAppli %s", appId.c_str());
-    xr_client_->EnterAppli(appId);
+    if (xr_client_) {
+        xr_client_->EnterAppli(appId);
+    }
+}
+
+void WaveApplication::EnterAppliParams(const lark::EnterAppliParams &params) {
+    LOGV("on enter EnterAppliParams");
+    if (xr_client_) {
+        xr_client_->EnterAppli(params);
+//        xr_client_->EnterAppli("846813152229195776");
+    }
 }
 
 void WaveApplication::CloseAppli() {
-    xr_client_->Close();
+    if (xr_client_)
+        xr_client_->Close();
 }
 
 void WaveApplication::OnConnected() {
+    Application::OnConnected();
     LOGI("==========OnConnected============");
     connected_ = true;
     scene_cloud_->OnConnect();
 }
 
 void WaveApplication::OnError(int errCode, const std::string &msg) {
+    Application::OnError(errCode, msg);
     LOGE("on xr client error %d; msg %s;", errCode, msg.c_str());
+
+#ifdef ENABLE_CLOUDXR
+    if (cloudxr_client_ && cloudxr_client_->IsConnectStarted()) {
+        cloudxr_client_->Teardown();
+        need_recreat_cloudxr_client_ = true;
+    }
+#endif
+
     if (errCode == 1) {
         // enter applifailed.
         scene_local_->HomePage();
@@ -356,7 +474,16 @@ void WaveApplication::OnError(int errCode, const std::string &msg) {
 }
 
 void WaveApplication::OnClose(int code) {
+    Application::OnClose(code);
     LOGV("=========on close %d", code);
+
+#ifdef ENABLE_CLOUDXR
+    if (cloudxr_client_ && cloudxr_client_->IsConnectStarted()) {
+        cloudxr_client_->Teardown();
+        need_recreat_cloudxr_client_ = true;
+    }
+#endif
+
     connected_ = false;
     scene_cloud_->OnClose();
     scene_local_->HomePage();
@@ -365,22 +492,26 @@ void WaveApplication::OnClose(int code) {
 // andoird lifecycle
 void WaveApplication::OnCreate() {
     LOGV("*************OnCreate");
-    xr_client_->OnCreated();
+    if (xr_client_)
+        xr_client_->OnCreated();
 }
 
 void WaveApplication::OnResume() {
     LOGV("*************OnResume");
-    xr_client_->OnResume();
+    if (xr_client_)
+        xr_client_->OnResume();
 }
 
 void WaveApplication::OnPause() {
     LOGV("*************OnPause");
-    xr_client_->OnPause();
+    if (xr_client_)
+        xr_client_->OnPause();
 }
 
 void WaveApplication::OnDestory() {
     LOGV("*************OnDestory");
-    xr_client_->OnDestory();
+    if (xr_client_)
+        xr_client_->OnDestory();
 }
 
 void WaveApplication::OnMediaReady(int nativeTextrure) {
@@ -407,3 +538,88 @@ WaveApplication::OnHapticsFeedback(bool isLeft, uint64_t startTime, float amplit
     WVR_TriggerVibration(isLeft ? WVR_DeviceType_Controller_Left : WVR_DeviceType_Controller_Right,
         WVR_InputId_Alias1_Trigger, (uint32_t)(duration * 1000));
 }
+
+#ifdef ENABLE_CLOUDXR
+void
+WaveApplication::OnCloudXRReady(const std::string &appServerIp, const std::string &preferOutIp) {
+    Application::OnCloudXRReady(appServerIp, preferOutIp);
+    prepare_public_ip_ = preferOutIp;
+    cxrError error = cloudxr_client_->Connect(appServerIp);
+//    cxrError error = cloudxr_client_->Connect("222.128.6.137");
+    if (error != cxrError_Success) {
+        const char* errorString = cxrErrorString(error);
+        LOGE("Error in LatchFrame [%0d] = %s", error, errorString);
+        Navigation::ShowToast(errorString);
+        need_recreat_cloudxr_client_ = true;
+    }
+}
+
+void WaveApplication::UpdateClientState(cxrClientState state, cxrStateReason reason) {
+    LOGI("PvrXrApplication UpdateClientState state %d reason %d", state, reason);
+    switch (state) {
+        case cxrClientState_ReadyToConnect:
+            Navigation::ShowToast("创建CloudXR客户端成功");
+            break;
+        case cxrClientState_ConnectionAttemptInProgress:
+            Navigation::ShowToast("开始连接服务器");
+            break;
+        case cxrClientState_StreamingSessionInProgress:
+            Navigation::ShowToast("连接服务器成功");
+            if (scene_cloud_) {
+                scene_cloud_->OnCloudXRConnected();
+            }
+            break;
+        case cxrClientState_ConnectionAttemptFailed:
+        {
+            if (!prepare_public_ip_.empty()) {
+                need_reconnect_public_ip_ = true;
+            } else {
+                char buff[200];
+                sprintf(buff, "连接CloudXR服务器失败 reason %d", reason);
+                Navigation::ShowToast(buff);
+                // release resource when cloudxr connected failed.
+                xr_client_->Close();
+            }
+        }
+            break;
+        case cxrClientState_Disconnected:
+        {
+            char buff[200];
+            sprintf(buff, "与CloudXR服务器连接断开 reason %d", reason);
+            Navigation::ShowToast(buff);
+            // release resource when cloudxr close.
+            xr_client_->Close();
+        }
+            break;
+        default:
+            break;
+    }
+}
+
+void WaveApplication::ReceiveUserData(const void *data, uint32_t size) {
+
+}
+
+void WaveApplication::GetTrackingState(cxrVRTrackingState *state) {
+    // send device pair
+    larkxrTrackingDevicePairFrame devicePairFrame;
+    scene_cloud_->UpdateAsync(&devicePairFrame);
+
+    {
+        larkxrTrackingFrame frame;
+        frame.frameIndex = devicePairFrame.frameIndex;
+        frame.fetchTime = devicePairFrame.fetchTime;
+        frame.displayTime = devicePairFrame.displayTime;
+        frame.tracking = devicePairFrame.devicePair.hmdPose;
+        // unique_ptr
+        std::lock_guard<std::mutex> lock(tracking_frame_mutex_);
+        tracking_frame_map_.insert(
+                std::pair<uint64_t, larkxrTrackingFrame>(frame.frameIndex, frame));
+        if (tracking_frame_map_.size() > MAXIMUM_TRACKING_FRAMES) {
+            tracking_frame_map_.erase(tracking_frame_map_.cbegin());
+        }
+    }
+
+    *state = CloudXRClient::VRTrackingStateFrom(devicePairFrame);
+}
+#endif

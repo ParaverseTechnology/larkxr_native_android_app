@@ -39,7 +39,6 @@ OvrApplication::~OvrApplication() {
 
 bool OvrApplication::InitVR(android_app *app) {
     LOGENTRY();
-
     java_.Vm = app->activity->vm;
     java_.Env = app->activity->env;
     // TODO
@@ -48,18 +47,20 @@ bool OvrApplication::InitVR(android_app *app) {
     java_.ActivityObject = app->activity->clazz;
     // Note that AttachCurrentThread will reset the thread name.
     prctl( PR_SET_NAME, (long)"OVR::Main", 0, 0, 0 );
-
+    LOGE("ovrInitParms");
     const ovrInitParms initParms = vrapi_DefaultInitParms( &java_ );
     int32_t initResult = vrapi_Initialize( &initParms );
+
     if ( initResult != VRAPI_INITIALIZE_SUCCESS )
     {
         // If intialization failed, vrapi_* function calls will not be available.
         return false;
     }
-
+    LOGE("初始化环境");
     // 初始化环境。
     Context::Init(app->activity);
     // 初始化客户端接入凭证
+    LOGE("初始化客户端接入凭证");
     InitCertificate();
     return true;
 }
@@ -73,7 +74,7 @@ bool OvrApplication::InitGL() {
     // 开启透明同道混合
     GL( glEnable(GL_BLEND) );
     GL( glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA) );
-
+//
     GL( glEnable(GL_DEPTH_TEST) );
     GL( glDepthFunc(GL_LEQUAL) );
     GL( glDepthMask(true) );
@@ -110,7 +111,15 @@ void OvrApplication::InitJava() {
     CreateFrameBuffer(&java_, use_multiview_);
 //    scene_local_->InitJava(&java_, use_multiview_);
 //    scene_cloud_->InitJava(&java_, use_multiview_);
+
+#ifdef ENABLE_CLOUDXR
+    // create cloudxr before scene cloud inited
+    cloudxr_client_ = std::make_shared<CloudXRClient>(this);
+    scene_cloud_->SetCloudXRClient(cloudxr_client_);
+#endif
+
     scene_local_->InitGL(frame_buffer_, num_buffers_);
+
     scene_cloud_->InitGL(frame_buffer_, num_buffers_);
 }
 
@@ -127,15 +136,30 @@ void OvrApplication::ShutdownVR() {
 
 void OvrApplication::ShutdownGL() {
     LOGENTRY();
+
+    connected_ = false;
+
+#ifdef ENABLE_CLOUDXR
+    if (cloudxr_client_ && cloudxr_client_->IsConnectStarted()) {
+        cloudxr_client_->Teardown();
+    }
+#endif
+
+    if (recording_stream_) {
+        recording_stream_->close();
+        recording_stream_.reset();
+    }
+
     // release cloudlark
     if (xr_client_) {
         xr_client_->UnRegisterObserver();
         xr_client_->Release();
+        xr_client_.reset();
     }
 
     // reset all state.
     Input::ResetInput();
-    Navigation::ClearToast();
+   // Navigation::ClearToastEnterAppli();
 
     scene_local_->ShutdownGL();
     scene_local_.reset();
@@ -236,6 +260,9 @@ void OvrApplication::HandleVrModeChange() {
                     lark::XRConfig::use_multiview = true;
                     //    lark::XRConfig::foveated_rendering.enableFoveateRendering = true;
 
+//                    lark::XRConfig::headset_desc.type = larkHeadSetType_HTC;
+                    lark::XRConfig::headset_desc.type = larkHeadSetType_OCULUS;
+
 //                    lark::XRConfig::use_multiview = false;
 //                    lark::XRConfig::flip_draw = true;
 #ifdef USE_RENDER_QUEUE
@@ -252,21 +279,17 @@ void OvrApplication::HandleVrModeChange() {
                     xr_client_ = std::make_shared<lark::XRClient>();
                     xr_client_->Init(java_.Vm);
                     xr_client_->RegisterObserver(this);
+                    xr_client_->EnableDebugMode(true);
 
-#ifdef LARK_SDK_SECRET
-                    // 初始化 cloudlark sdk
-                    std::string timestamp = utils::GetTimestampMillStr();
-                    std::string signature = utils::GetSignature(LARK_SDK_ID, LARK_SDK_SECRET, timestamp);
-                    if (!xr_client_->InitSdkAuthorization(LARK_SDK_ID, signature, timestamp)) {
-                        LOGV("init sdk auth faild %d %s", xr_client_->last_error_code(), xr_client_->last_error_message().c_str());
-                        Navigation::ShowToast(xr_client_->last_error_message());
-                    }
-#else
                     if (!xr_client_->InitSdkAuthorization(LARK_SDK_ID)) {
                         LOGV("init sdk auth faild %d %s", xr_client_->last_error_code(), xr_client_->last_error_message().c_str());
                         Navigation::ShowToast(xr_client_->last_error_message());
                     }
-#endif
+
+                    LOGV("pre appid ========== %s", appli_id_from_2d_ui_.c_str());
+                    if (!appli_id_from_2d_ui_.empty()) {
+                        EnterAppli(appli_id_from_2d_ui_);
+                    }
                 }
                 // setup fov
                 {
@@ -339,6 +362,13 @@ void OvrApplication::HandleVrModeChange() {
                 LOGI("current ipd %f", ipd);
 //                lark::XRConfig::foveated_rendering.enableFoveateRendering = true;
             }
+
+#ifdef ENABLE_CLOUDXR
+            if (cloudxr_client_ && !cloudxr_client_->inited()) {
+                cloudxr_client_->InitRenderParamsWithLarkXRConfig();
+                cloudxr_client_->Init();
+            }
+#endif
         } else {
             LOGV("VR mode change");
         }
@@ -358,6 +388,7 @@ void OvrApplication::OnResume() {
     LOGV( "    APP_CMD_RESUME" );
     resumed_ = true;
     if (xr_client_) {
+        sleep(1);
         xr_client_->OnResume();
     }
 }
@@ -393,6 +424,51 @@ bool OvrApplication::OnUpdate() {
     if (ovr_ == nullptr) {
         return false;
     }
+#ifdef ENABLE_CLOUDXR
+    if (need_recreat_cloudxr_client_) {
+        cloudxr_client_->Init();
+        need_recreat_cloudxr_client_ = false;
+    }
+
+    if (need_reconnect_public_ip_ && cloudxr_client_) {
+        // recreate recevier
+        cloudxr_client_->Init();
+        // try to connect to public ip.
+        cloudxr_client_->Connect(prepare_public_ip_);
+
+        need_reconnect_public_ip_ = false;
+        prepare_public_ip_ = "";
+    }
+    // cloudxr progess
+    if (cloudxr_client_ && cloudxr_client_->IsConnect()) {
+        // update input.
+        scene_cloud_->HandleInput();
+
+        cxrFramesLatched latched;
+        cxrError error = cloudxr_client_->Latch(latched);
+        if (error != cxrError_Success)
+        {
+            LOGV("Latching frame failed.");
+            if (error == cxrError_Frame_Not_Ready)
+            {
+                LOGW("LatchFrame failed, frame not ready for %d ms", 150);
+            }
+            else
+            {
+                LOGE("Error in LatchFrame [%0d] = %s", error, cxrErrorString(error));
+            }
+            return false;
+        }
+
+        scene_cloud_->Render(ovr_, latched);
+
+        cloudxr_client_->Release();
+        cloudxr_client_->Stats();
+
+        egl_utils::GLCheckErrors(0);
+        return true;
+    }
+#endif
 
     if (connected_) {
 #ifdef USE_RENDER_QUEUE
@@ -407,7 +483,7 @@ bool OvrApplication::OnUpdate() {
                 scene_cloud_->Update(ovr_);
             } else {
                 scene_cloud_->HandleInput();
-                usleep(1);
+                usleep(1000);
             }
         }
 #else
@@ -419,7 +495,7 @@ bool OvrApplication::OnUpdate() {
             if (xr_client_->Render(&trackingFrame)) {
                 scene_cloud_->Render(ovr_, trackingFrame);
             } else {
-                usleep(1);
+                usleep(1000);
             }
         } else {
             scene_cloud_->Update(ovr_);
@@ -434,7 +510,46 @@ bool OvrApplication::OnUpdate() {
 void OvrApplication::EnterAppli(const std::string &appId) {
     LOGENTRY();
     if (xr_client_) {
+#if 1
         xr_client_->EnterAppli(appId);
+#else
+        CommonConfig config;
+        config.width = lark::XRConfig::align32ed_scaled_render_width();
+        config.height = lark::XRConfig::align32ed_scaled_render_height();
+        config.bitrateKbps = lark::XRConfig::bitrate;
+        config.fps = lark::XRConfig::fps;
+        for(int i = 0; i < 2; i++) {
+            config.fovList[i] = {
+                    lark::XRConfig::fov[i].left,
+                    lark::XRConfig::fov[i].right,
+                    lark::XRConfig::fov[i].top,
+                    lark::XRConfig::fov[i].bottom,
+            };
+        }
+        config.roomHeight = lark::XRConfig::room_height;
+        config.ipd = lark::XRConfig::XRConfig::ipd;
+        config.useKcp = lark::XRConfig::XRConfig::use_kcp;
+        config.useH265 = lark::XRConfig::XRConfig::use_h265;
+        // oculus use touch controller.
+        config.hasTouchcontroller = true;
+        {
+            // test
+            config.appServer = "192.168.0.223";
+//            config.appServer = "192.168.0.35";
+            config.appPort = 10002;
+//            config.width = 1920;
+//            config.height = 1080;
+            config.taskId = "123456";
+            config.debugTask = true;
+            config.useProxy = false;
+            config.playerMode = PlayerModeType_Normal;
+            config.userType = UserType_Player;
+        }
+
+        config.headSetDesc = lark::XRConfig::headset_desc;
+        config.vrVideoDesc = lark::XRConfig::GetVideoDesc();
+        xr_client_->Connect(config);
+#endif
     }
 }
 
@@ -447,26 +562,46 @@ void OvrApplication::CloseAppli() {
 
 void OvrApplication::OnConnected() {
     LOGENTRY();
+    Application::OnConnected();
     connected_ = true;
     scene_cloud_->OnConnect();
 }
 
 void OvrApplication::OnClose(int code) {
     LOGV("=========on close %d", code);
+    Application::OnClose(code);
+
+#ifdef ENABLE_CLOUDXR
+    if (cloudxr_client_ && cloudxr_client_->IsConnectStarted()) {
+        cloudxr_client_->Teardown();
+        need_recreat_cloudxr_client_ = true;
+    }
+#endif
+
     connected_ = false;
     scene_cloud_->OnClose();
-    scene_local_->HomePage();
+
+    std::string msg = "";
     switch(code) {
         case LK_XR_MEDIA_TRANSPORT_CHANNEL_CLOSED:
-            Navigation::ShowToast("与服务器媒体传输通道连接关闭");
+            msg = "与服务器媒体传输通道连接关闭";
             break;
         case LK_RENDER_SERVER_CLOSE:
-            Navigation::ShowToast("与渲染服务器 TCP 连接关闭");
+            msg = "与渲染服务器 WebSocket 连接关闭";
             break;
         case LK_PROXY_SERVER_CLOSE:
-            Navigation::ShowToast("与渲染服务器代理连接关闭");
+            msg = "与渲染服务器代理连接关闭";
             break;
     }
+    Navigation::ShowToast(msg);
+
+    if (ui_mode() == ApplicationUIMode_Opengles_3D) {
+        scene_local_->HomePage();
+    } else {
+        scene_local_->LoadingPage();
+        JniCallbackOnError(code, msg);
+    }
+
     if (ovr_ != nullptr && tracking_space_ != VRAPI_TRACKING_SPACE_LOCAL) {
         vrapi_SetTrackingSpace(ovr_, VRAPI_TRACKING_SPACE_LOCAL);
         tracking_space_ = VRAPI_TRACKING_SPACE_LOCAL;
@@ -474,16 +609,36 @@ void OvrApplication::OnClose(int code) {
 }
 
 void OvrApplication::OnError(int errCode, const std::string &msg) {
+    Application::OnError(errCode, msg);
     LOGE("on xr client error %d; msg %s;", errCode, msg.c_str());
+
+#ifdef ENABLE_CLOUDXR
+    if (cloudxr_client_ && cloudxr_client_->IsConnectStarted()) {
+        cloudxr_client_->Teardown();
+        need_recreat_cloudxr_client_ = true;
+    }
+#endif
+
+    Navigation::ShowToast(msg);
     if (errCode == LK_API_ENTERAPPLI_FAILED) {
         // enter applifailed.
-        scene_local_->HomePage();
+        if (ui_mode() == ApplicationUIMode_Opengles_3D) {
+            scene_local_->HomePage();
+        } else {
+            JniCallbackOnError(errCode, msg);
+            scene_local_->LoadingPage();
+        }
     } else {
         connected_ = false;
         scene_cloud_->OnClose();
-        scene_local_->HomePage();
+        if (ui_mode() == ApplicationUIMode_Opengles_3D) {
+            scene_local_->HomePage();
+        } else{
+            JniCallbackOnError(errCode, msg);
+            scene_local_->LoadingPage();
+        }
+
     }
-    Navigation::ShowToast(msg);
     if (ovr_ != nullptr && tracking_space_ != VRAPI_TRACKING_SPACE_LOCAL) {
         vrapi_SetTrackingSpace(ovr_, VRAPI_TRACKING_SPACE_LOCAL);
         tracking_space_ = VRAPI_TRACKING_SPACE_LOCAL;
@@ -619,3 +774,116 @@ void OvrApplication::ClearFrameBuffer() {
     }
     num_buffers_ = VRAPI_FRAME_LAYER_EYE_MAX;
 }
+
+void OvrApplication::Quit3DUI() {
+    Application::Quit3DUI();
+    LOGV("OnQuit3DUI");
+    auto env_wraper = Context::instance()->GetEnv();
+    auto env = env_wraper.get();
+    if (env == nullptr) {
+        LOGV("OnQuit3DUI failed env empty");
+        return;
+    }
+    jclass clazz = env->GetObjectClass(java_.ActivityObject);
+//    clazz = env->FindClass("com/pxy/cloudlarkxroculus/MainActivity");
+    jmethodID mid = env->GetMethodID(clazz, "switchTo2DAppList", "()V");
+    env->CallVoidMethod(java_.ActivityObject, mid);
+    env->DeleteLocalRef(clazz);
+}
+
+void OvrApplication::JniCallbackOnError(int code, const std::string& msg) {
+    LOGV("JniCallbackOnError");
+    auto env_wraper = Context::instance()->GetEnv();
+    auto env = env_wraper.get();
+    if (env == nullptr) {
+        LOGV("OnQuit3DUI failed env empty");
+        return;
+    }
+    jclass clazz = env->GetObjectClass(java_.ActivityObject);
+//    clazz = env->FindClass("com/pxy/cloudlarkxroculus/MainActivity");
+    jmethodID mid = env->GetMethodID(clazz, "onError", "(ILjava/lang/String;)V");
+
+    jstring jstr = env->NewStringUTF(msg.c_str());
+    env->CallVoidMethod(java_.ActivityObject, mid, code, jstr);
+
+    env->DeleteLocalRef(clazz);
+    env->DeleteLocalRef(jstr);
+}
+
+#ifdef ENABLE_CLOUDXR
+// cloudxr callback
+void OvrApplication::UpdateClientState(cxrClientState state, cxrStateReason reason) {
+    LOGI("UpdateClientState state %d reason %d", state, reason);
+    switch (state) {
+        case cxrClientState_ReadyToConnect:
+            Navigation::ShowToast("创建CloudXR客户端成功");
+            break;
+        case cxrClientState_ConnectionAttemptInProgress:
+            Navigation::ShowToast("开始连接服务器");
+            break;
+        case cxrClientState_StreamingSessionInProgress:
+            Navigation::ShowToast("连接服务器成功");
+            if (scene_cloud_) {
+                scene_cloud_->OnCloudXRConnected();
+            }
+            if (ovr_ != nullptr && tracking_space_ != VRAPI_TRACKING_SPACE_LOCAL_FLOOR) {
+                vrapi_SetTrackingSpace(ovr_, VRAPI_TRACKING_SPACE_LOCAL_FLOOR);
+                tracking_space_ = VRAPI_TRACKING_SPACE_LOCAL_FLOOR;
+            }
+            break;
+        case cxrClientState_ConnectionAttemptFailed:
+        {
+            if (!prepare_public_ip_.empty()) {
+                need_reconnect_public_ip_ = true;
+            } else {
+                char buff[200];
+                sprintf(buff, "连接CloudXR服务器失败 reason %d", reason);
+                Navigation::ShowToast(buff);
+                // release resource when cloudxr connected failed.
+                xr_client_->Close();
+            }
+        }
+            break;
+        case cxrClientState_Disconnected:
+        {
+            char buff[200];
+            sprintf(buff, "与CloudXR服务器连接断开 reason %d", reason);
+            Navigation::ShowToast(buff);
+            // release resource when cloudxr close.
+            xr_client_->Close();
+        }
+            break;
+        default:
+            break;
+    }
+}
+
+void OvrApplication::ReceiveUserData(const void *data, uint32_t size) {
+
+}
+
+void OvrApplication::GetTrackingState(cxrVRTrackingState *state) {
+    // skip when ovr not ready.
+    if (ovr_ == nullptr) {
+        return;
+    }
+
+    scene_cloud_->UpdateAsync(ovr_);
+
+    *state = CloudXRClient::VRTrackingStateFrom(scene_cloud_->device_pair_frame());
+}
+
+void
+OvrApplication::OnCloudXRReady(const std::string &appServerIp, const std::string &preferOutIp) {
+    Application::OnCloudXRReady(appServerIp, preferOutIp);
+    prepare_public_ip_ = preferOutIp;
+    cxrError error = cloudxr_client_->Connect(appServerIp);
+    if (error != cxrError_Success) {
+        const char* errorString = cxrErrorString(error);
+        LOGE("Error in LatchFrame [%0d] = %s", error, errorString);
+        Navigation::ShowToast(errorString);
+        need_recreat_cloudxr_client_ = true;
+    }
+}
+
+#endif

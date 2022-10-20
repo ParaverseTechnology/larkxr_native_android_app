@@ -19,8 +19,88 @@
 #include "log.h"
 #include "lark_xr/types.h"
 #include "utils.h"
+#ifdef ENABLE_CLOUDXR
+#include "CloudXRCommon.h"
+#endif
 
 namespace ovr {
+
+#ifdef ENABLE_CLOUDXR
+//-----------------------------------------------------------------------------
+//
+//-----------------------------------------------------------------------------
+    inline ovrQuatf cxrToQuaternion(const cxrMatrix34& m)
+    {
+        ovrQuatf q;
+        const float trace = m.m[0][0] + m.m[1][1] + m.m[2][2];
+
+        if (trace > 0.f)
+        {
+            float s = 0.5f / sqrtf(trace + 1.0f);
+            q.w = 0.25f / s;
+            q.x = (m.m[2][1] - m.m[1][2]) * s;
+            q.y = (m.m[0][2] - m.m[2][0]) * s;
+            q.z = (m.m[1][0] - m.m[0][1]) * s;
+        }
+        else
+        {
+            if (m.m[0][0] > m.m[1][1] && m.m[0][0] > m.m[2][2])
+            {
+                float s = 2.0f * sqrtf(1.0f + m.m[0][0] - m.m[1][1] - m.m[2][2]);
+                q.w = (m.m[2][1] - m.m[1][2]) / s;
+                q.x = 0.25f * s;
+                q.y = (m.m[0][1] + m.m[1][0]) / s;
+                q.z = (m.m[0][2] + m.m[2][0]) / s;
+            }
+            else if (m.m[1][1] > m.m[2][2])
+            {
+                float s = 2.0f * sqrtf(1.0f + m.m[1][1] - m.m[0][0] - m.m[2][2]);
+                q.w = (m.m[0][2] - m.m[2][0]) / s;
+                q.x = (m.m[0][1] + m.m[1][0]) / s;
+                q.y = 0.25f * s;
+                q.z = (m.m[1][2] + m.m[2][1]) / s;
+            }
+            else
+            {
+                float s = 2.0f * sqrtf(1.0f + m.m[2][2] - m.m[0][0] - m.m[1][1]);
+                q.w = (m.m[1][0] - m.m[0][1]) / s;
+                q.x = (m.m[0][2] + m.m[2][0]) / s;
+                q.y = (m.m[1][2] + m.m[2][1]) / s;
+                q.z = 0.25f * s;
+            }
+        }
+
+        return q;
+    }
+
+//-----------------------------------------------------------------------------
+//
+//-----------------------------------------------------------------------------
+    inline ovrVector3f cxrGetTranslation(const cxrMatrix34& m)
+    {
+        return {m.m[0][3], m.m[1][3], m.m[2][3]};
+    }
+
+    //-----------------------------------------------------------------------------
+//
+//-----------------------------------------------------------------------------
+    static inline cxrMatrix34 cxrConvert(const ovrMatrix4f& m)
+    {
+        cxrMatrix34 out{};
+        // The matrices are compatible so doing a memcpy() here
+        //  noting that we are a [3][4] and ovr uses [4][4]
+        memcpy(&out, &m, sizeof(out));
+        return out;
+    }
+
+//-----------------------------------------------------------------------------
+//
+//-----------------------------------------------------------------------------
+    static inline cxrVector3 cxrConvert(const ovrVector3f& v)
+    {
+        return {{v.x, v.y, v.z}};
+    }
+#endif
 
     inline glm::mat4 toGlm(const ovrMatrix4f & om) {
         return glm::transpose(glm::make_mat4(&om.M[0][0]));
@@ -97,7 +177,7 @@ namespace ovr {
     inline larkxrTrackedPose toLarkHMDTrakedPose(const ovrTracking2& tracking) {
         larkxrTrackedPose pose = toLarkTrackedPose(tracking.HeadPose);
         pose.device = Larkxr_Device_Type_HMD;
-        for (int i = 0; i < LARKVR_EYE_COUNT; i ++ ) {
+        for (int i = 0; i < LARKXR_EYE_COUNT; i ++ ) {
             pose.eye[i].viewMatrix = toGlm(tracking.Eye[i].ViewMatrix);
             pose.eye[i].projectionMatrix = toGlm(tracking.Eye[i].ProjectionMatrix);
         }
@@ -128,7 +208,7 @@ namespace ovr {
         ovrTracking2 tracking;
         tracking.HeadPose = fromLarkvrTrackedPose(larkvrPose);
         tracking.Status = (uint)larkvrPose.status;
-        for (int i = 0; i < LARKVR_EYE_COUNT; i++) {
+        for (int i = 0; i < LARKXR_EYE_COUNT; i++) {
             tracking.Eye[i].ViewMatrix = fromGlm(larkvrPose.eye[i].viewMatrix);
             tracking.Eye[i].ProjectionMatrix = fromGlm(larkvrPose.eye[i].projectionMatrix);
         }
@@ -169,7 +249,8 @@ namespace ovr {
         if (ovrButton::ovrButton_Trigger & trackedRemote.Buttons) {
             state.buttons |= LARKXR_BUTTON_FLAG(larkxrInput::larkxr_Input_Trigger_Click);
         }
-        if (ovrButton::ovrButton_GripTrigger& trackedRemote.Buttons) {
+
+        if (ovrButton::ovrButton_GripTrigger & trackedRemote.Buttons) {
             state.buttons |= LARKXR_BUTTON_FLAG(larkxrInput::larkxr_Input_Grip_Click);
         }
 

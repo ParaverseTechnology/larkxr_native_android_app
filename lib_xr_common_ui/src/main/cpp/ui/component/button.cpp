@@ -57,8 +57,8 @@ void Button::set_color(component::color color) {
     title_->set_color(color);
 }
 
-void Button::SetText(const std::wstring & txt) {
-    title_->SetText(txt, true);
+void Button::SetText(const std::wstring & txt, bool upateNow) {
+    title_->SetText(txt, upateNow);
 }
 
 void Button::HandleInput(glm::vec2 *point, int pointCount) {

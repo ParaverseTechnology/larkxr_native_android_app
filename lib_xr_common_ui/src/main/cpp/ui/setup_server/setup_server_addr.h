@@ -7,8 +7,14 @@
 
 #include "ui/view.h"
 #include "ui/component/keyboard.h"
+#include "lark_xr/request/region_rtt_test.h"
+#include "lark_xr/request/region_list.h"
 
-class SetupServerAddr: public View, public Keyboard::Callback {
+class SetupServerAddrListener;
+class SetupServerAddr: public View,
+        public Keyboard::Callback,
+        public lark::GetRegionListListener,
+        public lark::RegionRttTestListener {
 public:
     enum Mode {
         Mode_Audo   = 0,
@@ -19,6 +25,12 @@ public:
         InputMode_Ip   = 0,
         InputMode_Port = 1,
         InputMode_None = 1000,
+    };
+
+    struct RegionTestResult {
+        uint64_t rtt;
+        bool selected;
+        lark::RegionInfo info;
     };
 
     class InputButton: public Button {
@@ -49,6 +61,21 @@ public:
     virtual void onInput(const Keyboard::Key &key) override;
     // handle input
     virtual void HandleInput(lark::Ray * rays, int rayCount) override;
+    // update every frame
+    virtual void Update() override;
+
+    // GetRegion callback
+    virtual void OnSuccess(bool detectRttFlag, const std::vector<lark::RegionInfo>& appliPageInfo) override;
+    virtual void OnFailed(const std::string& msg) override;
+
+    // region_rtt_test callback
+    virtual void OnRegionRttTestResult(uint64_t rtt, const std::string& regionId) override;
+    virtual void OnRegionRttTestError(const std::string& err, const std::string& regionId) override;
+    virtual void OnRegionRttTestClose(const std::string& err, const std::string& regionId) override;
+
+    inline RegionTestResult selected_region_result() { return selected_result_; }
+
+    virtual void set_listener(SetupServerAddrListener* callback) { callback_ = callback; };
 protected:
     virtual void Init() override;
 
@@ -83,6 +110,25 @@ private:
 
     std::function<void()> get_applist_adapter_;
     bool is_detecting_ = false;
+
+    std::shared_ptr<lark::RegionRttTest> region_rtt_test_ = {};
+    std::shared_ptr<lark::GetRegionList> get_region_list_ = {};
+    std::vector<RegionTestResult> results_ = {};
+    RegionTestResult selected_result_ = { 0, false };
+
+    std::vector<std::shared_ptr<TextButton>> region_list_ = {};
+    std::shared_ptr<Text> region_title_ = {};
+
+    int current_test_ = 0;
+    std::mutex region_mutex_ = {};
+    bool need_update_region_ = false;
+
+    SetupServerAddrListener* callback_ = nullptr;
+};
+
+class SetupServerAddrListener {
+public:
+    virtual void OnUpdateRegion(const SetupServerAddr::RegionTestResult& result) = 0;
 };
 
 

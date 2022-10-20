@@ -14,6 +14,18 @@ set(project_base_dir ${CMAKE_CURRENT_SOURCE_DIR}/../../../../)
 set(third_party_base_dir ${project_base_dir}/third_party)
 include(${project_base_dir}/cmake/android_third_party.cmake)
 
+if (ENABLE_CLOUDXR STREQUAL "1")
+    message(STATUS "=========start cloudxr ${CLOUDXR_LIBPATH}")
+    # Import CloudXR
+    add_library(cloudxr-lib SHARED IMPORTED)
+    set_target_properties(cloudxr-lib PROPERTIES IMPORTED_LOCATION
+            ${CLOUDXR_LIBPATH}/${ANDROID_ABI}/libCloudXRClient.so
+            )
+    include_directories(${CLOUDXR_INCLUDE})
+
+    add_definitions(-DENABLE_CLOUDXR)
+endif()
+
 # source dir
 set(src_dir ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -64,6 +76,7 @@ target_include_directories(lark_xr_htc PRIVATE
         ${third_party_base_dir}/glm/include/
         ${third_party_base_dir}/assimp/include/
         ${third_party_base_dir}/wvr_client/include/
+        ${third_party_base_dir}/oboe/include/
         )
 
 find_library( # Sets the name of the path variable.
@@ -84,6 +97,9 @@ target_link_libraries( # Specifies the target library.
         mediandk
         OpenMAXAL
 
+        # oboe
+        liboboe
+
         lib_lark_common
         lib_lark_xr
         # first party
@@ -95,3 +111,10 @@ target_link_libraries( # Specifies the target library.
         # included in the NDK.
         lib_assimp_android_jniiosystem
 )
+
+if (ENABLE_CLOUDXR STREQUAL "1")
+    target_link_libraries( # Specifies the target library.
+            lark_xr_htc
+            cloudxr-lib
+            )
+endif()

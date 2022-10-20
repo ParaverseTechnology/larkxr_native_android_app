@@ -6,6 +6,7 @@
 #include "ffr_setup.h"
 #include "lark_xr/xr_config.h"
 #include <input.h>
+#include <ui/localization.h>
 #include "quick_config_setup.h"
 
 namespace {
@@ -22,18 +23,18 @@ namespace {
 }
 
 FFRSetup::FFRSetup(int group, QuickConfigSetup* setup): ItemBase(group), quick_config_setup_(setup) {
-    setTitle(L"是否开启固定注视点渲染？");
+    setTitle(localization::Loader::getResource().ui_setup_advance_ffr_title);
 
     {
         glm::vec2 p{};
-        btn_on_ = std::make_shared<TextButton>(L"是");
+        btn_on_ = std::make_shared<TextButton>(localization::Loader::getResource().ui_setup_yes);
         btn_on_->Move(Base::position_.x + RES_1_POSITION_X, RES_1_POSITION_Y, RES_1_POSITION_Z);
         PushAABB(btn_on_.get());
         AddChild(btn_on_);
     }
     {
         glm::vec2 p{};
-        btn_off_ = std::make_shared<TextButton>(L"否");
+        btn_off_ = std::make_shared<TextButton>(localization::Loader::getResource().ui_setup_no);
         btn_off_->Move(Base::position_.x + RES_2_POSITION_X, RES_2_POSITION_Y, RES_2_POSITION_Z);
         PushAABB(btn_off_.get());
         AddChild(btn_off_);

@@ -7,6 +7,7 @@
 
 #include <object.h>
 #include <ui/component/button.h>
+#include <ui/setup_server/setup_server_addr.h>
 #include "ui/view.h"
 #include "cover_item.h"
 #include "lark_xr/app_list_task.h"
@@ -57,6 +58,10 @@ public:
     virtual void OnImageLoadFailed(const std::string& err) override;
 
     void ResetAppPageInfo();
+
+    void SetSupport2DUI();
+
+    void UpdateRegion(const SetupServerAddr::RegionTestResult& result);
 protected:
     virtual void Init() override;
 private:
@@ -89,6 +94,7 @@ private:
     std::shared_ptr<TextButton> setup_server_button_;
     std::shared_ptr<TextButton> advance_setup_button_;
     std::shared_ptr<SetupButton> setup_button_;
+    std::shared_ptr<TextButton> quit_3d_ui_button_;
 
     std::shared_ptr<PageButton> page_down_button_;
     std::shared_ptr<PageButton> page_up_button_;
@@ -114,6 +120,10 @@ private:
 //    Poco::Mutex update_applist_mutex_ = {};
     bool has_new_data_ = false;
     lark::AppliPageInfo app_page_info_ = {};
+
+    bool support_2d_ui_ = false;
+
+    bool need_update_region_info_ = false;
 };
 
 

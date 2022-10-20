@@ -3,20 +3,28 @@ package com.pxy.cloudlarkxrhtc;
 import com.htc.vr.sdk.VRActivity;
 import com.pxy.cloudlarkxrkit.CrashHandler;
 import com.pxy.cloudlarkxrkit.XrSystem;
+import com.pxy.libxrcommonui.PermissionHelper;
 
+import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
 import android.content.res.AssetManager;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 
 import java.io.File;
 
-import static android.os.Environment.getExternalStorageDirectory;
-import static com.pxy.cloudlarkxrhtc.BuildConfig.VERSION_NAME;
-
 public class MainActivity extends VRActivity {
     private static String TAG = "HTC_MainActivity";
     static {
+//        // cloud xr sdk use JNI_OnLoad to get java vm;
+//        // muse load lib to trigger JNI_Onload
+        if (BuildConfig.ENABLE_CLOUDXR) {
+            System.loadLibrary("CloudXRClient");
+        }
         System.loadLibrary("lark_xr_htc");
     }
     //
@@ -26,6 +34,8 @@ public class MainActivity extends VRActivity {
     }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
+        Log.e(TAG,"inmain");
         String s1 = getFilesDir().getAbsolutePath();
 
         String s2 = "";
@@ -35,6 +45,7 @@ public class MainActivity extends VRActivity {
         }
 
         init(getResources().getAssets(), s1, s2);
+
         super.onCreate(savedInstanceState);
 
         CrashHandler.getInstance().init(this);
@@ -45,13 +56,20 @@ public class MainActivity extends VRActivity {
         Log.d(TAG, "onCreate");
         nativeCreated();
     }
+
     @Override
     protected void onResume() {
         super.onResume();
         Log.d(TAG, "onResume");
         nativeResume();
         xrSystem.onResume();
+
+        // check permission
+        if (!PermissionHelper.hasRequiredPermissions(this)) {
+            PermissionHelper.requestPermissions(this);
+        }
     }
+
     @Override
     protected void onPause() {
         super.onPause();
@@ -59,6 +77,7 @@ public class MainActivity extends VRActivity {
         nativePause();
         xrSystem.onPause();
     }
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -66,7 +85,6 @@ public class MainActivity extends VRActivity {
         nativeDestory();
         xrSystem.onDestroy();
     }
-
 
     // Pass this acitivty instance to native
     public native void init(AssetManager am, String internalDataPath, String externalDataPath);

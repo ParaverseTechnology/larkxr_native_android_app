@@ -14,6 +14,7 @@
 #include "ui/navigation.h"
 #include "rect_texture.h"
 #include "ovr_scene.h"
+#include "ui/menu_view.h"
 
 class OvrSceneLocal:public OvrScene {
 public:
@@ -28,6 +29,7 @@ public:
     bool Update(ovrMobile * ovr) override;
 
     void HomePage();
+    void LoadingPage();
 protected:
     bool HandleInput(ovrMobile * ovr) override;
     bool Render(ovrMobile * ovr) override;

@@ -3,6 +3,8 @@
 //
 
 #include <log.h>
+#include <application.h>
+#include <ui/localization.h>
 #include "lark_xr/xr_client.h"
 #include "loading.h"
 #define LOG_TAG "ui_loading"
@@ -41,13 +43,20 @@ void Loading::Init() {
 
     larkxrSystemInfo systemInfo = lark::XRClient::system_info();
     std::wstring quit = L"";
-    if (systemInfo.platFromType == larkxrPlatFromType::Larkxr_Platform_Oculus_Quest ||
-        systemInfo.platFromType == larkxrPlatFromType::Larkxr_Platform_PICO_NEO_2) {
-        quit = L"按住手柄扳机键并短按B或Y键可退出云端应用返回列表。";
+    if (Application::instance()->ui_mode() == Application::ApplicationUIMode_Opengles_3D) {
+        if (systemInfo.platFromType == larkxrPlatFromType::Larkxr_Platform_Oculus_Quest ||
+            systemInfo.platFromType == larkxrPlatFromType::Larkxr_Platform_PICO_NEO_2 ||
+            systemInfo.platFromType == larkxrPlatFromType::Larkxr_Platform_PICO_NEO_3) {
+            // 按住手柄扳机键并短按B或Y键可退出云端应用返回列表
+            quit = localization::Loader::getResource().ui_loading_tips_3d_quest;
+        } else {
+            // 按住手柄扳机键并短按APP键可退出云端应用返回列表
+            quit = localization::Loader::getResource().ui_loading_tips_3d;
+        }
     } else {
-        quit = L"按住手柄扳机键并短按APP键可退出云端应用返回列表。";
+        // 按手柄 Home 键选择退出返回应用列表
+        quit = localization::Loader::getResource().ui_loading_tips_2d;
     }
-
     tips_ = std::make_shared<Text>(L"");
     tips_->set_color(0xd7e1FF, 0xFF);
     tips_->SetFontSize(24);

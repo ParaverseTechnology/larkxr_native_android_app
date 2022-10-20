@@ -16,12 +16,6 @@
 #include "lark_xr/xr_latency_collector.h"
 #include "lark_xr/app_list_task.h"
 
-#define LOG_TAG "scene_cloud"
-
-using namespace lark;
-
-static bool EXIT_UI = false;
-
 OvrSceneCloud::OvrSceneCloud(): OvrScene()
 {
 }
@@ -29,7 +23,7 @@ OvrSceneCloud::OvrSceneCloud(): OvrScene()
 OvrSceneCloud::~OvrSceneCloud() = default;
 
 bool OvrSceneCloud::InitGL(OvrFrameBuffer *frame_buffer, int num_buffers) {
-    sky_box_ =  std::make_shared<SkyBox>("textures/skybox_8_2k.jpg");
+    sky_box_ =  std::make_shared<lark::SkyBox>("textures/skybox_8_2k.jpg");
     OvrScene::AddObject(sky_box_);
 
     loading_ = std::make_shared<Loading>(nullptr);
@@ -41,21 +35,24 @@ bool OvrSceneCloud::InitGL(OvrFrameBuffer *frame_buffer, int num_buffers) {
     // rect_texture_->set_active(false);
 
     // controllers
-    controller_left_ = std::make_shared<Controller>(true, CONTROLLER_OCULUS_QUEST);
+    controller_left_ = std::make_shared<lark::Controller>(true, lark::CONTROLLER_OCULUS_QUEST);
     controller_left_->Move(-0.3, 0, -0.3);
     // add to scene;
     OvrScene::AddObject(controller_left_);
 
-    controller_right_ = std::make_shared<Controller>(false, CONTROLLER_OCULUS_QUEST);
+    controller_right_ = std::make_shared<lark::Controller>(false, lark::CONTROLLER_OCULUS_QUEST);
     controller_right_->Move(0.3, 0, -0.3);
     // add to scene;
     OvrScene::AddObject(controller_right_);
 
-    if (EXIT_UI) {
-        menu_view_ = std::make_shared<MenuView>(nullptr);
-        menu_view_->Move(-0.75, -0.75, -1.5);
-        OvrScene::AddObject(menu_view_);
-    }
+    fake_hmd_ = std::make_shared<lark::Object>();
+    OvrScene::AddObject(fake_hmd_);
+
+    menu_view_ = std::make_shared<MenuView>(this);
+    menu_view_->Move(-0.75, -0.75, -1.8);
+    menu_view_->set_active(false);
+    OvrScene::AddObject(menu_view_);
+    fake_hmd_->AddChild(menu_view_);
 
     return OvrScene::InitGL(frame_buffer, num_buffers);
 }
@@ -92,13 +89,14 @@ bool OvrSceneCloud::UpdateAsync(ovrMobile *ovr) {
 
 bool OvrSceneCloud::HandleInput(ovrMobile *ovr) {
     OvrScene::HandleInput(ovr);
+    HandleInput();
+
     device_pair_frame_ = {
             frame_index_,
             utils::GetTimestampUs(),
             display_time_,
             GetDevicePair(ovr, display_time_),
     };
-    HandleInput();
     return true;
 }
 
@@ -140,21 +138,40 @@ void OvrSceneCloud::HandleInput() {
         inputState[rayCastType].enterButtonDown = enterButtonDownThisFrame[rayCastType];
         inputState[rayCastType].triggerButtonDown = triggerDownThisFrame[rayCastType];
 
+        // short press backbutton
+        if (inputState[rayCastType].backShortPressed) {
+            if (menu_view_->active()) {
+                HideMenu();
+            }
+        }
+
         // call after pressup.
         if ( triggerDownThisFrame[deviceIndex] && backButtonDownLastFrame && !backButtonDownThisFrame[deviceIndex] ) {
             LOGV("close app." );
-            OnCloseApp();
+            if (Application::instance()->ui_mode() == Application::ApplicationUIMode_Opengles_3D &&
+                lark::AppListTask::run_mode() == lark::GetVrClientRunMode::ClientRunMode::CLIENT_RUNMODE_SELF) {
+                // 显示退出菜单
+                ShowMenu();
+            }
         }
 
         // call ater pressup.
-        if (traggerButtonDownLastFrame && !triggerDownThisFrame[deviceIndex] ) {
-            LOGV("trigger button short press" );
+        if (inputState[rayCastType].triggerShortPressed) {
+            LOGV("trigger button short press %d", rayCastType);
+            if (menu_view_->active()) {
+                Input::SetCurrentRayCastType(rayCastType);
+            }
         }
 
         // enter button.
-        if (enterButtonDownLastFrame && !enterButtonDownThisFrame[deviceIndex]) {
-            LOGV("enter button short press" );
+        if (inputState[rayCastType].enterShortPressed) {
+            LOGV("enter button short press %d", rayCastType);
         }
+    }
+
+    if (menu_view_->active()) {
+        // update input state.
+        menu_view_->Update();
     }
 }
 
@@ -167,7 +184,7 @@ larkxrDevicePair OvrSceneCloud::GetDevicePair(ovrMobile *ovr, double absTimeInSe
 
     // save ray
     // 0->left, 1->right.
-    Ray rays[Input::RayCast_Count] = {};
+    lark::Ray rays[Input::RayCast_Count] = {};
 
     // update controller pose.
     for (uint32_t i = 0; ; i++) {
@@ -201,9 +218,9 @@ larkxrDevicePair OvrSceneCloud::GetDevicePair(ovrMobile *ovr, double absTimeInSe
 
                     glm::quat rotation = ovr::toGlm(remoteTracking.HeadPose.Pose.Orientation);
                     glm::vec3 positon = ovr::toGlm(remoteTracking.HeadPose.Pose.Position);
-                    Transform transform(rotation, positon);
+                    lark::Transform transform(rotation, positon);
 
-                    Ray *ray = nullptr;
+                    lark::Ray *ray = nullptr;
                     if (isLeft) {
                         controller_left_->set_transform(transform);
                         ray = &rays[0];
@@ -232,24 +249,23 @@ larkxrDevicePair OvrSceneCloud::GetDevicePair(ovrMobile *ovr, double absTimeInSe
         }
     }
 
-
-    if (menu_view_) {
+    if (menu_view_->active()) {
+        devicePair.controllerState[0].inputState.isConnected = false;
+        devicePair.controllerState[1].inputState.isConnected = false;
+        devicePair.controllerState[0].pose.isConnected = false;
+        devicePair.controllerState[1].pose.isConnected = false;
         menu_view_->HandleInput(rays, 2);
     }
     return devicePair;
 }
 
 bool OvrSceneCloud::Render(ovrMobile *ovr) {
-//    if (!inited()) {
-//        // not inited.
-//        return false;
-//    }
     // render use clcoud
     return OvrScene::Render(ovr);
 }
 
 bool OvrSceneCloud::Render(ovrMobile *ovr, const larkxrTrackingFrame &trackingFrame,
-                           const XRVideoFrame &videoFrame) {
+                           const lark::XRVideoFrame &videoFrame) {
     if (videoFrame.frame_type() == lark::XRVideoFrame::FrameType::kNative_Multiview) {
         rect_texture_->SetMutiviewModeTexture(videoFrame.texture());
     } else if (videoFrame.frame_type() == lark::XRVideoFrame::FrameType::kNative_Stereo) {
@@ -261,12 +277,8 @@ bool OvrSceneCloud::Render(ovrMobile *ovr, const larkxrTrackingFrame &trackingFr
 }
 
 bool OvrSceneCloud::Render(ovrMobile *ovr, const larkxrTrackingFrame &trackingFrame) {
-//    if (!inited()) {
-//        // not inited.
-//        return false;
-//    }
     frame_index_++;
-    XRLatencyCollector::Instance().Rendered2(trackingFrame.frameIndex);
+    lark::XRLatencyCollector::Instance().Rendered2(trackingFrame.frameIndex);
 
     ovrTracking2 tracking = ovr::fromtLarkvrTrackedHMDPose(trackingFrame.tracking);
     const ovrLayerProjection2 worldLayer = RenderFrame(&tracking, ovr);
@@ -295,7 +307,7 @@ bool OvrSceneCloud::Render(ovrMobile *ovr, const larkxrTrackingFrame &trackingFr
     glm::vec3 renderAng = glm::eulerAngles(trackingFrame.tracking.rotation);
     glm::vec3 trackingAng = glm::eulerAngles(hmdPose.rotation);
     float degree = glm::degrees(renderAng.y - trackingAng.y);
-    XRLatencyCollector::Instance().Submit(trackingFrame.frameIndex, degree);
+    lark::XRLatencyCollector::Instance().Submit(trackingFrame.frameIndex, degree);
 
     // Hand over the eye images to the time warp.
     vrapi_SubmitFrame2( ovr, &frameDesc );
@@ -305,7 +317,7 @@ bool OvrSceneCloud::Render(ovrMobile *ovr, const larkxrTrackingFrame &trackingFr
 void OvrSceneCloud::OnCloseApp() {
     LOGV("================on close app");
     // 集中管控模式下由教师端控制退出应用。
-    if (lark::AppListTask::run_mode() == GetVrClientRunMode::ClientRunMode::CLIENT_RUNMODE_TEACHER) {
+    if (lark::AppListTask::run_mode() == lark::GetVrClientRunMode::ClientRunMode::CLIENT_RUNMODE_TEACHER) {
         return;
     }
     Application::instance()->CloseAppli();
@@ -338,9 +350,97 @@ void OvrSceneCloud::OnMediaReady() {
 }
 
 void OvrSceneCloud::OnClose() {
+    LOGV("==========OnClose");
+    loading_->set_active(true);
+    menu_view_->set_active(false);
     controller_left_->set_active(true);
     controller_right_->set_active(true);
     sky_box_->set_active(true);
     tracking_frame_index_ = 0;
     rect_texture_->ClearTexture();
+#ifdef ENABLE_CLOUDXR
+    cloudxr_client_->set_active(false);
+#endif
 }
+
+void OvrSceneCloud::OnMenuViewSelect(bool submit) {
+    LOGV("OnMenuViewSelect %d", submit);
+    if (submit) {
+        // 用户选择退出
+        OnCloseApp();
+        HideMenu();
+    } else {
+        // 用户选择取消
+        HideMenu();
+    }
+}
+
+void OvrSceneCloud::ShowMenu() {
+    LOGV("show menu");
+    fake_hmd_->set_transform(lark::Transform(device_pair_frame_.devicePair.hmdPose.rotation,
+                                       device_pair_frame_.devicePair.hmdPose.position));
+    menu_view_->set_active(true);
+    controller_left_->set_active(true);
+    controller_right_->set_active(true);
+}
+
+void OvrSceneCloud::HideMenu() {
+    LOGV("hide menu menu");
+    menu_view_->set_active(false);
+    controller_left_->set_active(false);
+    controller_right_->set_active(false);
+}
+
+#ifdef ENABLE_CLOUDXR
+void OvrSceneCloud::SetCloudXRClient(const std::shared_ptr<CloudXRClient>& client) {
+    if (!client) {
+        return;
+    }
+    cloudxr_client_ = client;
+    cloudxr_client_->set_active(false);
+    AddObject(cloudxr_client_);
+}
+
+void OvrSceneCloud::OnCloudXRConnected() {
+    loading_->set_active(false);
+    rect_texture_->ClearTexture();
+    controller_left_->set_active(false);
+    controller_right_->set_active(false);
+    sky_box_->set_active(false);
+    cloudxr_client_->set_active(true);
+}
+
+bool OvrSceneCloud::Render(ovrMobile *ovr, const cxrFramesLatched &framesLatched) {
+    frame_index_++;
+
+    const double predictedDisplayTime = vrapi_GetPredictedDisplayTime(ovr, frame_index_);
+
+    const ovrTracking2 tracking = vrapi_GetPredictedTracking2(ovr, predictedDisplayTime);
+
+    ovrLayerProjection2 worldLayer = RenderFrame(&tracking, ovr);
+
+    worldLayer.HeadPose.Pose.Orientation = ovr::cxrToQuaternion(framesLatched.poseMatrix);
+    worldLayer.HeadPose.Pose.Position = ovr::cxrGetTranslation(framesLatched.poseMatrix);
+
+    const ovrLayerHeader2 * layers[] =
+            {
+                    &worldLayer.Header
+            };
+
+    ovrSubmitFrameDescription2 frameDesc = { 0 };
+    frameDesc.Flags = 0;
+    frameDesc.SwapInterval = swap_interval();
+
+    frameDesc.FrameIndex = frame_index_;
+    frameDesc.DisplayTime = predictedDisplayTime;
+
+
+    frameDesc.LayerCount = 1;
+    frameDesc.Layers = layers;
+
+    // Hand over the eye images to the time warp.
+    vrapi_SubmitFrame2( ovr, &frameDesc );
+
+    return true;
+}
+#endif

@@ -3,9 +3,11 @@
 // Copyright (c) 2021 www.pingxingyun.com All rights reserved.
 //
 
+#include <log.h>
 #include "menu_view.h"
+#include "localization.h"
 
-MenuView::MenuView(Navigation *navigation) : View(navigation) {
+MenuView::MenuView(Callback* callback): View(nullptr), callback_(callback) {
     MenuView::Init();
 }
 
@@ -14,21 +16,17 @@ MenuView::~MenuView() {
     ClearAABB();
 }
 
-void MenuView::Update() {
-    Object::Update();
-}
-
 void MenuView::Init() {
     {
         bg_ = std::make_shared<ColorBox>();
-        bg_->set_size(glm::vec2(1.5, 1.5));
+        bg_->set_size(glm::vec2(1.7, 1.7));
         bg_->set_color(0x000530A2);
-        bg_->set_position(0, 0, -0.01);
+        bg_->set_position(0, 0, -0.02);
         AddChild(bg_);
     }
 
     {
-        text_ = std::make_shared<Text>(L"确定退出当前应用？");
+        text_ = std::make_shared<Text>(localization::Loader::getResource().ui_menu_view_title);
         text_->set_color(0xd7e1FF, 0xFF);
         text_->SetFontSize(25);
         text_->set_position(0.1, 1.2, 0);
@@ -37,7 +35,7 @@ void MenuView::Init() {
 
     {
         glm::vec3 p(0.7,0.5,0);
-        btn_submit_ = std::make_shared<TextButton>(L"退出");
+        btn_submit_ = std::make_shared<TextButton>(localization::Loader::getResource().ui_menu_view_submit);
         btn_submit_->Move(p);
         btn_submit_->SetFontSize(24);
         btn_submit_->SetAABBPositon(glm::vec2(p.x, p.y));
@@ -47,7 +45,7 @@ void MenuView::Init() {
 
     {
         glm::vec3 p(1.1,0.5,0);
-        btn_cancle_ = std::make_shared<TextButton>(L"继续");
+        btn_cancle_ = std::make_shared<TextButton>(localization::Loader::getResource().ui_menu_view_cancle);
         btn_cancle_->Move(p);
         btn_cancle_->SetFontSize(24);
         btn_cancle_->SetAABBPositon(glm::vec2(p.x, p.y));
@@ -58,7 +56,7 @@ void MenuView::Init() {
     // advance btn
 //    {
 //        glm::vec3 p(0, 0, 0);
-//        advance_btn_ = std::make_shared<TextButton>(L"高级设置");
+//        advance_btn_ = std::make_shared<TextButton>(L"LarkXR");
 //        advance_btn_->Move(p);
 //        advance_btn_->SetAABBPositon(glm::vec2(p.x, p.y));
 //        PushAABB(advance_btn_.get());
@@ -68,10 +66,10 @@ void MenuView::Init() {
     View::back_btn_->set_active(false);
     View::Init();
 
-    plane_ = {
-            glm::vec3(0, 0, 1), // normal
-            glm::vec3(-0.75, -0.75, -1.5 + 0.2), // dot
-    };
+//    plane_ = {
+//            glm::vec3(0, 0, 1), // normal
+//            glm::vec3(-0.75, -0.75, -1.5 + 0.2), // dot
+//    };
 }
 
 void MenuView::Enter() {
@@ -80,4 +78,22 @@ void MenuView::Enter() {
 
 void MenuView::Leave() {
     View::Leave();
+}
+
+void MenuView::Update() {
+    Object::Update();
+
+    if (btn_submit_->picked() && Input::IsInputEnter()) {
+        LOGV("Menu view on submit");
+        if (callback_ != nullptr) {
+            callback_->OnMenuViewSelect(true);
+        }
+    }
+
+    if (btn_cancle_->picked() && Input::IsInputEnter()) {
+        LOGV("Menu view on cancle");
+        if (callback_ != nullptr) {
+            callback_->OnMenuViewSelect(false);
+        }
+    }
 }

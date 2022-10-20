@@ -6,7 +6,7 @@
 #ifndef CLOUDLARKXR_COMPANY_IMAGE_LOADER_H
 #define CLOUDLARKXR_COMPANY_IMAGE_LOADER_H
 
-#include <iostream>;
+#include <iostream>
 #include "../common.h"
 
 namespace lark {

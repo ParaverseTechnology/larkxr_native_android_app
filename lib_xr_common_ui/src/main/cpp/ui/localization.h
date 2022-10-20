@@ -100,6 +100,7 @@ namespace localization {
         std::wstring ui_home_support_server_version;
         std::wstring ui_home_setup_serveraddr;
         std::wstring ui_home_advance_setting;
+        std::wstring ui_home_quick_3d_ui;
         std::wstring ui_home_setup;
         std::wstring ui_home_back;
         std::wstring ui_home_status_normal;
@@ -107,6 +108,9 @@ namespace localization {
         std::wstring ui_home_reset;
         std::wstring ui_home_run_mode_teacher;
         std::wstring ui_home_trigger_hit;
+        std::wstring ui_home_trigger_hit_ax;
+        std::wstring ui_home_empty_list;
+
         std::wstring ui_advence_predit_title;
         std::wstring ui_advence_nolosetup_switch;
         std::wstring ui_advence_nolosetup_switch_normal;
@@ -143,10 +147,48 @@ namespace localization {
         std::wstring ui_setup_serveraddr_currentmode;
         std::wstring ui_setup_serveraddr_submit;
         std::wstring ui_setup_serveraddr_autofind;
+        std::wstring ui_setup_serveraddr_region_title;
+        std::wstring ui_setup_serveraddr_request;
+        std::wstring ui_setup_serveraddr_check_server_version;
+        std::wstring ui_setup_serveraddr_detecting;
+        std::wstring ui_setup_serveraddr_server_version_missmatch;
+        std::wstring ui_setup_serveraddr_server_version_success;
+        std::wstring ui_setup_serveraddr_server_version_failed;
+        std::wstring ui_setup_serveraddr_detect_applist;
+        std::wstring ui_setup_serveraddr_detect_applist_success;
+        std::wstring ui_setup_serveraddr_detect_applist_failed;
+
+
+        std::wstring ui_setup_yes;
+        std::wstring ui_setup_no;
+
+        std::wstring ui_setup_advance;
+        std::wstring ui_setup_normal;
+        std::wstring ui_setup_advance_ffr_title;
+        std::wstring ui_setup_advance_report_fec_title;
+        std::wstring ui_setup_advance_use_h265_title;
+        std::wstring ui_setup_advance_haptics_feedback_title;
+        std::wstring ui_setup_advance_throttled_udp;
+        std::wstring ui_setup_advance_kcp_title;
+        std::wstring ui_setup_advance_kcp;
+        std::wstring ui_setup_advance_use_10bit_encode;
+        std::wstring ui_setup_advance_quick_config;
+        std::wstring ui_setup_advance_quick_config_manual;
+        std::wstring ui_setup_advance_quick_config_fast;
+        std::wstring ui_setup_advance_quick_config_normal;
+        std::wstring ui_setup_advance_quick_config_extreme;
 
         std::wstring ui_setup_resolution_title;
 
         std::wstring ui_keyboard_number;
+
+        std::wstring ui_menu_view_title;
+        std::wstring ui_menu_view_submit;
+        std::wstring ui_menu_view_cancle;
+
+        std::wstring ui_loading_tips_3d_quest;
+        std::wstring ui_loading_tips_3d;
+        std::wstring ui_loading_tips_2d;
     };
     class Loader {
     public:

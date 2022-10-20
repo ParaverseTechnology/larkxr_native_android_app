@@ -13,6 +13,7 @@
 #include <ui/aa_bb.h>
 #include "ui/component/color_box.h"
 #include "lark_xr/request/cover_loader.h"
+#include "lark_xr/lk_common_types.h"
 
 class Navigation;
 class CoverItem: public lark::Object, public AABB, public lark::CoverLoader::CoverLoaderCallback {
@@ -32,6 +33,7 @@ public:
     void SetCoverUrl(const std::string& coverUrl, bool isLocal = false);
     void SetNormalBgColor(const glm::vec4& normalColor);
     void SetActiveBgColor(const glm::vec4& activeColor );
+    void SetAppliType(larkAppliType type);
 
     // object
     void Draw(Eye eye, const glm::mat4& projection, const glm::mat4& eyeView) override;
@@ -59,6 +61,7 @@ private:
     std::string app_id_;
     Text title_;
     Text tail_;
+    Text app_type_icon_;
     std::string cover_url_;
     ColorBox bg_color_;
     std::shared_ptr<Image> cover_;
@@ -71,6 +74,8 @@ private:
 
     bool is_empty_;
     lark::CoverLoader cover_loader_;
+
+    int appli_type_ = larkAppliType::AppliType_VR;
 };
 
 

@@ -101,9 +101,11 @@ typedef struct larkxrDeviceBatteryInfo_ {
 // vr 渲染左右眼类型
 //
 typedef enum larkxrEye_ {
-    LARKVR_EYE_LEFT   = 0,
-    LARKVR_EYE_RIGHT  = 1,
-    LARKVR_EYE_COUNT  = 2
+    LARKXR_EYE_LEFT   = 0,
+    LARKXR_EYE_RIGHT  = 1,
+    LARKXR_EYE_COUNT  = 2,
+    LARKXR_EYE_BOTH   = 3,
+    LARKAR_EYE        = 4,
 } larkxrEye;
 
 //
@@ -127,7 +129,7 @@ typedef struct larkxrRenderInfo_ {
     int renderWidth;
     int renderHeight;
     // 渲染的视场角，以度数为单位。
-    larkxrRenderFov fov[LARKVR_EYE_COUNT];
+    larkxrRenderFov fov[LARKXR_EYE_COUNT];
 } larkxrRenderInfo;
 // end render info
 
@@ -205,7 +207,7 @@ typedef struct larkxrTrackedPose_ {
         glm::quat       viewRotation; // view rotation for openxr stereo view pose
         glm::mat4		projectionMatrix;
         glm::mat4		viewMatrix;
-    } eye[ LARKVR_EYE_COUNT ];
+    } eye[ LARKXR_EYE_COUNT ];
 #if defined(NOLO_6DOF)
     glm::vec3 baseLineOffset; // 头部基准线偏移。nolo 使用
         glm::vec3 noloPosition;   // nolo position.

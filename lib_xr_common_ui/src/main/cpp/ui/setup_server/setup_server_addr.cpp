@@ -2,6 +2,7 @@
 // Created by fcx@pingixngyun.com on 2019/12/4.
 //
 
+#include <sstream>
 #include <log.h>
 #include <env_context.h>
 #include <utils.h>
@@ -37,7 +38,7 @@ SetupServerAddr::SetupServerAddr(Navigation *navigation):
 SetupServerAddr::~SetupServerAddr() = default;
 
 void SetupServerAddr::Init() {
-    title_ = std::make_shared<Text>(localization::Loader().getResource().ui_home_setup_serveraddr);
+    title_ = std::make_shared<Text>(localization::Loader::getResource().ui_home_setup_serveraddr);
     title_->Move(-title_->GetSize().x / 2.0F, 1.5F - title_->GetSize().y / 2.0F, 0);
     AddChild(title_);
 
@@ -49,7 +50,7 @@ void SetupServerAddr::Init() {
     keyboard_->set_active(false);
 
     {
-        label_server_ip_ = std::make_shared<Text>(localization::Loader().getResource().ui_setup_serveraddr_ip);
+        label_server_ip_ = std::make_shared<Text>(localization::Loader::getResource().ui_setup_serveraddr_ip);
         label_server_ip_->Move(-1.5F, 1, 0);
         label_server_ip_->SetFontSize(26);
         AddChild(label_server_ip_);
@@ -62,7 +63,7 @@ void SetupServerAddr::Init() {
     }
 
     {
-        label_server_port_ = std::make_shared<Text>(localization::Loader().getResource().ui_setup_serveraddr_port);
+        label_server_port_ = std::make_shared<Text>(localization::Loader::getResource().ui_setup_serveraddr_port);
         label_server_port_->Move(-1.5F, 0.8, 0);
         label_server_port_->SetFontSize(26);
         AddChild(label_server_port_);
@@ -75,7 +76,7 @@ void SetupServerAddr::Init() {
     }
 
     {
-        label_mode_ = std::make_shared<Text>(localization::Loader().getResource().ui_setup_serveraddr_currentmode);
+        label_mode_ = std::make_shared<Text>(localization::Loader::getResource().ui_setup_serveraddr_currentmode);
         label_mode_->Move(-1.5F, 0.6, 0);
         label_mode_->SetFontSize(26);
         AddChild(label_mode_);
@@ -87,7 +88,7 @@ void SetupServerAddr::Init() {
     }
 
     {
-        submit_button_ = std::make_shared<TextButton>(localization::Loader().getResource().ui_setup_serveraddr_submit);
+        submit_button_ = std::make_shared<TextButton>(localization::Loader::getResource().ui_setup_serveraddr_submit);
         submit_button_->SetFontSize(24);
         submit_button_->Move(-0.6F, 0.4, 0);
         submit_button_->SetAABBPositon(glm::vec2(-0.6F, 0.4 - submit_button_->GetSize().y / 2));
@@ -98,12 +99,41 @@ void SetupServerAddr::Init() {
 
     {
         status_messsage_ = std::make_shared<Text>(L"");
-        status_messsage_->Move(-1.5F, 0, 0);
+        status_messsage_->Move(-1.5F, -1, 0);
         status_messsage_->SetFontSize(26);
         AddChild(status_messsage_);
     }
 
-    // sync mode frome java.
+    {
+        region_title_ = std::make_shared<Text>(localization::Loader::getResource().ui_setup_serveraddr_region_title);
+        region_title_->Move(-1.5f, 0.1f, 0);
+        region_title_->SetFontSize(22);
+        region_title_->set_active(false);
+        AddChild(region_title_);
+
+        // region list max 10 region
+        for(int i = 0; i < 10; i++) {
+            std::shared_ptr<TextButton> button = std::make_shared<TextButton>(L"");
+            button->Move(-0.6f, 0.1f - i * 0.15f, 0);
+            button->SetFontSize(22);
+            button->set_active(false);
+            button->SetAABBPositon(glm::vec2(-0.6F, 0.1f - i * 0.15f - button->GetSize().y / 2));
+            button->SetAABBSize(button->GetSize());
+            PushAABB(button.get());
+            AddChild(button);
+            region_list_.push_back(button);
+        }
+
+        get_region_list_ = std::make_shared<lark::GetRegionList>();
+        get_region_list_->set_listener(this);
+
+        region_rtt_test_ = std::make_shared<lark::RegionRttTest>();
+        region_rtt_test_->set_listener(this);
+
+        get_region_list_->SendAsync();
+    }
+
+    // sync mode from java.
     getServerAddr();
     onInputModeChange(InputMode_None);
     View::Init();
@@ -122,6 +152,19 @@ void SetupServerAddr::HandleInput(Ray *rays, int rayCount) {
     // 设置服务器地址
     if (submit_button_->picked() && isEnter) {
         setServerAddr();
+    }
+
+    for(int i = 0; i < region_list_.size(); i ++) {
+        if (region_list_[i]->active() && region_list_[i]->picked() && isEnter) {
+            if (i < results_.size()) {
+                LOGV("region [%s] picked rtt %ld", results_[i].info.regionName.c_str(), results_[i].rtt);
+                for (int j = 0; j < results_.size(); j++) {
+                    results_[j].selected = i == j;
+                }
+                selected_result_ = results_[i];
+                need_update_region_ = true;
+            }
+        }
     }
 }
 
@@ -180,8 +223,8 @@ void SetupServerAddr::Enter() {
 //    getMode();
     getServerAddr();
 
-    if (lark::XRClient::GetServerHost() == "") {
-        status_messsage_->SetText(L"请设置服务器地址");
+    if (lark::XRClient::GetServerHost().empty()) {
+        status_messsage_->SetText(localization::Loader::getResource().ui_setup_serveraddr_request);
     }
     is_detecting_ = false;
 }
@@ -211,7 +254,10 @@ void SetupServerAddr::onInputModeChange(InputMode mode) {
 
 void SetupServerAddr::getServerAddr() {
     // TODO 服务器地址
+    //server_ip_button_->SetText(utils::StringToWstring(lark::XRClient::GetServerHost()));
+    //label_server_ip_->SetText(utils::StringToWstring("222.128.6.137"));
     server_ip_button_->SetText(utils::StringToWstring(lark::XRClient::GetServerHost()));
+    //server_ip_button_->SetText(utils::StringToWstring("222.128.6.137"));
     uint16_t port = lark::XRClient::GetServerPort();
     std::string s_port = port == 0 ? std::to_string(DEFAULT_PORT) : std::to_string(port);
     server_port_button_->SetText(utils::StringToWstring(s_port));
@@ -232,14 +278,31 @@ void SetupServerAddr::setServerAddr() {
     if (!is_detecting_) {
         std::thread thread(get_applist_adapter_);
         thread.detach();
-//        Poco::ThreadPool::defaultPool().start(get_applist_adapter_);
     } else {
-        Navigation::ShowToast("正在检测中");
+        // 正在检测中
+        Navigation::ShowToast(utils::WStringToString(localization::Loader::getResource().ui_setup_serveraddr_detecting));
+    }
+
+    // update region
+    if (get_region_list_) {
+        get_region_list_->SendAsync();
+    }
+    {
+        std::lock_guard<std::mutex> lock(region_mutex_);
+        results_.clear();
+        current_test_ = 0;
+        selected_result_ = { 0, false };
+        need_update_region_ = true;
+        if (callback_) {
+            callback_->OnUpdateRegion(selected_result_);
+        }
     }
 }
 
 void SetupServerAddr::GetAppList() {
-    status_messsage_->SetText(L"检测服务器版本号", false);
+    is_detecting_ = true;
+    // L"检测服务器版本号"
+    status_messsage_->SetText(localization::Loader::getResource().ui_setup_serveraddr_check_server_version, false);
     lark::GetCoreServerVersionInfo getCoreServerVersionInfo;
     getCoreServerVersionInfo.Send();
     if (getCoreServerVersionInfo.is_success()) {
@@ -251,37 +314,252 @@ void SetupServerAddr::GetAppList() {
              LARK_NATIVE_CLIENT_SDK_VERSION_REVISE,
              LARK_NATIVE_CLIENT_SDK_VERSION_BUILD);
         if (info.marjor == LARK_NATIVE_CLIENT_SDK_VERSION_MARJOR && info.minor == LARK_NATIVE_CLIENT_SDK_VERSION_MINOR) {
-            status_messsage_->SetText(L"检测服务器版本号成功", false);
+            // L"检测服务器版本号成功"
+            status_messsage_->SetText(localization::Loader::getResource().ui_setup_serveraddr_server_version_success, false);
         } else {
             char buffer[100];
-            sprintf(buffer, "检测到与服务器版本号不匹配，服务器版本 [%d.%d] 客户端 SDK 版本 [%d.%d]",
+            // 检测到与服务器版本号不匹配，服务器版本
+            // 客户端 SDK 版本
+            sprintf(buffer, "Server [%d.%d] Client [%d.%d]",
                                               info.marjor, info.minor,
                                               LARK_NATIVE_CLIENT_SDK_VERSION_MARJOR,
                                               LARK_NATIVE_CLIENT_SDK_VERSION_MINOR);
-            status_messsage_->SetText(utils::StringToWstring(buffer), false);
+            // "检测到与服务器版本号不匹配，服务器版本"
+            std::string msg = utils::WStringToString(localization::Loader::getResource().ui_setup_serveraddr_server_version_missmatch)
+                    + std::string(buffer);
+            status_messsage_->SetText(utils::StringToWstring(msg), false);
             // reset status
             is_detecting_ = false;
             return;
         }
     } else {
-        std::string errMsg = "检测服务器版本号请求失败，与服务器版本可能不匹配, 请检查地址是否正确或联系服务器管理员获得帮助。Err:"
+        // "检测服务器版本号请求失败，与服务器版本可能不匹配, 请检查地址是否正确或联系服务器管理员获得帮助。Err:"
+        std::string errMsg = utils::WStringToString(localization::Loader::getResource().ui_setup_serveraddr_server_version_failed)
                 + getCoreServerVersionInfo.message();
         status_messsage_->SetText(utils::StringToWstring(errMsg), false);
         return;
     }
 
-    status_messsage_->SetText(L"发送请求获取应用列表检测服务器地址", false);
+    // L"发送请求获取应用列表检测服务器地址"
+    status_messsage_->SetText(localization::Loader::getResource().ui_setup_serveraddr_detect_applist, false);
 
     lark::GetAppliList getAppliList;
     getAppliList.Send();
     if (getAppliList.is_success()) {
-        status_messsage_->SetText(L"当前地址检测成功。点击返回按钮可返回首页。", false);
+        // L"当前地址检测成功。点击返回按钮可返回首页。"
+        status_messsage_->SetText(localization::Loader::getResource().ui_setup_serveraddr_detect_applist_success, false);
     } else {
-        std::string errMsg = "应用列表请求失败，请检查地址是否正确或联系服务器管理员获得帮助。Err:" + getAppliList.message();
+        // "应用列表请求失败，请检查地址是否正确或联系服务器管理员获得帮助。Err:"
+        std::string errMsg = utils::WStringToString(localization::Loader::getResource().ui_setup_serveraddr_detect_applist_failed)
+                + getAppliList.message();
         status_messsage_->SetText(utils::StringToWstring(errMsg), false);
     }
     // reset status
     is_detecting_ = false;
+}
+
+// GetRegion callback
+void SetupServerAddr::OnSuccess(bool detectRttFlag, const std::vector<lark::RegionInfo> &regionInfo) {
+    LOGV("On region list %ld", regionInfo.size());
+
+    {
+        std::lock_guard<std::mutex> lock(region_mutex_);
+        results_.clear();
+        current_test_ = 0;
+        selected_result_ = { 0, false };
+        need_update_region_ = true;
+    }
+
+    // server close detect
+    if (!detectRttFlag) {
+        return;
+    }
+
+    for (const auto& region: regionInfo) {
+        LOGV("find region name %s ip %s port %s publicIp %s", region.regionName.c_str(), region.serverIp.c_str(), region.serverPort.c_str(), region.publicIp.c_str());
+         results_.push_back({0, false, region});
+    }
+    // connect
+    if (region_rtt_test_ && !regionInfo.empty()) {
+        const auto region = regionInfo.front();
+        if (!region.publicIp.empty()) {
+            int port;
+            std::istringstream (region.serverPort) >> port;
+            region_rtt_test_->Connect(region.publicIp, port,  "", region.regionId);
+            LOGV("region test [%s] rrt with public %s:%d", region.regionName.c_str(), region.publicIp.c_str(), port);
+        } else if (!region.preferPublicIp.empty()) {
+            std::string ip = lark::XRClient::GetServerHost();
+            int port = lark::XRClient::GetServerPort();
+            region_rtt_test_->Connect(ip, port,
+                                      "/websocket/" + region.serverIp + "/" + region.serverPort,
+                                       region.regionId);
+            LOGV("region test [%s] with preferPublicIp %s:%d %s:%s id %s", region.regionName.c_str(), ip.c_str(), port,
+                 region.serverIp.c_str(), region.serverPort.c_str(), region.regionId.c_str());
+        } else {
+            int port;
+            std::istringstream (region.serverPort) >> port;
+            region_rtt_test_->Connect(region.serverIp, port, "", region.regionId);
+            LOGV("regin test [%s] with %s:%d id %s", region.regionName.c_str(), region.serverIp.c_str(), port, region.regionId.c_str());
+        }
+    }
+}
+
+void SetupServerAddr::OnFailed(const std::string &err) {
+    LOGW("Fetch Region list failed %s", err.c_str());
+    {
+        std::lock_guard<std::mutex> lock(region_mutex_);
+        results_.clear();
+        current_test_ = 0;
+        selected_result_ = { 0, false };
+        need_update_region_ = true;
+    }
+}
+
+// region_rtt_test callback
+void SetupServerAddr::OnRegionRttTestResult(uint64_t rtt, const std::string& regionId) {
+    std::lock_guard<std::mutex> lock(region_mutex_);
+    LOGV("get region rtttest result %ld id %s total regionsize %ld", rtt, regionId.c_str(), results_.size());
+
+    if (results_.empty()) {
+        return;
+    }
+
+    if (current_test_ < results_.size() && results_[current_test_].info.regionId == regionId) {
+        results_[current_test_].rtt = rtt;
+
+        // finish
+        if (current_test_ == results_.size() - 1) {
+            for(const auto& res : results_) {
+                LOGV("got region %s rtt %ld", res.info.regionName.c_str(), res.rtt);
+                if (res.rtt != 0 && (selected_result_.rtt == 0 || res.rtt < selected_result_.rtt)) {
+                    selected_result_ = res;
+                    selected_result_.selected = true;
+                }
+            }
+            for(auto& res: results_) {
+                if (res.info.regionId == selected_result_.info.regionId) {
+                    res.selected = true;
+                    LOGV("selected region %s rtt %ld", res.info.regionName.c_str(), res.rtt);
+                }
+            }
+            if (callback_) {
+                callback_->OnUpdateRegion(selected_result_);
+            }
+            // need update ui
+            need_update_region_ = true;
+        } else {
+            // next
+            if (region_rtt_test_) {
+                LOGV("get next rtt info total %ld current %d", results_.size(), current_test_);
+                current_test_++;
+                auto region = results_[current_test_].info;
+                if (!region.publicIp.empty()) {
+                    int port;
+                    std::istringstream (region.serverPort) >> port;
+                    region_rtt_test_->Connect(region.publicIp, port, "", region.regionId);
+                    LOGV("region test [%s] rrt with public %s:%d", region.regionName.c_str(), region.publicIp.c_str(), port);
+                } else if (!region.preferPublicIp.empty()) {
+                    std::string ip = lark::XRClient::GetServerHost();
+                    int port = lark::XRClient::GetServerPort();
+                    region_rtt_test_->Connect(ip, port,
+                                              "/websocket/" + region.serverIp + "/" + region.serverPort,
+                                              region.regionId);
+                    LOGV("region test [%s] with preferPublicIp %s:%d %s:%s id %s", region.regionName.c_str(), ip.c_str(), port,
+                         region.serverIp.c_str(), region.serverPort.c_str(), region.regionId.c_str());
+                } else {
+                    int port;
+                    std::istringstream (region.serverPort) >> port;
+                    region_rtt_test_->Connect(region.serverIp, port, "", region.regionId);
+                    LOGV("regin test [%s] with %s:%d id %s", region.regionName.c_str(), region.serverIp.c_str(), port, region.regionId.c_str());
+                }
+            }
+        }
+    }
+}
+
+void SetupServerAddr::OnRegionRttTestError(const std::string &err, const std::string& regionId) {
+    LOGW("Fetch Region Test Rtt failed %s", err.c_str());
+    std::lock_guard<std::mutex> lock(region_mutex_);
+    if (results_.empty()) {
+        return;
+    }
+    if (current_test_ < results_.size()) {
+        // TODO set to max when rtt check failed.
+        results_[current_test_].rtt = 0;
+
+        // finish
+        if (current_test_ == results_.size() - 1) {
+            for(const auto& res : results_) {
+                LOGV("got region %s rtt %ld", res.info.regionName.c_str(), res.rtt);
+                if (res.rtt != 0 && (selected_result_.rtt == 0 || res.rtt < selected_result_.rtt)) {
+                    selected_result_ = res;
+                    selected_result_.selected = true;
+                }
+            }
+            for(auto& res: results_) {
+                if (res.info.regionId == selected_result_.info.regionId) {
+                    res.selected = true;
+                    LOGV("selected region %s rtt %ld", res.info.regionName.c_str(), res.rtt);
+                }
+            }
+            if (callback_) {
+                callback_->OnUpdateRegion(selected_result_);
+            }
+            // need update ui
+            need_update_region_ = true;
+        } else {
+            // next
+            if (region_rtt_test_) {
+                LOGV("get next rtt info total %ld current %d", results_.size(), current_test_);
+                current_test_++;
+                auto region = results_[current_test_].info;
+                if (!region.publicIp.empty()) {
+                    int port;
+                    std::istringstream (region.serverPort) >> port;
+                    region_rtt_test_->Connect(region.publicIp, port, "", region.regionId);
+                } else if (!region.preferPublicIp.empty()) {
+                    std::string ip = lark::XRClient::GetServerHost();
+                    int port = lark::XRClient::GetServerPort();
+                    region_rtt_test_->Connect(ip, port,
+                                              "/websocket/" + region.serverIp + "/" + region.serverPort,
+                                              region.regionId);
+                } else {
+                    int port;
+                    std::istringstream (region.serverPort) >> port;
+                    region_rtt_test_->Connect(region.serverIp, port, "", region.regionId);
+                }
+            }
+        }
+    }
+}
+
+void SetupServerAddr::OnRegionRttTestClose(const std::string &err, const std::string &regionId) {
+    LOGW("Fetch Region Test Rtt Closed %s", err.c_str());
+}
+
+void SetupServerAddr::Update() {
+    Object::Update();
+    if (need_update_region_) {
+        region_title_->set_active(!results_.empty());
+        for (int i = 0; i < region_list_.size(); i++) {
+            if (i < results_.size()) {
+                std::ostringstream ss;
+                ss << results_[i].info.regionName << " "
+                   << results_[i].rtt << " ms"
+                   << (results_[i].selected ? " current " : "");
+                region_list_[i]->SetText(utils::StringToWstring(ss.str()));
+                region_list_[i]->set_active(true);
+                region_list_[i]->SetAABBPositon(glm::vec2(-0.6F, 0.1f - i * 0.15f - region_list_[i]->GetSize().y / 2));
+                region_list_[i]->SetAABBSize(region_list_[i]->GetSize());
+            } else {
+                region_list_[i]->set_active(false);
+            }
+        }
+        if (callback_) {
+            callback_->OnUpdateRegion(selected_result_);
+        }
+        need_update_region_ = false;
+    }
 }
 
 //

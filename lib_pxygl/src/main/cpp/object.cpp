@@ -67,10 +67,10 @@ bool Object::AreEnabled() const {
 bool Object::HasGLError() const {
     GLenum err = glGetError();
     if (err == GL_OUT_OF_MEMORY) {
-        LOGE("%s glGetError(): GL_OUT_OF_MEMORY", name_);
+        LOGE("%s glGetError():GL_OUT_OF_MEMORY", name_);
         return true;
     } else if (err != GL_NO_ERROR) {
-        LOGE("%s glGetError(): %?d", name_, err);
+        LOGE("%s glGetError():Not_GL_NO_ERROR %u", name_, err);
         return true;
     } else {
         return false;
@@ -127,6 +127,7 @@ void Object::LoadMultiviewShaderFromAsset(const char* vpath, const char* fpath) 
     has_error_ = !shader_;
 }
 #endif
+
 void Object::LoadShader(const char* vfile, const char* ffile, const char* vstr, const char* fstr)
 {
     ShaderAsset shaderAsset = {

@@ -21,11 +21,11 @@
 #include "log.h"
 #include "ovr_application.h"
 #include "env_context.h"
-#include "logger.h"
 
 #include "assimp/cimport.h"
 #include "assimp/Logger.hpp"
 #include "assimp/DefaultLogger.hpp"
+
 /**
  * Process the next main command.
  */
@@ -69,20 +69,52 @@ static void app_handle_cmd( struct android_app * app, int32_t cmd )
 //    application->handleAndroidCmd(app, cmd);
 }
 
-void android_main( struct android_app * app )
-{
-    // inint logger
-    lark::Logger::InitLogger();
-    ANativeActivity_setWindowFlags( app->activity, AWINDOW_FLAG_KEEP_SCREEN_ON, 0 );
+void android_main( struct android_app * app ) {
+    ANativeActivity_setWindowFlags(app->activity, AWINDOW_FLAG_KEEP_SCREEN_ON, 0);
 
     // init app
     OvrApplication application;
+
     if (!application.InitVR(app)) {
         LOGE("init vr failed");
         exit(0);
     }
 
+    std::string appid;
+    {
+        EnvWrapper env_wraper = Context::instance()->GetEnv();
+        JNIEnv* env = env_wraper.get();
+
+        jobject native_activity = app->activity->clazz;
+        jclass clazz = env->GetObjectClass(native_activity);
+        jmethodID giid = env->GetMethodID(clazz, "getIntent", "()Landroid/content/Intent;");
+        jobject intent = env->CallObjectMethod(native_activity, giid);
+
+        jclass icl = env->GetObjectClass(intent);
+        jmethodID gseid = env->GetMethodID(icl, "getStringExtra", "(Ljava/lang/String;)Ljava/lang/String;");
+
+        auto j_appid = (jstring)env->CallObjectMethod(intent, gseid, env->NewStringUTF("appid"));
+
+        if (j_appid != nullptr) {
+            const char *c_appid = env->GetStringUTFChars(j_appid, 0);
+            appid = c_appid;
+            env->ReleaseStringUTFChars(j_appid, c_appid);
+        }
+
+        env->DeleteLocalRef(j_appid);
+        env->DeleteLocalRef(clazz);
+        env->DeleteLocalRef(icl);
+        env->DeleteLocalRef(intent);
+    }
+
+    LOGV("enter appli param %s", appid.c_str());
+
     LOGD("init vr success");
+
+    if (!appid.empty()) {
+        application.Set2DUIEnterAppliMode(appid);
+    }
+
     if (!application.InitGL()) {
         LOGE("init gl failed");
         application.ShutdownGL();

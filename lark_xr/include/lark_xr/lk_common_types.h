@@ -8,8 +8,8 @@
 // sdk version.
 const int LARK_NATIVE_CLIENT_SDK_VERSION_MARJOR = 3;
 const int LARK_NATIVE_CLIENT_SDK_VERSION_MINOR  = 2;
-const int LARK_NATIVE_CLIENT_SDK_VERSION_REVISE = 0;
-const int LARK_NATIVE_CLIENT_SDK_VERSION_BUILD  = 5;
+const int LARK_NATIVE_CLIENT_SDK_VERSION_REVISE = 2;
+const int LARK_NATIVE_CLIENT_SDK_VERSION_BUILD  = 0;
 
 /// vr setup
 typedef enum larkHeadSetType_ {
@@ -18,6 +18,7 @@ typedef enum larkHeadSetType_ {
     larkHeadSetType_PICO_2 = 2,
     larkHeadSetType_PICO_3 = 3,
     larkHeadSetType_NOLO_Sonic_1 = 4,
+    larkHeadSetType_NONE = 1000,
 } larkHeadSetType;
 
 typedef struct larkHeadSetControllerDesc_ {
@@ -81,31 +82,54 @@ typedef struct larkVRVideoDesc_
 
 
 ///
-typedef struct RenderFov_ {
+typedef struct larkRenderFov_ {
     float left;
     float right;
     float top;
     float bottom;
-} RenderFov;
+} larkRenderFov;
 
-typedef enum PlayerModeType_ {
+typedef enum larkPlayerModeType_ {
     // 普通模式
     PlayerModeType_Normal = 0,
     // 交互模式（可以一人操作多人看）
     PlayerModeType_Interactive = 1,
     // 多人互动模式 (多人可操作)
     PlayerModeType_MutiPlayer = 2,
-} PlayerModeType;
+} larkPlayerModeType;
 
-typedef enum UserType_ {
+typedef enum larkUserType_ {
     // 观看者
     UserType_Observer = 0,
     // 操作者
     UserType_Player = 1,
-} UserType;
+} larkUserType;
+
+// 云端应用的类型
+typedef enum larkAppliType_ {
+	// SR(独占型)
+	AppliType_DESKTOP = 1,
+	// SR(共享型-平行云通用方案)
+    AppliType_SHARED = 2,
+	// SR(共享型-UE像素流送方案)
+    AppliType_PIXEL_STREAMING = 13,
+	// VR(SteamVR)
+    AppliType_VR = 3,
+    //不能多开
+	// SteamVR:依赖Steam)
+    AppliType_VR_STEAM = 5,
+	// VR(Nvidia)
+    AppliType_NV_VR = 6,
+	// VR(OpenXR)
+    AppliType_XR = 7,
+	// AR(PXY)
+    AppliType_PXY_AR = 9,
+	// AR(Nvidia)
+    AppliType_NV_AR = 11,
+} larkAppliType;
 
 // config
-typedef struct CommonConfig_ {
+typedef struct larkCommonConfig_ {
     bool debugTask;
     bool useProxy;
     std::string appServer;
@@ -114,6 +138,7 @@ typedef struct CommonConfig_ {
     // common config
     std::string taskId;
     std::string appliId;
+    larkAppliType appliType;
     int noOperationTimeout;
     int fps;
     int bitrateKbps;
@@ -124,16 +149,16 @@ typedef struct CommonConfig_ {
     float roomHeight;
     // oculus controller.
     bool hasTouchcontroller;
-    RenderFov fovList[2];
+    larkRenderFov fovList[2];
     bool useKcp;
     bool useH265;
-    PlayerModeType playerMode;
-    UserType userType;
+    larkPlayerModeType playerMode;
+    larkUserType userType;
     std::string nickName;
     std::string roomCode;
     larkHeadSetControllerDesc headSetDesc;
     larkVRVideoDesc vrVideoDesc;
-} CommonConfig;
+} larkCommonConfig;
 
 typedef enum larkEventTypes_ {
     // 进入应用接口调用

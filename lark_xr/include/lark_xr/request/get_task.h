@@ -21,6 +21,8 @@ public:
     void SendAsync(const std::string& taskId);
 
     bool is_task_ready() const;
+    bool is_ar_alpha_mask() const;
+    bool is_audio_input() const;
     int http_code() const;
     int api_result_code() const;
     std::string message() const;

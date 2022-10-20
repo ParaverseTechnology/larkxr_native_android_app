@@ -6,6 +6,7 @@
 #include "lark_xr/xr_client.h"
 #include "navigation.h"
 #include "log.h"
+#include "localization.h"
 
 #define LOG_TAG "Navigation"
 
@@ -19,6 +20,7 @@ void Navigation::ShowToast(const std::string &msg) {
     s_show_toast_ = true;
     s_last_toast_timestamp_ = utils::GetTimestampUs();
 }
+
 void Navigation::ClearToast() {
     s_toast_str_ = "";
     s_show_toast_ = false;
@@ -35,10 +37,14 @@ Navigation::Navigation() :
       setup_server_addr_(new SetupServerAddr(this)),
       toast_(new Text(L""))
 {
-    current_ = ROUTERS::HOME;
+
+//    localization::Loader::load(true);
+
+    bool ui_3d_mode = Application::instance()->ui_mode() == Application::ApplicationUIMode_Opengles_3D;
+    current_ = ui_3d_mode ? ROUTERS::HOME : ROUTERS::LOADING;
 
     // add chiledren.
-    home_page_->set_active(true);
+    home_page_->set_active(ui_3d_mode);
     home_page_->Move(View::VIEW_POSITION_X, component::CAMERA_ORI_POSITION.y, View::VIEW_POSITION_Z);
     AddChild(home_page_);
 
@@ -46,13 +52,14 @@ Navigation::Navigation() :
     setup_->Move(View::VIEW_POSITION_X, component::CAMERA_ORI_POSITION.y, View::VIEW_POSITION_Z);
     AddChild(setup_);
 
-    loading_->set_active(false);
+    loading_->set_active(!ui_3d_mode);
     loading_->Move(View::VIEW_POSITION_X, component::CAMERA_ORI_POSITION.y, View::VIEW_POSITION_Z);
     AddChild(loading_);
 
     setup_server_addr_->set_active(false);
     setup_server_addr_->Move(View::VIEW_POSITION_X, component::CAMERA_ORI_POSITION.y, View::VIEW_POSITION_Z);
     AddChild(setup_server_addr_);
+    setup_server_addr_->set_listener(this);
 
     toast_->Move(View::VIEW_POSITION_X - 2.0F, component::CAMERA_ORI_POSITION.y  - 1.9F, View::VIEW_POSITION_Z + 0.5F);
     toast_->set_active(false);
@@ -61,9 +68,13 @@ Navigation::Navigation() :
     if (lark::XRClient::GetServerHost().empty()) {
         LOGV("server ip is empty.");
         SetRouter(Navigation::ROUTERS::SETUP_SERVERADDR);
-        ShowToast("请设置服务器地址");
+        ShowToast(utils::WStringToString(localization::Loader::getResource().ui_setup_serveraddr_request));
     } else {
-        home_page_->Enter();
+        if (ui_3d_mode) {
+            home_page_->Enter();
+        } else {
+            loading_->Enter();
+        }
     }
 }
 
@@ -150,5 +161,17 @@ void Navigation::HandelInput(lark::Ray *ray, int rayCount) {
 void Navigation::SetLoadingTips(const std::wstring &tips) {
     if (loading_) {
         loading_->SetQuitTips(tips);
+    }
+}
+
+void Navigation::SetSupport2DUI() {
+    if (home_page_) {
+        home_page_->SetSupport2DUI();
+    }
+}
+
+void Navigation::OnUpdateRegion(const SetupServerAddr::RegionTestResult &result) {
+    if (home_page_) {
+        home_page_->UpdateRegion(result);
     }
 }
