@@ -50,6 +50,8 @@ public:
     void SetCloudXRClient(const std::shared_ptr<CloudXRClient>& client);
     void OnCloudXRConnected();
 #endif
+
+    void SetSkyBox(int index);
 private:
     void ShowMenu();
     void HideMenu();

@@ -40,7 +40,7 @@ void PvrXRSceneLocal::InitGL(GraphicsDeviceAndroid *device) {
     PvrXRSceneLocal::AddObject(controller_right_);
 
     // navigation.
-    navigation_ = std::make_shared<Navigation>();
+    navigation_ = std::make_shared<Navigation>(true);
 //    navigation_->set_transform({
 //        1, 0, 0, 0,
 //        0, 1, 0, 0,
@@ -173,6 +173,8 @@ void PvrXRSceneLocal::HandleInput(const InputState& input_state, const XrSession
         }
 //        LOGI("trigger value %f type %d changed %d time %ld", triggerValue.currentState, triggerValue.type, triggerValue.changedSinceLastSync, triggerValue.lastChangeTime);
 
+        // LOGI("hand[%d] current state A=%d X=%d B=%d Y=%d", hand, AValue.currentState, XValue.currentState, BValue.currentState, YValue.currentState);
+
         backButtonDownThisFrame[rayCastType] = BValue.currentState || YValue.currentState;
         enterButtonDownThisFrame[rayCastType] = AValue.currentState || XValue.currentState;
 
@@ -220,4 +222,9 @@ void PvrXRSceneLocal::OnCloseApp() {
     LOGV("================on close app");
     // TODO 关闭应用
     Application::instance()->CloseAppli();
+}
+
+void PvrXRSceneLocal::SetSkyBox(int index) {
+    const char *path = index == 0 ? "textures/skybox_8_2k.jpg" : "textures/skybox_9.jpg";
+    sky_box_->SetTexture(path);
 }

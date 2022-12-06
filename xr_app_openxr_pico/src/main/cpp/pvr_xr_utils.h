@@ -17,6 +17,50 @@
 #include <lark_xr/xr_client.h>
 #include <logger.h>
 
+#ifdef CHECK_GL_ERRORS
+
+static const char* GlErrorString(GLenum error) {
+    switch (error) {
+        case GL_NO_ERROR:
+            return "GL_NO_ERROR";
+        case GL_INVALID_ENUM:
+            return "GL_INVALID_ENUM";
+        case GL_INVALID_VALUE:
+            return "GL_INVALID_VALUE";
+        case GL_INVALID_OPERATION:
+            return "GL_INVALID_OPERATION";
+        case GL_INVALID_FRAMEBUFFER_OPERATION:
+            return "GL_INVALID_FRAMEBUFFER_OPERATION";
+        case GL_OUT_OF_MEMORY:
+            return "GL_OUT_OF_MEMORY";
+        default:
+            return "unknown";
+    }
+}
+
+static void GLCheckErrors(int line) {
+    for (int i = 0; i < 10; i++) {
+        const GLenum error = glGetError();
+        if (error == GL_NO_ERROR) {
+            break;
+        }
+        ALOGE("GL error on line %d: %s", line, GlErrorString(error));
+    }
+}
+
+#define GL(func) \
+    func;        \
+    GLCheckErrors(__LINE__);
+
+#else // CHECK_GL_ERRORS
+
+#define GL(func) func;
+
+#endif // CHECK_GL_ERRORS
+
+#define OXR(func) func;
+
+
 namespace Math {
     namespace Pose {
         inline XrPosef Identity() {
@@ -44,6 +88,23 @@ namespace Math {
 }  // namespace Math
 
 namespace pxrutils {
+    inline const char* GlFrameBufferStatusString(GLenum status) {
+        switch (status) {
+            case GL_FRAMEBUFFER_UNDEFINED:
+                return "GL_FRAMEBUFFER_UNDEFINED";
+            case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
+                return "GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT";
+            case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
+                return "GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT";
+            case GL_FRAMEBUFFER_UNSUPPORTED:
+                return "GL_FRAMEBUFFER_UNSUPPORTED";
+            case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:
+                return "GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE";
+            default:
+                return "unknown";
+        }
+    }
+
     inline std::string GetXrVersionString(XrVersion ver) {
         return Fmt("%d.%d.%d", XR_VERSION_MAJOR(ver), XR_VERSION_MINOR(ver), XR_VERSION_PATCH(ver));
     }
@@ -168,14 +229,6 @@ namespace pvr {
         XrActionStateFloat triggerValue{XR_TYPE_ACTION_STATE_FLOAT};
         CHECK_XRCMD(xrGetActionStateFloat(session, &getInfo, &triggerValue));
 
-        getInfo.action = input_state.TriggerTouchAction;
-        XrActionStateBoolean TriggerTouch{XR_TYPE_ACTION_STATE_BOOLEAN};
-        CHECK_XRCMD(xrGetActionStateBoolean(session, &getInfo, &TriggerTouch));
-
-        getInfo.action = input_state.sideAction;
-        XrActionStateBoolean gripValue{XR_TYPE_ACTION_STATE_BOOLEAN};
-        CHECK_XRCMD(xrGetActionStateBoolean(session, &getInfo, &gripValue));
-
         getInfo.action = input_state.batteryAction;
         XrActionStateFloat batteryValue{XR_TYPE_ACTION_STATE_FLOAT};
         CHECK_XRCMD(xrGetActionStateFloat(session, &getInfo, &batteryValue));
@@ -184,37 +237,70 @@ namespace pvr {
         XrActionStateBoolean backValue{XR_TYPE_ACTION_STATE_BOOLEAN};
         CHECK_XRCMD(xrGetActionStateBoolean(session, &getInfo, &backValue));
 
-        getInfo.action = input_state.touchpadAction;
-        XrActionStateBoolean touchpadValue{XR_TYPE_ACTION_STATE_BOOLEAN};
-        CHECK_XRCMD(xrGetActionStateBoolean(session, &getInfo, &touchpadValue));
+        getInfo.action = hand == Side::LEFT ? input_state.TriggerTouchLeftAction : input_state.TriggerTouchRightAction;
+        XrActionStateBoolean TriggerTouch{XR_TYPE_ACTION_STATE_BOOLEAN};
+        CHECK_XRCMD(xrGetActionStateBoolean(session, &getInfo, &TriggerTouch));
 
-        getInfo.action = input_state.joystickAction;
+        getInfo.action = hand == Side::LEFT ? input_state.TriggerClickLeftAction : input_state.TriggerClickRightAction;
+        XrActionStateBoolean TriggerClick{XR_TYPE_ACTION_STATE_BOOLEAN};
+        CHECK_XRCMD(xrGetActionStateBoolean(session, &getInfo, &TriggerClick));
+
+        getInfo.action = hand == Side::LEFT ? input_state.GripClickLeftAction : input_state.GripClickRightAction;
+        XrActionStateBoolean gripClick{XR_TYPE_ACTION_STATE_BOOLEAN};
+        CHECK_XRCMD(xrGetActionStateBoolean(session, &getInfo, &gripClick));
+
+        getInfo.action = hand == Side::LEFT ? input_state.GripValueLeftAction : input_state.GripValueRightAction;
+        XrActionStateFloat gripValue{XR_TYPE_ACTION_STATE_FLOAT};
+        CHECK_XRCMD(xrGetActionStateFloat(session, &getInfo, &gripValue));
+
+        getInfo.action = hand == Side::LEFT ? input_state.JoystickClickLeftAction : input_state.JoystickClickRightAction;
+        XrActionStateBoolean joystickClick{XR_TYPE_ACTION_STATE_BOOLEAN};
+        CHECK_XRCMD(xrGetActionStateBoolean(session, &getInfo, &joystickClick));
+
+        getInfo.action = hand == Side::LEFT ? input_state.JoystickTouchLeftAction : input_state.JoystickTouchRightAction;
+        XrActionStateBoolean joystickTouch{XR_TYPE_ACTION_STATE_BOOLEAN};
+        CHECK_XRCMD(xrGetActionStateBoolean(session, &getInfo, &joystickTouch));
+
+        getInfo.action = hand == Side::LEFT ? input_state.JoystickValueLeftAction : input_state.JoystickValueRightAction;
         XrActionStateVector2f joystickValue{XR_TYPE_ACTION_STATE_VECTOR2F};
         CHECK_XRCMD(xrGetActionStateVector2f(session, &getInfo, &joystickValue));
 
         if (AValue.currentState && AValue.isActive) {
             state.buttons |= LARKXR_BUTTON_FLAG(larkxrInput::larkxr_Input_A_Click);
         }
+
         if (BValue.currentState && BValue.isActive) {
             state.buttons |= LARKXR_BUTTON_FLAG(larkxrInput::larkxr_Input_B_Click);
         }
+
         if (XValue.currentState && XValue.isActive) {
             state.buttons |= LARKXR_BUTTON_FLAG(larkxrInput::larkxr_Input_X_Click);
         }
+
         if (YValue.currentState && YValue.isActive) {
             state.buttons |= LARKXR_BUTTON_FLAG(larkxrInput::larkxr_Input_Y_Click);
         }
+
         if (backValue.currentState && backValue.isActive) {
             state.buttons |= LARKXR_BUTTON_FLAG(larkxrInput::larkxr_Input_System_Click);
         }
 
         if (TriggerTouch.currentState && TriggerTouch.isActive) {
+            state.buttons |= LARKXR_BUTTON_FLAG(larkxrInput::larkxr_Input_Trigger_Touch);
+        }
+
+        if (TriggerClick.currentState && TriggerClick.isActive) {
             state.buttons |= LARKXR_BUTTON_FLAG(larkxrInput::larkxr_Input_Trigger_Click);
         }
-        if (gripValue.currentState && gripValue.isActive) {
+
+        if (gripClick.currentState && gripClick.isActive) {
             state.buttons |= LARKXR_BUTTON_FLAG(larkxrInput::larkxr_Input_Grip_Click);
-            state.gripValue = 1;
+            state.buttons |= LARKXR_BUTTON_FLAG(larkxrInput::larkxr_Input_Grip_Touch);
         }
+
+        // TODO
+        // gripValue from pico not good
+        state.gripValue = gripValue.currentState;
 
         state.triggerValue = triggerValue.currentState;
 
@@ -222,9 +308,17 @@ namespace pvr {
         state.touchPadAxis.y = joystickValue.currentState.y;
 
 //        LOGV("touchPadAxis %f %f triggerValue %f gripValue %f", state.touchPadAxis.x, state.touchPadAxis.y, state.triggerValue, state.gripValue);
+//        LOGV("controller input hand [%d] gripValue %f gripClick %d triggerValue %f triggerClick %d TriggerTouch %d",
+//             hand, gripValue.currentState, gripClick.currentState, triggerValue.currentState, TriggerClick.currentState, TriggerTouch.currentState);
 
-        if (touchpadValue.currentState && touchpadValue.isActive) {
+//        LOGV("controller input hand [%d] joystickClick %d joystickTouch %d joystick:X %f :Y %f",
+//             hand, joystickClick.currentState, joystickTouch.currentState, joystickValue.currentState.x, joystickValue.currentState.y);
+
+        if (joystickClick.currentState && joystickClick.isActive) {
             state.buttons |= LARKXR_BUTTON_FLAG(larkxrInput::larkxr_Input_Joystick_Click);
+        }
+
+        if (joystickTouch.currentState && joystickTouch.isActive) {
             state.buttons |= LARKXR_BUTTON_FLAG(larkxrInput::larkxr_Input_Joystick_Touch);
         }
 

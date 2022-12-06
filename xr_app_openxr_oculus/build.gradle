@@ -1,0 +1,130 @@
+plugins {
+    id 'com.android.application'
+}
+
+apply from:"$projectDir/../config.gradle"
+
+android {
+    compileSdkVersion 33
+    // buildToolsVersion 32
+//    ndkVersion "21.4.7075529"
+    ndkVersion "22.1.7171670"
+
+    defaultConfig {
+        applicationId "com.pxy.larkxr_openxr_oculus"
+        minSdkVersion 25
+        targetSdkVersion 33
+        versionCode 1
+        versionName "3.2.2.11"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        externalNativeBuild {
+            cmake {
+                cppFlags "-frtti -fexceptions -std=c++1y -DANDROID_NDK_BUILD=1"
+                targets 'lark_xr_openxr_oculus'
+
+                if (BUILD_WITH_CLOUDXR_SUPPORT) {
+                    arguments "-DANDROID_STL=c++_shared",
+                            "-DCLOUDXR_LIBPATH=${project.rootDir}/third_party/cloudxr/CloudXR/jni",
+                            "-DCLOUDXR_INCLUDE=${project.rootDir}/third_party/cloudxr/CloudXR/include",
+                            "-DENABLE_CLOUDXR=1"
+                } else {
+                    arguments "-DANDROID_STL=c++_shared"
+                }
+            }
+            ndk {
+                abiFilters 'arm64-v8a'
+            }
+            ndkBuild {
+                abiFilters 'arm64-v8a'
+            }
+        }
+    }
+
+    buildTypes {
+        String ENABLE_CLOUDXR = BUILD_WITH_CLOUDXR_SUPPORT ? "true" : "false";
+        debug {
+            buildConfigField "boolean","ENABLE_CLOUDXR",ENABLE_CLOUDXR
+        }
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            buildConfigField "boolean","ENABLE_CLOUDXR",ENABLE_CLOUDXR
+        }
+    }
+
+    sourceSets {
+        main {
+            def base = "../"
+            def lib_prex = "lib/android/"
+            // let gradle pack the shared library into apk
+            jniLibs.srcDirs = [
+            ]
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path "src/main/cpp/CMakeLists.txt"
+            version "3.10.2"
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JAVA_VERSION
+        targetCompatibility JAVA_VERSION
+    }
+
+    repositories {
+        flatDir {
+            dirs 'libs', '../lark_xr'
+        }
+    }
+    packagingOptions {
+        jniLibs {
+            pickFirsts += [
+                    'lib/arm64-v8a/libglm.so',
+                    'lib/armeabi-v7a/libglm.so',
+                    'lib/arm64-v8a/libPocoFoundation.so',
+                    'lib/armeabi-v7a/libPocoFoundation.so',
+                    'lib/arm64-v8a/libprotobuf.so',
+                    'lib/armeabi-v7a/libprotobuf.so',
+                    'lib/arm64-v8a/libc++_shared.so',
+                    'lib/armeabi-v7a/libc++_shared.so',
+                    'lib/arm64-v8a/libCloudXRClient.so',
+                    'lib/armeabi-v7a/libCloudXRClient.so'
+            ]
+        }
+    }
+
+    applicationVariants.all { variant ->
+        variant.outputs.all { output ->
+//            def date = new Date().format("mmss");
+            def build = 1
+            def abi = "all";
+            if (output.filters[0] != null) {
+                abi = output.filters[0].identifier
+            }
+            def type = "quest-openxr";
+
+            outputFileName =  "lark-xr-" +
+                    defaultConfig.versionName + "-build-" +
+                    build + "-" + type + "-beta-" + abi + ".apk"
+        }
+    }
+}
+
+dependencies {
+//    implementation 'androidx.appcompat:appcompat:1.4.1'
+
+    implementation project(':lib_pxygl')
+    implementation project(':lib_xr_common_ui')
+    implementation(name: 'larkxr-kit-3.2.2.0-build-1', ext: 'aar')
+
+    // WARNING
+    // enable cloudxr support must put your CloudXR.aar under larkar_android/libs dir
+    if (BUILD_WITH_CLOUDXR_SUPPORT) {
+        implementation files("${project.rootDir}/third_party/cloudxr/CloudXR.aar")
+    }
+}

@@ -300,8 +300,9 @@ public:
 	 * @param init_share_context 是否立即初始化 opengl 上下文。如果调用 init 方法不在渲染线程或渲染环境
 	 * 可能会变动的情况下，init_share_context 传入 false，然后手动调用 InitGLShareContext。如果渲染线程
 	 * 不会变化可以直接在 init 方法初始化。
+	 * @param language zh, zh-CN 中文 en 英文
 	 */
-	void Init(JavaVM* vm, bool init_share_context = true);
+	void Init(JavaVM* vm, bool init_share_context = true, const std::string& language = "");
 	/**
 	 * 初始化opengl共享上下文
 	 * 必须在 opengl渲染线程中调用

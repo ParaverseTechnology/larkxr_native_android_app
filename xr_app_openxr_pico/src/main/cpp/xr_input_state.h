@@ -21,22 +21,31 @@ struct InputState {
     XrAction vibrateAction{XR_NULL_HANDLE};
     XrAction quitAction{XR_NULL_HANDLE};
     /*************************pico******************/
-    XrAction touchpadAction{XR_NULL_HANDLE};
     XrAction AXAction{XR_NULL_HANDLE};
     XrAction homeAction{XR_NULL_HANDLE};
     XrAction BYAction{XR_NULL_HANDLE};
     XrAction backAction{XR_NULL_HANDLE};
-    XrAction sideAction{XR_NULL_HANDLE};
     XrAction triggerAction{XR_NULL_HANDLE};
-    XrAction joystickAction{XR_NULL_HANDLE};
     XrAction batteryAction{XR_NULL_HANDLE};
     //---add new----------
     XrAction AXTouchAction{XR_NULL_HANDLE};
     XrAction BYTouchAction{XR_NULL_HANDLE};
-    XrAction RockerTouchAction{XR_NULL_HANDLE};
-    XrAction TriggerTouchAction{XR_NULL_HANDLE};
+    XrAction TriggerTouchLeftAction{XR_NULL_HANDLE};
+    XrAction TriggerTouchRightAction{XR_NULL_HANDLE};
+    XrAction TriggerClickLeftAction{XR_NULL_HANDLE};
+    XrAction TriggerClickRightAction{XR_NULL_HANDLE};
     XrAction ThumbrestTouchAction{XR_NULL_HANDLE};
-    XrAction GripAction{XR_NULL_HANDLE};
+    XrAction GripClickLeftAction{XR_NULL_HANDLE};
+    XrAction GripClickRightAction{XR_NULL_HANDLE};
+    XrAction GripValueLeftAction{XR_NULL_HANDLE};
+    XrAction GripValueRightAction{XR_NULL_HANDLE};
+    XrAction JoystickClickLeftAction{XR_NULL_HANDLE};
+    XrAction JoystickClickRightAction{XR_NULL_HANDLE};
+    XrAction JoystickTouchLeftAction{XR_NULL_HANDLE};
+    XrAction JoystickTouchRightAction{XR_NULL_HANDLE};
+    XrAction JoystickValueLeftAction{XR_NULL_HANDLE};
+    XrAction JoystickValueRightAction{XR_NULL_HANDLE};
+
     //---add new----------zgt
     XrAction AAction{XR_NULL_HANDLE};
     XrAction BAction{XR_NULL_HANDLE};
@@ -51,8 +60,6 @@ struct InputState {
     std::array<XrSpace, Side::COUNT> aimSpace;
     std::array<XrPath, Side::COUNT> handSubactionPath;
     std::array<XrSpace, Side::COUNT> handSpace;
-    std::array<float, Side::COUNT> handScale = {{1.0f, 1.0f}};
-    std::array<XrVector2f, Side::COUNT> handXYPos = {0.0f};
     std::array<XrBool32, Side::COUNT> handActive;
 
     void InitializeActions(const XrInstance& instance, const XrSession& session);

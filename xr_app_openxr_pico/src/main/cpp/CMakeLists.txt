@@ -65,7 +65,8 @@ add_library( # Sets the name of the library.
 		pvr_xr_jni.cpp
 		xr_input_state.h
 		xr_input_state.cpp
-		)
+		frame_buffer.cpp
+)
 
 source_group("Headers" FILES ${LOCAL_HEADERS})
 source_group("Shaders" FILES ${VULKAN_SHADERS})

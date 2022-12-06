@@ -223,4 +223,13 @@ void SkyBox::Draw(Eye eye, const glm::mat4 &projection, const glm::mat4 &eyeView
 
     HasGLError();
 }
+
+void SkyBox::SetTexture(const char* path) {
+    std::shared_ptr<Texture> texture = AssetLoader::instance()->FindTexture(path);
+    if (texture) {
+        texture_ = texture;
+    } else {
+        LOGW("cant find skybox texture %s", path);
+    }
+}
 }

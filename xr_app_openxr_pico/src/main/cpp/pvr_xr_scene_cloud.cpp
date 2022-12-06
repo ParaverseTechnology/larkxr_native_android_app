@@ -48,9 +48,11 @@ void PvrXRSceneCloud::OnMediaReady() {
 
 void PvrXRSceneCloud::OnClose() {
     LOGV("================OnClose");
+    loading_->set_active(true);
     menu_view_->set_active(false);
     controller_left_->set_active(true);
     controller_right_->set_active(true);
+    sky_box_->set_active(true);
     rect_texture_->ClearTexture();
 #ifdef ENABLE_CLOUDXR
     cloudxr_client_->set_active(false);
@@ -363,3 +365,8 @@ void PvrXRSceneCloud::OnCloudXRConnected() {
     cloudxr_client_->set_active(true);
 }
 #endif
+
+void PvrXRSceneCloud::SetSkyBox(int index) {
+    const char *path = index == 0 ? "textures/skybox_8_2k.jpg" : "textures/skybox_9.jpg";
+    sky_box_->SetTexture(path);
+}

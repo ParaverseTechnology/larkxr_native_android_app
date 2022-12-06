@@ -97,6 +97,14 @@ namespace localization {
 
             ui_setup_resolution_title: L"Resolution",
 
+            ui_setup_skybox_title: L"SkyBox",
+            ui_setup_skybox_0: L"Asset Night",
+            ui_setup_skybox_1: L"Asset Star",
+
+            ui_setup_skybox_xrspace: L"XrSpace",
+            ui_setup_skybox_xrspace_local: L"XrSpace Local(Fixed room height)",
+            ui_setup_skybox_xrspace_app: L"XrSpace App(Room height with system setup)",
+
             ui_keyboard_number:L"NumberKeyboard",
 
             ui_menu_view_title: L"Quit CloudApp Now?",
@@ -195,6 +203,14 @@ namespace localization {
             ui_setup_advance_quick_config_extreme: L"超清",
 
             ui_setup_resolution_title: L"分辨率",
+
+            ui_setup_skybox_title: L"天空盒",
+            ui_setup_skybox_0: L"Asset-Night",
+            ui_setup_skybox_1: L"Asset-Star",
+
+            ui_setup_skybox_xrspace: L"XrSpace",
+            ui_setup_skybox_xrspace_local: L"本地-固定房间高度",
+            ui_setup_skybox_xrspace_app: L"系统-系统设置房间高度",
 
             ui_keyboard_number:L"数字键盘",
 

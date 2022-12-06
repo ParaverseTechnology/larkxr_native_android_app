@@ -65,6 +65,10 @@ OpenxrContext::OpenxrContext(const std::shared_ptr<Options>& options, const std:
 }
 
 OpenxrContext::~OpenxrContext() {
+    for (auto & i : frame_buffer_) {
+        i.Destroy();
+    }
+
     if (input_.actionSet != XR_NULL_HANDLE) {
         for (auto hand : {Side::LEFT, Side::RIGHT}) {
             xrDestroySpace(input_.handSpace[hand]);
@@ -72,10 +76,6 @@ OpenxrContext::~OpenxrContext() {
         xrDestroyActionSet(input_.actionSet);
     }
 
-    for (Swapchain swapchain : swapchains_) {
-        xrDestroySwapchain(swapchain.handle);
-    }
-    
     if (app_space_ != XR_NULL_HANDLE) {
         xrDestroySpace(app_space_);
     }
@@ -275,7 +275,6 @@ void OpenxrContext::InitializeSession() {
 
 void OpenxrContext::CreateSwapchains() {
     CHECK(session_ != XR_NULL_HANDLE);
-    CHECK(swapchains_.empty());
     CHECK(config_views_.empty());
 
     // Read graphics properties for preferred swapchain length and logging.
@@ -336,38 +335,22 @@ void OpenxrContext::CreateSwapchains() {
             Log::Write(Log::Level::Verbose, Fmt("Swapchain Formats: %s", swapchainFormatsString.c_str()));
         }
 
-        // Create a swapchain for each view.
-        for (uint32_t i = 0; i < viewCount; i++) {
-            const XrViewConfigurationView& vp = config_views_[i];
-            Log::Write(Log::Level::Info,
-                       Fmt("Creating swapchain for view %d with dimensions Width=%d Height=%d SampleCount=%d", i,
-                           vp.recommendedImageRectWidth, vp.recommendedImageRectHeight, vp.recommendedSwapchainSampleCount));
+        assert(viewCount == ovrMaxNumEyes);
 
-            // Create the swapchain.
-            XrSwapchainCreateInfo swapchainCreateInfo{XR_TYPE_SWAPCHAIN_CREATE_INFO};
-            swapchainCreateInfo.arraySize = 1;
-            swapchainCreateInfo.format = color_swapchain_format_;
-            swapchainCreateInfo.width = vp.recommendedImageRectWidth;
-            swapchainCreateInfo.height = vp.recommendedImageRectHeight;
-            swapchainCreateInfo.mipCount = 1;
-            swapchainCreateInfo.faceCount = 1;
-            swapchainCreateInfo.sampleCount = graphics_plugin_->GetSupportedSwapchainSampleCount(vp);
-            swapchainCreateInfo.usageFlags = XR_SWAPCHAIN_USAGE_SAMPLED_BIT | XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT;
-            Swapchain swapchain;
-            swapchain.width = swapchainCreateInfo.width;
-            swapchain.height = swapchainCreateInfo.height;
-            CHECK_XRCMD(xrCreateSwapchain(session_, &swapchainCreateInfo, &swapchain.handle));
+        for (int eye = 0; eye < ovrMaxNumEyes; eye++) {
 
-            swapchains_.push_back(swapchain);
+            // TODO setup res
+            config_views_[eye].recommendedImageRectWidth = 3644 / 2;
+            config_views_[eye].recommendedImageRectHeight = 1920;
 
-            uint32_t imageCount;
-            CHECK_XRCMD(xrEnumerateSwapchainImages(swapchain.handle, 0, &imageCount, nullptr));
-            // XXX This should really just return XrSwapchainImageBaseHeader*
-            std::vector<XrSwapchainImageBaseHeader*> swapchainImages =
-                    graphics_plugin_->AllocateSwapchainImageStructs(imageCount, swapchainCreateInfo);
-            CHECK_XRCMD(xrEnumerateSwapchainImages(swapchain.handle, imageCount, &imageCount, swapchainImages[0]));
-
-            swapchain_images_.insert(std::make_pair(swapchain.handle, std::move(swapchainImages)));
+//                                  GL_SRGB8_ALPHA8,
+//                                  GL_RGBA,
+//                                  GL_RGBA8
+            frame_buffer_[eye].Create(session_,
+                                      color_swapchain_format_,
+                                      config_views_[eye].recommendedImageRectWidth,
+                                      config_views_[eye].recommendedImageRectHeight,
+                                      NUM_MULTI_SAMPLES);
         }
     }
 }
@@ -540,276 +523,25 @@ void OpenxrContext::PollActions() {
     // Get pose and grab action state and start haptic vibrate when hand is 90% squeezed.
     for (auto hand : {Side::LEFT, Side::RIGHT}) {
         XrActionStateGetInfo getInfo{XR_TYPE_ACTION_STATE_GET_INFO};
-        getInfo.action = input_.grabAction;
-        getInfo.subactionPath = input_.handSubactionPath[hand];
-
-        XrActionStateFloat grabValue{XR_TYPE_ACTION_STATE_FLOAT};
-        CHECK_XRCMD(xrGetActionStateFloat(session_, &getInfo, &grabValue));
-        if (grabValue.isActive == XR_TRUE) {
-            // Scale the rendered hand by 1.0f (open) to 0.5f (fully squeezed).
-            input_.handScale[hand] = 1.0f - 0.5f * grabValue.currentState;
-            if (grabValue.currentState > 0.9f) {
-                XrHapticVibration vibration{XR_TYPE_HAPTIC_VIBRATION};
-                vibration.amplitude = 0.5;
-                vibration.duration = XR_MIN_HAPTIC_DURATION;
-                vibration.frequency = XR_FREQUENCY_UNSPECIFIED;
-
-                XrHapticActionInfo hapticActionInfo{XR_TYPE_HAPTIC_ACTION_INFO};
-                hapticActionInfo.action = input_.vibrateAction;
-                hapticActionInfo.subactionPath = input_.handSubactionPath[hand];
-                CHECK_XRCMD(xrApplyHapticFeedback(session_, &hapticActionInfo, (XrHapticBaseHeader*)&vibration));
-            }
-        }
-
-        getInfo.action = input_.quitAction;
-        XrActionStateBoolean quitValue{XR_TYPE_ACTION_STATE_BOOLEAN};
-        CHECK_XRCMD(xrGetActionStateBoolean(session_, &getInfo, &quitValue));
-        if ((quitValue.isActive == XR_TRUE) && (quitValue.changedSinceLastSync == XR_TRUE) &&
-            (quitValue.currentState == XR_TRUE)) {
-            CHECK_XRCMD(xrRequestExitSession(session_));
-        }
-        /**************************pico*******************************/
-        getInfo.action = input_.touchpadAction;
-        XrActionStateBoolean touchpadValue{XR_TYPE_ACTION_STATE_BOOLEAN};
-        CHECK_XRCMD(xrGetActionStateBoolean(session_, &getInfo, &touchpadValue));
-
-        //joystick key down/up
-        if ((touchpadValue.isActive == XR_TRUE) && (touchpadValue.changedSinceLastSync == XR_TRUE)) {
-            if(touchpadValue.currentState == XR_TRUE)
-            {
-                Log::Write(Log::Level::Error,
-                           Fmt("pico keyevent  touchpadValue pressed %d",hand));
-                input_.handScale[hand] = 0.01f/0.1f;
-            } else {
-                Log::Write(Log::Level::Error,
-                           Fmt("pico keyevent  touchpadValue released %d",hand));
-                input_.handScale[hand] = 1.0;
-            }
-        }
-
-        getInfo.action = input_.homeAction;
-        XrActionStateBoolean homeValue{XR_TYPE_ACTION_STATE_BOOLEAN};
-        CHECK_XRCMD(xrGetActionStateBoolean(session_, &getInfo, &homeValue));
-
-        if (homeValue.isActive == XR_TRUE){
-            if(homeValue.changedSinceLastSync == XR_TRUE){
-                if((homeValue.currentState == XR_TRUE)){
-                    Log::Write(Log::Level::Error,
-                               Fmt("pico keyevent  homekey pressed %d xxx",hand));
-                }
-                else{
-
-                    Log::Write(Log::Level::Error,
-                               Fmt("pico keyevent  homekey released %d xxx",hand));
-                }
-            }
-        }
-
-        getInfo.action = input_.backAction;
-        XrActionStateBoolean backValue{XR_TYPE_ACTION_STATE_BOOLEAN};
-        CHECK_XRCMD(xrGetActionStateBoolean(session_, &getInfo, &backValue));
-        if ((backValue.isActive == XR_TRUE) && (backValue.changedSinceLastSync == XR_TRUE)) {
-            /*Log::Write(Log::Level::Error,
-                       Fmt("pico keyevent  backkey click %d",hand));*/
-            if(backValue.currentState == XR_TRUE)
-            {
-                Log::Write(Log::Level::Error,
-                           Fmt("pico keyevent  backkey pressed %d",hand));
-            } else {
-                Log::Write(Log::Level::Error,
-                           Fmt("pico keyevent  backkey released %d", hand));
-                ret = true;
-            }
-        }
-
-        getInfo.action = input_.sideAction;
-        XrActionStateBoolean sideValue{XR_TYPE_ACTION_STATE_BOOLEAN};
-        CHECK_XRCMD(xrGetActionStateBoolean(session_, &getInfo, &sideValue));
-        if ((sideValue.isActive == XR_TRUE) && (sideValue.changedSinceLastSync == XR_TRUE)) {
-            if(sideValue.currentState == XR_TRUE)
-            {
-                Log::Write(Log::Level::Error,
-                           Fmt("pico keyevent  sidekey pressed %d",hand));
-                input_.handScale[hand] = 0.25f/0.1f;
-            } else{
-                Log::Write(Log::Level::Error,
-                           Fmt("pico keyevent  sidekey released %d",hand));
-                input_.handScale[hand] = 1.0;
-            }
-        }
-//            Log::Write(Log::Level::Error,
-//                       Fmt("%d pico keyevent  boolean (sideValue.isActive == XR_TRUE)  %d ,(sideValue.changedSinceLastSync == XR_TRUE) %d,(sideValue.currentState == XR_TRUE) %d"
-//                               ,hand,(sideValue.isActive == XR_TRUE),(sideValue.changedSinceLastSync == XR_TRUE),(sideValue.currentState == XR_TRUE)));
-        getInfo.action = input_.triggerAction;
-        XrActionStateFloat triggerValue{XR_TYPE_ACTION_STATE_FLOAT};
-        CHECK_XRCMD(xrGetActionStateFloat(session_, &getInfo, &triggerValue));
-        if (triggerValue.isActive == XR_TRUE){
-            float trigger = triggerValue.currentState;
-//            if(trigger > 0.1f) {
-//                //test controller Vibrate by  trigger key
-//                pxr::Pxr_VibrateController(trigger, 20, hand);
-//            }
-            //Log::Write(Log::Level::Error,
-            //          Fmt("pico keyevent  trigger value %f",triggerValue.currentState));
-        }
-
-        getInfo.action = input_.joystickAction;
-        XrActionStateVector2f joystickValue{XR_TYPE_ACTION_STATE_VECTOR2F};
-        CHECK_XRCMD(xrGetActionStateVector2f(session_, &getInfo, &joystickValue));
-        if ((joystickValue.isActive == XR_TRUE)) {
-            input_.handXYPos[hand].x = joystickValue.currentState.x;
-            input_.handXYPos[hand].y = joystickValue.currentState.y;
-
-            /*Log::Write(Log::Level::Error,
-                       Fmt("pico keyevent  joystick value x = %f,y = %f",joystickValue.currentState.x,joystickValue.currentState.y));*/
-        }
-
-        getInfo.action = input_.batteryAction;
-        XrActionStateFloat batteryValue{XR_TYPE_ACTION_STATE_FLOAT};
-        CHECK_XRCMD(xrGetActionStateFloat(session_, &getInfo, &batteryValue));
-
-//        if (batteryValue.isActive == XR_TRUE){
-//            Log::Write(Log::Level::Error,
-//            Fmt("controller %d pico keyevent  battery value %f",hand,batteryValue.currentState));
-//        }
-        //------  add new ----------------
-
-        getInfo.action = input_.RockerTouchAction;
-        XrActionStateBoolean RockerTouch{XR_TYPE_ACTION_STATE_BOOLEAN};
-        CHECK_XRCMD(xrGetActionStateBoolean(session_, &getInfo, &RockerTouch));
-        if (RockerTouch.isActive == XR_TRUE) {
-            if (RockerTouch.changedSinceLastSync == XR_TRUE &&
-                RockerTouch.currentState == XR_TRUE) {
-                Log::Write(Log::Level::Error,Fmt("pico keyevent  RockerTouch click %d", hand));
-            }
-        }
-
-        getInfo.action = input_.TriggerTouchAction;
-        XrActionStateBoolean TriggerTouch{XR_TYPE_ACTION_STATE_BOOLEAN};
-        CHECK_XRCMD(xrGetActionStateBoolean(session_, &getInfo, &TriggerTouch));
-        if (TriggerTouch.isActive == XR_TRUE) {
-            if (TriggerTouch.changedSinceLastSync == XR_TRUE &&
-                TriggerTouch.currentState == XR_TRUE) {
-                Log::Write(Log::Level::Error,Fmt("pico keyevent  TriggerTouch click %d", hand));
-            }
-        }
-
-        getInfo.action = input_.ThumbrestTouchAction;
-        XrActionStateBoolean ThumbrestTouch{XR_TYPE_ACTION_STATE_BOOLEAN};
-        CHECK_XRCMD(xrGetActionStateBoolean(session_, &getInfo, &ThumbrestTouch));
-        if (ThumbrestTouch.isActive == XR_TRUE) {
-            if (ThumbrestTouch.changedSinceLastSync == XR_TRUE &&
-                ThumbrestTouch.currentState == XR_TRUE) {
-                Log::Write(Log::Level::Error,Fmt("pico keyevent  ThumbrestTouch click %d", hand));
-            }
-        }
-
-        getInfo.action = input_.GripAction;
-        XrActionStateFloat gripValue{XR_TYPE_ACTION_STATE_FLOAT};
-        CHECK_XRCMD(xrGetActionStateFloat(session_, &getInfo, &gripValue));
-        if (gripValue.isActive == XR_TRUE) {
-            //Log::Write(Log::Level::Error,Fmt("pico keyevent  grip value %f hand:%d", gripValue.currentState,hand));
-        }
-
-        //------  add new ----------------zgt
-        getInfo.action = input_.BAction;
-        XrActionStateBoolean BValue{XR_TYPE_ACTION_STATE_BOOLEAN};
-        CHECK_XRCMD(xrGetActionStateBoolean(session_, &getInfo, &BValue));
-        if ((BValue.isActive == XR_TRUE) && (BValue.changedSinceLastSync == XR_TRUE)) {
-            if(BValue.currentState == XR_TRUE)
-            {
-                Log::Write(Log::Level::Error,Fmt("pico keyevent  Bkey pressed %d",hand));
-                input_.handScale[hand] = 0.15f/0.1f;
-            } else{
-                Log::Write(Log::Level::Error,Fmt("pico keyevent  Bkey released %d",hand));
-                input_.handScale[hand] = 1.0;
-            }
-        }
-
-        getInfo.action = input_.YAction;
-        XrActionStateBoolean YValue{XR_TYPE_ACTION_STATE_BOOLEAN};
-        CHECK_XRCMD(xrGetActionStateBoolean(session_, &getInfo, &YValue));
-        if ((YValue.isActive == XR_TRUE) && (YValue.changedSinceLastSync == XR_TRUE)) {
-            if(YValue.currentState == XR_TRUE)
-            {
-                Log::Write(Log::Level::Error,Fmt("pico keyevent  Ykey pressed %d",hand));
-                input_.handScale[hand] = 0.15f/0.1f;
-            } else{
-                Log::Write(Log::Level::Error,Fmt("pico keyevent  Ykey released %d",hand));
-                input_.handScale[hand] = 1.0;
-            }
-        }
-        getInfo.action = input_.AAction;
-        XrActionStateBoolean AValue{XR_TYPE_ACTION_STATE_BOOLEAN};
-        CHECK_XRCMD(xrGetActionStateBoolean(session_, &getInfo, &AValue));
-        if ((AValue.isActive == XR_TRUE) && (AValue.changedSinceLastSync == XR_TRUE)) {
-            if(AValue.currentState == XR_TRUE)
-            {
-                Log::Write(Log::Level::Error,Fmt("pico keyevent  Akey pressed %d",hand));
-                input_.handScale[hand] = 0.05f/0.1f;
-            } else{
-                Log::Write(Log::Level::Error,Fmt("pico keyevent  Akey released %d",hand));
-                input_.handScale[hand] = 1.0;
-            }
-        }
-
-        getInfo.action = input_.XAction;
-        XrActionStateBoolean XValue{XR_TYPE_ACTION_STATE_BOOLEAN};
-        CHECK_XRCMD(xrGetActionStateBoolean(session_, &getInfo, &XValue));
-        if ((XValue.isActive == XR_TRUE) && (XValue.changedSinceLastSync == XR_TRUE)) {
-            if(XValue.currentState == XR_TRUE)
-            {
-                Log::Write(Log::Level::Error,Fmt("pico keyevent  Xkey pressed %d",hand));
-                input_.handScale[hand] = 0.05f/0.1f;
-            } else{
-                Log::Write(Log::Level::Error,Fmt("pico keyevent  Xkey released %d",hand));
-                input_.handScale[hand] = 1.0;
-            }
-        }
-        getInfo.action = input_.ATouchAction;
-        XrActionStateBoolean Atouch{XR_TYPE_ACTION_STATE_BOOLEAN};
-        CHECK_XRCMD(xrGetActionStateBoolean(session_, &getInfo, &Atouch));
-        if (Atouch.isActive == XR_TRUE) {
-            if (Atouch.changedSinceLastSync == XR_TRUE &&
-                Atouch.currentState == XR_TRUE) {
-                Log::Write(Log::Level::Error,Fmt("pico keyevent  Atouch %d",hand));
-            }
-        }
-
-        getInfo.action = input_.XTouchAction;
-        XrActionStateBoolean Xtouch{XR_TYPE_ACTION_STATE_BOOLEAN};
-        CHECK_XRCMD(xrGetActionStateBoolean(session_, &getInfo, &Xtouch));
-        if (Xtouch.isActive == XR_TRUE) {
-            if (Xtouch.changedSinceLastSync == XR_TRUE &&
-                Xtouch.currentState == XR_TRUE) {
-                Log::Write(Log::Level::Error,Fmt("pico keyevent  Xtouch %d",hand));
-            }
-        }
-
-        getInfo.action = input_.BTouchAction;
-        XrActionStateBoolean Btouch{XR_TYPE_ACTION_STATE_BOOLEAN};
-        CHECK_XRCMD(xrGetActionStateBoolean(session_, &getInfo, &Btouch));
-        if (Btouch.isActive == XR_TRUE) {
-            if (Btouch.changedSinceLastSync == XR_TRUE &&
-                Btouch.currentState == XR_TRUE) {
-                Log::Write(Log::Level::Error,Fmt("pico keyevent  Btouch %d",hand));
-            }
-        }
-
-        getInfo.action = input_.YTouchAction;
-        XrActionStateBoolean Ytouch{XR_TYPE_ACTION_STATE_BOOLEAN};
-        CHECK_XRCMD(xrGetActionStateBoolean(session_, &getInfo, &Ytouch));
-        if (Ytouch.isActive == XR_TRUE) {
-            if (Ytouch.changedSinceLastSync == XR_TRUE &&
-                Ytouch.currentState == XR_TRUE) {
-                Log::Write(Log::Level::Error,Fmt("pico keyevent  Ytouch %d",hand));
-            }
-        }
-        /**************************pico*******************************/
-
         getInfo.action = input_.poseAction;
         XrActionStatePose poseState{XR_TYPE_ACTION_STATE_POSE};
         CHECK_XRCMD(xrGetActionStatePose(session_, &getInfo, &poseState));
         input_.handActive[hand] = poseState.isActive;
+    }
+}
+
+float OpenxrContext::GetFPS() {
+    float fps = 0;
+    ConfigsEXT configsExt = ConfigsEXT::DISPLAY_REFRESH_RATE;
+    GetConfig(configsExt, &fps);
+    return fps;
+}
+
+void OpenxrContext::SetFPS(float fps) {
+    char buffer[50] = {};
+    sprintf(buffer, "%f", fps);
+    if (pfn_xr_set_config_pico_ && session_) {
+        XrResult result = pfn_xr_set_config_pico_(session_, ConfigsSetEXT::SET_DISPLAY_RATE, buffer);
+        LOGV("set fps %f result %d", fps, result);
     }
 }

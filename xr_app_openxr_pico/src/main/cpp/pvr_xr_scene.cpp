@@ -27,21 +27,14 @@ void PvrXRScene::ReleaseGL() {
 //    sky_box_.reset();
 }
 
-void PvrXRScene::RenderView(lark::Object::Eye eye, const XrCompositionLayerProjectionView& layerView, const XrSwapchainImageBaseHeader* swapchainImage,
-                            int64_t swapchainFormat) {
-//    CHECK(layerView.subImage.imageArrayIndex == 0);  // Texture arrays not supported.
-    UNUSED_PARM(swapchainFormat);                    // Not used in this function for now.
+void PvrXRScene::RenderView(lark::Object::Eye eye, const XrCompositionLayerProjectionView& layerView, picoxr::FrameBuffer& frameBuffer) {
     if (device_ == nullptr) {
         return;
     }
 
-    glBindFramebuffer(GL_FRAMEBUFFER, device_->swapchain_framebuffer());
+    frameBuffer.Acquire();
 
-    const uint32_t colorTexture = reinterpret_cast<const XrSwapchainImageOpenGLESKHR*>(swapchainImage)->image;
-    const uint32_t depthTexture = device_->GetDepthTexture(colorTexture);
-
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorTexture, 0);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTexture, 0);
+    frameBuffer.SetCurrent();
 
 //        glFrontFace(GL_CW);
 //    glFrontFace(GL_CCW);
@@ -115,9 +108,16 @@ void PvrXRScene::RenderView(lark::Object::Eye eye, const XrCompositionLayerProje
 //    test_obj_->Draw(lark::Object::EYE_LEFT, g_proj, g_view);
 
 
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glDisable(GL_BLEND);
-    device_->Swap();
+    // glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    // glDisable(GL_BLEND);
+
+    // device_->Swap();
+
+    frameBuffer.Resolve();
+
+    frameBuffer.Release();
+
+    frameBuffer.SetNone();
 }
 
 void PvrXRScene::AddObject(std::shared_ptr<lark::Object> object) {
@@ -142,10 +142,10 @@ void PvrXRScene::ClearObject() {
 
 void PvrXRScene::HandleInput(const InputState &input_state, XrSession const &session,
                              XrSpace const &space) {
-    for(auto it = objects_.begin(); it != objects_.end(); it ++) {
-        if (it->get()->active()) {
+    for(auto & object : objects_) {
+        if (object->active()) {
             // TODO eye config
-            it->get()->Update();
+            object->Update();
         }
     }
 }

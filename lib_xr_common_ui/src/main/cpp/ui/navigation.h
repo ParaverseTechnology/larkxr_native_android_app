@@ -29,7 +29,7 @@ public:
     static void ShowToast(const std::string & msg);
     static void ClearToast();
 
-    Navigation();
+    Navigation(bool extAppSetup = false);
     ~Navigation();
     void SetRouter(ROUTERS router);
     ROUTERS current() { return  current_; };
@@ -49,6 +49,7 @@ public:
             return { 0, false };
         }
     }
+    inline bool ext_app_setup() { return ext_app_setup_; }
 private:
     // static faileds
     static std::string s_toast_str_;
@@ -68,6 +69,8 @@ private:
     std::shared_ptr<Setup>            setup_;
     std::shared_ptr<Loading>          loading_;
     std::shared_ptr<SetupServerAddr>  setup_server_addr_;
+
+    bool ext_app_setup_ = false;
 };
 
 

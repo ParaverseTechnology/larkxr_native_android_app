@@ -27,6 +27,8 @@ public:
     virtual void HandleInput(const InputState& input_state, const XrSession& session, const XrSpace& space) override;
 
     void HomePage();
+
+    void SetSkyBox(int index);
 private:
     void OnCloseApp();
 

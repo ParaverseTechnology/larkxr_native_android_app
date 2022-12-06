@@ -4,7 +4,7 @@
   <component name="GradleSettings">
     <option name="linkedExternalProjectsSettings">
       <GradleProjectSettings>
-        <option name="testRunner" value="PLATFORM" />
+        <option name="testRunner" value="GRADLE" />
         <option name="distributionType" value="DEFAULT_WRAPPED" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
         <option name="modules">
@@ -14,10 +14,10 @@
             <option value="$PROJECT_DIR$/lib_xr_common_ui" />
             <option value="$PROJECT_DIR$/xr_app_htc" />
             <option value="$PROJECT_DIR$/xr_app_oculus" />
-            <option value="$PROJECT_DIR$/xr_app_pico" />
+            <option value="$PROJECT_DIR$/xr_app_openxr_oculus" />
+            <option value="$PROJECT_DIR$/xr_app_openxr_pico" />
           </set>
         </option>
-        <option name="resolveModulePerSourceSet" value="false" />
       </GradleProjectSettings>
     </option>
   </component>

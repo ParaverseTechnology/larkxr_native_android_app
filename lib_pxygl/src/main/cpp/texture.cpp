@@ -97,6 +97,8 @@ void Texture::SetTextureInfo(Texture * texture, AndroidBitmapInfo & info) {
             texture->format_ = GL_RGBA;
             break;
     }
+    // test srgb
+//    texture->format_ = GL_SRGB;
 }
 Texture *Texture::LoadTexture(AAssetManager* assetManager, BitmapFactory* bitmapFactory, JNIEnv *env, const char *assetFile) {
     return LoadTexture(assetManager, bitmapFactory, env, assetFile, 0);
@@ -353,8 +355,11 @@ Texture *Texture::SetupSkyboxTexture(Texture *texture) {
         uint8_t * bitmap = CropBitmap(texture->bitmap_, texture->stride_, texture->height_, x, y, stride, height);
 
         // Always output as GL_RGB5_A1 because the skybox don't need quality
-        glTexImage2D(faces[i], 0, GL_RGBA, width, height, 0, texture->format_, texture->type_, bitmap);
-//    	glTexImage2D(faces[i], 0, GL_RGB5_A1, width, height, 0, texture->format_, texture->type_, bitmap);
+        glTexImage2D(faces[i], 0, GL_RGB5_A1, width, height, 0, texture->format_, texture->type_, bitmap);
+
+//        glTexImage2D(faces[i], 0, GL_RGBA, width, height, 0, texture->format_, texture->type_, bitmap);
+        // test srgb
+//        glTexImage2D(faces[i], 0, GL_SRGB, width, height, 0, texture->format_, texture->type_, bitmap);
 
         delete [] bitmap;
     }

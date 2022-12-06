@@ -88,6 +88,8 @@ set(common_files
     ${common_dir}/ui/setup/fec_report.cpp
     ${common_dir}/ui/setup/use_10bitencode.cpp
     ${common_dir}/ui/setup/quick_config_setup.cpp
+    ${common_dir}/ui/setup/setup_skybox.cpp
+    ${common_dir}/ui/setup/setup_xrspace.cpp
 )
 
 # source files

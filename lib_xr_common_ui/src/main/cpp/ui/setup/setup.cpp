@@ -7,7 +7,10 @@
 
 using namespace lark;
 
-Setup::Setup(Navigation *navigation) : View(navigation) {
+Setup::Setup(Navigation *navigation, bool ext_app_setup):
+    ext_app_setup_(ext_app_setup),
+    View(navigation)
+{
     Setup::Init();
 }
 
@@ -16,8 +19,9 @@ Setup::~Setup() = default;
 void Setup::Init() {
     // normal group.
     // row1
+    const float normal_offset = ext_app_setup_ ? -0.8f : 0;
     {
-        glm::vec3 p(-2.425F, -0.4, 0);
+        glm::vec3 p(-2.425F + normal_offset, -0.4, 0);
         quick_config_setup_ = std::make_shared<QuickConfigSetup>(SetupGroup_Normal, this);
         quick_config_setup_->Move(p);
         // add to aabb.
@@ -27,7 +31,7 @@ void Setup::Init() {
         items_.push_back(quick_config_setup_);
     }
     {
-        glm::vec3 p(0.075F, -0.4F, 0);
+        glm::vec3 p(0.075F + normal_offset, -0.4F, 0);
         haptics_feedback_ = std::make_shared<UseHapticsFeedback>(SetupGroup_Normal);
         haptics_feedback_->Move(p);
         haptics_feedback_->SetAABBPositon(glm::vec2(p.x, p.y));
@@ -37,7 +41,7 @@ void Setup::Init() {
     }
     // row2
     {
-        glm::vec3 p(-2.425F, -0.4 - 1.7F, 0);
+        glm::vec3 p(-2.425F + normal_offset, -0.4 - 1.7F, 0);
         resolution_ = std::make_shared<Resolution>(SetupGroup_Normal, quick_config_setup_.get());
         resolution_->Move(p);
         // add to aabb.
@@ -47,7 +51,7 @@ void Setup::Init() {
         items_.push_back(resolution_);
     }
     {
-        glm::vec3 p(0.075F, -0.4 - 1.7F, 0);
+        glm::vec3 p(0.075F + normal_offset, -0.4 - 1.7F, 0);
         code_rate_ = std::make_shared<CodeRate>(SetupGroup_Normal, quick_config_setup_.get());
         code_rate_->Move(p);
         // add to aabb
@@ -55,6 +59,31 @@ void Setup::Init() {
         PushAABB(code_rate_.get());
         AddChild(code_rate_);
         items_.push_back(code_rate_);
+    }
+    // row3
+    if (ext_app_setup_) {
+        {
+            // setup skybox
+            glm::vec3 p(2.575F + normal_offset, -0.4, 0);
+            setup_skybox_ = std::make_shared<SetupSkyBox>(SetupGroup_Normal);
+            setup_skybox_->Move(p);
+            // add to aabb
+            setup_skybox_->SetAABBPositon(glm::vec2(p.x, p.y));
+            PushAABB(setup_skybox_.get());
+            AddChild(setup_skybox_);
+            items_.push_back(setup_skybox_);
+        }
+        {
+            // setup xrspace
+            glm::vec3 p(2.575F + normal_offset, -0.4 - 1.7F, 0);
+            setup_xrspace_ = std::make_shared<SetupXrSpace>(SetupGroup_Normal);
+            setup_xrspace_->Move(p);
+            // add to aabb
+            setup_xrspace_->SetAABBPositon(glm::vec2(p.x, p.y));
+            PushAABB(setup_xrspace_.get());
+            AddChild(setup_xrspace_);
+            items_.push_back(setup_xrspace_);
+        }
     }
     {
 //        glm::vec3 p(0.075F, -0.4F - 1.7F, 0);

@@ -107,6 +107,7 @@ void View::HandleInput(Ray * rays, int rayCount) {
         glm::mat4 wold = glm::translate(glm::mat4(1.0f), p);
         wold = wold * glm::mat4_cast(rotation);
         glm::mat4 local = glm::inverse(parentTransforms.GetTrans()) * wold;
+//        local = glm::translate(local, glm::vec3(0,0,0.01));
         local = glm::translate(local, glm::vec3(0,0,0.2));
         Transform transform(local);
         glm::vec3 local_position = transform.GetPosition();

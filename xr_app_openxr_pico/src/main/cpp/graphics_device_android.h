@@ -19,25 +19,23 @@ public:
     ~GraphicsDeviceAndroid();
 
     void InitializeDevice(XrInstance instance, XrSystemId systemId);
+
     int64_t SelectColorSwapchainFormat(const std::vector<int64_t>& runtimeFormats);
-    std::vector<XrSwapchainImageBaseHeader*> AllocateSwapchainImageStructs(
-            uint32_t capacity, const XrSwapchainCreateInfo& /*swapchainCreateInfo*/);
 
     void DebugMessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message);
-    uint32_t GetDepthTexture(uint32_t colorTexture);
+
     inline std::vector<std::string> GetInstanceExtensions() const { return {XR_KHR_OPENGL_ES_ENABLE_EXTENSION_NAME}; }
+
     inline void Swap() {
         if ((every_other_++ & 1) != 0) {
             ksGpuWindow_SwapBuffers(&window_);
         }
     }
+
     inline ksGpuWindow window() { return window_; }
+
     inline XrBaseInStructure* GetGraphicsBinding() {
         return reinterpret_cast<XrBaseInStructure *>(&graphics_binding_);
-    }
-    inline GLuint swapchain_framebuffer() { return swapchain_framebuffer_; }
-    inline uint32_t GetSupportedSwapchainSampleCount(const XrViewConfigurationView& view) {
-        return view.recommendedSwapchainSampleCount;
     }
 private:
 #ifdef XR_USE_PLATFORM_ANDROID
@@ -45,20 +43,6 @@ private:
 #endif
     ksGpuWindow window_{};
     uint64_t every_other_{0};
-
-    std::list<std::vector<XrSwapchainImageOpenGLESKHR>> swapchain_image_buffers_;
-    GLuint swapchain_framebuffer_{0};
-
-    GLuint m_program{0};
-    GLint m_modelViewProjectionUniformLocation{0};
-    GLint m_vertexAttribCoords{0};
-    GLint m_vertexAttribColor{0};
-    GLuint m_vao{0};
-    GLuint m_cubeVertexBuffer{0};
-    GLuint m_cubeIndexBuffer{0};
-
-    // Map color buffer to associated depth buffer. This map is populated on demand.
-    std::map<uint32_t, uint32_t> color_to_depth_map_;
 };
 
 

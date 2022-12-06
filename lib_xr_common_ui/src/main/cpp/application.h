@@ -24,6 +24,13 @@ public:
         ApplicationUIMode_Android_2D  = 0,
         ApplicationUIMode_Opengles_3D = 1,
     };
+    // 云渲染使用的空间
+    enum Space {
+        // local space -> 使用固定的地面高度和初始位置原点
+        Space_Local = 0,
+        // app space -> 使用app设置的地面高度和位置原点
+        Space_App   = 1,
+    };
 
     // warning should init in child class
     static Application* instance();
@@ -38,14 +45,25 @@ public:
     virtual void ShutdownGL() {};
 
     //  callback from android native activity.
-    virtual void HandleVrModeChange() = 0;
-    virtual bool OnUpdate() = 0;
+    virtual void HandleVrModeChange() {};
+    virtual bool OnUpdate() { return false; };
+
+    // call by ui
     // 进入应用
     virtual void EnterAppli(const std::string& appId);
     // 可选区域id等参数进入应用
     virtual void EnterAppliParams(const lark::EnterAppliParams& params);
+    // 关闭应用
+    virtual void CloseAppli();
+    // ui 设置帧率
+    virtual void SetupFPS(int fps) {};
+    // ui 设置云渲染使用的空间
+    // app space -> 使用app设置的地面高度和位置原点
+    // local space -> 使用固定的地面高度和初始位置原点
+    virtual void SetupSapce(Space space) {};
+    // ui 设置天空盒, 更新场景中的天空盒
+    virtual void SetupSkyBox(int index) {};
 
-    virtual void CloseAppli() = 0;
     // xr client callback
     virtual void OnSDKAuthorizationFailed(int code, const std::string& msg) override {};
     virtual void OnCloudXRReady(const std::string& appServerIp, const std::string& perferOutIp) override {};

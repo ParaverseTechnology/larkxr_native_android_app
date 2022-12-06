@@ -18,6 +18,8 @@
 #include "fec_report.h"
 #include "use_10bitencode.h"
 #include "quick_config_setup.h"
+#include "setup_skybox.h"
+#include "setup_xrspace.h"
 
 class Setup: public View {
 public:
@@ -26,7 +28,7 @@ public:
         SetupGroup_Advance = 1,
     };
 
-    Setup(Navigation *navigation);
+    Setup(Navigation *navigation, bool ext_app_setup = false);
     ~Setup();
 
     void FreshData();
@@ -48,6 +50,10 @@ private:
     std::shared_ptr<CodeRate> code_rate_;
     std::shared_ptr<UseHapticsFeedback> haptics_feedback_;
 
+    // ext setup
+    std::shared_ptr<SetupSkyBox> setup_skybox_;
+    std::shared_ptr<SetupXrSpace> setup_xrspace_;
+
     std::shared_ptr<KCPSetup> kcp_setup_;
     std::shared_ptr<H265Setup> h265_setup_;
     std::shared_ptr<FFRSetup> ffr_setup_;
@@ -59,6 +65,8 @@ private:
 
     std::shared_ptr<ResetButton> reset_btn_;
     std::shared_ptr<TextButton> advance_btn_;
+
+    bool ext_app_setup_ = false;
 };
 
 

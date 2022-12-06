@@ -19,6 +19,8 @@ public:
     SkyBox(const char* path);
     ~SkyBox();
 
+    void SetTexture(const char* path);
+
     inline const glm::vec4& light_dir() { return light_dir_; }
 
     virtual void Draw(Eye eye, const glm::mat4& projection, const glm::mat4& eyeView) override;

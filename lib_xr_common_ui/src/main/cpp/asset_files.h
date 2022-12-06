@@ -20,6 +20,7 @@ const lark::AssetLists Assetlist = {
         {
                 // skybox
                 { lark::TextureAssetType_Local_Skybox, "textures/skybox_8_2k.jpg" },
+                { lark::TextureAssetType_Local_Skybox, "textures/skybox_9.jpg" },
                 { lark::TextureAssetType_Local_Normal, "textures/ui/arrow_back.png" },
                 { lark::TextureAssetType_Local_Normal, "textures/ui/arrow_right.png" },
                 { lark::TextureAssetType_Local_Normal, "textures/ui/bg.png" },

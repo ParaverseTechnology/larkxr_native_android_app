@@ -68,7 +68,11 @@ bool PvrXrApplication::InitGL(OpenxrContext *context) {
     lark::AssetLoader::instance()->Load(&context_config, Assetlist);
 
     // init xrconfig
-    lark::XRConfig::fps = 72;
+    if (context_ && context_->GetFPS() != 0) {
+        lark::XRConfig::fps = context_->GetFPS();
+    } else {
+        lark::XRConfig::fps = 72;
+    }
     lark::XRConfig::request_pose_fps = 72 * 2;
 
     // pico4
@@ -133,6 +137,7 @@ bool PvrXrApplication::InitGL(OpenxrContext *context) {
 //    lark::XRConfig::ipd = 0.071930f;
     lark::XRConfig::headset_desc.type = larkHeadSetType_PICO_3;
     lark::XRConfig::use_multiview = true;
+    lark::XRConfig::request_pose_fps = 72;
     // test force hmd to htc
     // lark::XRConfig::set_force_headset_type(larkHeadSetType_HTC);
 
@@ -170,13 +175,6 @@ bool PvrXrApplication::InitGL(OpenxrContext *context) {
         LOGV("xr head space failed %d", res);
     }
 
-#ifdef ENABLE_CLOUDXR
-    // create cloudxr before scene cloud inited
-    cloudxr_client_ = std::make_shared<CloudXRClient>(this);
-    cloudxr_client_->InitRenderParamsWithLarkXRConfig();
-    cloudxr_client_->Init();
-#endif
-
     //    lark::CopyAssetToInternalPath(Context::instance()->native_activity(),
     //                                  "model/oculus_quest_controller_left/oculus_quest_controller_left.obj");
 
@@ -186,10 +184,16 @@ bool PvrXrApplication::InitGL(OpenxrContext *context) {
     scene_local_ = std::make_shared<PvrXRSceneLocal>();
     scene_local_->InitGL(context_->graphics_plugin());
     scene_cloud_ = std::make_shared<PvrXRSceneCloud>();
+
 #ifdef ENABLE_CLOUDXR
+    // create cloudxr before scene cloud inited
+    cloudxr_client_ = std::make_shared<CloudXRClient>(this);
+    cloudxr_client_->InitRenderParamsWithLarkXRConfig();
+    cloudxr_client_->Init();
     // create cloudxr before scene cloud inited
     scene_cloud_->SetCloudXRClient(cloudxr_client_);
 #endif
+
     scene_cloud_->InitGL(context_->graphics_plugin());
 
     return false;
@@ -334,8 +338,7 @@ void PvrXrApplication::RenderFrame() {
     }
 #else
     bool cloudmedia_ready = xr_client_->media_ready();
-    larkxrTrackingFrame trackingFrame;
-    bool has_new_frame_pxy_stream = xr_client_->Render(&trackingFrame);
+    xr_client_->Render(&trackingFrame);
 #endif
 
     auto session = context_->session();
@@ -415,9 +418,6 @@ bool PvrXrApplication::RenderLayer(XrTime predictedDisplayTime,
     auto app_space = context_->app_space();
     auto session = context_->session();
     auto config_views = context_->config_views();
-    auto swapchain_images = context_->swapchain_images();
-    auto swapchains = context_->swapchains();
-    auto color_swapchain_format = context_->color_swapchain_format();
 
     XrViewState viewState{XR_TYPE_VIEW_STATE};
     uint32_t viewCapacityInput = (uint32_t)views.size();
@@ -462,27 +462,17 @@ bool PvrXrApplication::RenderLayer(XrTime predictedDisplayTime,
 
     CHECK(viewCountOutput == viewCapacityInput);
     CHECK(viewCountOutput == config_views.size());
-    CHECK(viewCountOutput == swapchains.size());
 
     projectionLayerViews.resize(viewCountOutput);
 
     // Render view to the appropriate part of the swapchain image.
     for (uint32_t i = 0; i < viewCountOutput; i++) {
+        picoxr::FrameBuffer frameBuffer = context_->frame_buffer(i);
+
         // Each view has a separate swapchain which is acquired, rendered to, and released.
-        const Swapchain viewSwapchain = swapchains[i];
-
-        XrSwapchainImageAcquireInfo acquireInfo{XR_TYPE_SWAPCHAIN_IMAGE_ACQUIRE_INFO};
-
-        uint32_t swapchainImageIndex;
-        CHECK_XRCMD(xrAcquireSwapchainImage(viewSwapchain.handle, &acquireInfo, &swapchainImageIndex));
-
-        XrSwapchainImageWaitInfo waitInfo{XR_TYPE_SWAPCHAIN_IMAGE_WAIT_INFO};
-        waitInfo.timeout = XR_INFINITE_DURATION;
-        CHECK_XRCMD(xrWaitSwapchainImage(viewSwapchain.handle, &waitInfo));
-
         projectionLayerViews[i] = {XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW};
 
-        if (xr_client_->is_connected() && hasNewFrame) {
+        if (hasNewFrame) {
 //            LOGV("CLOUDXR frame ready %ld", trackingFrame.frameIndex);
             projectionLayerViews[i].pose.position = pvr::fromGlm(trackingFrame.tracking.eye[i].viewPosition);
             projectionLayerViews[i].pose.orientation = pvr::fromGlm(trackingFrame.tracking.eye[i].viewRotation);
@@ -491,23 +481,24 @@ bool PvrXrApplication::RenderLayer(XrTime predictedDisplayTime,
         }
 
         projectionLayerViews[i].fov = views[i].fov;
-        projectionLayerViews[i].subImage.swapchain = viewSwapchain.handle;
-        projectionLayerViews[i].subImage.imageRect.offset = {0, 0};
-        projectionLayerViews[i].subImage.imageRect.extent = {viewSwapchain.width, viewSwapchain.height};
+
+        projectionLayerViews[i].subImage.swapchain =
+                frameBuffer.color_swapchain().Handle;
+        projectionLayerViews[i].subImage.imageRect.offset.x = 0;
+        projectionLayerViews[i].subImage.imageRect.offset.y = 0;
+        projectionLayerViews[i].subImage.imageRect.extent.width =
+                frameBuffer.color_swapchain().Width;
+        projectionLayerViews[i].subImage.imageRect.extent.height =
+                frameBuffer.color_swapchain().Height;
+        projectionLayerViews[i].subImage.imageArrayIndex = 0;
 
 //        LOGI("viewSwapchain w %d h %d", viewSwapchain.width, viewSwapchain.height);
 
-        const XrSwapchainImageBaseHeader* const swapchainImage = swapchain_images[viewSwapchain.handle][swapchainImageIndex];
         if (xr_client_->is_connected()) {
-            scene_cloud_->RenderView(static_cast<lark::Object::Eye>(i),  projectionLayerViews[i], swapchainImage, color_swapchain_format);
+            scene_cloud_->RenderView(static_cast<lark::Object::Eye>(i),  projectionLayerViews[i], frameBuffer);
         } else {
-            scene_local_->RenderView(static_cast<lark::Object::Eye>(i), projectionLayerViews[i], swapchainImage, color_swapchain_format);
+            scene_local_->RenderView(static_cast<lark::Object::Eye>(i), projectionLayerViews[i], frameBuffer);
         }
-
-        XrSwapchainImageReleaseInfo releaseInfo{XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO};
-        CHECK_XRCMD(xrReleaseSwapchainImage(viewSwapchain.handle, &releaseInfo));
-
-//            projectionLayerViews[i].pose = {};
     }
 
     layer.space = app_space;
@@ -891,3 +882,30 @@ void PvrXrApplication::GetTrackingState(cxrVRTrackingState *state) {
 //    LOGV("push tracking info %ld %ld", state->hmd.poseID, devicePairFrame.frameIndex);
 }
 #endif
+
+void PvrXrApplication::SetupFPS(int fps) {
+    Application::SetupFPS(fps);
+    if (context_) {
+        LOGV("current fps %f", context_->GetFPS());
+        context_->SetFPS(fps);
+        LOGV("set fps %f", context_->GetFPS());
+    }
+}
+
+void PvrXrApplication::SetupSapce(Application::Space space) {
+    Application::SetupSapce(space);
+}
+
+void PvrXrApplication::SetupSkyBox(int index) {
+    Application::SetupSkyBox(index);
+
+    // sync skybox
+    // only support 0:textures/skybox_8_2k.jpg 1:textures/skybox_9.jpg
+    scene_local_->SetSkyBox(index);
+    scene_cloud_->SetSkyBox(index);
+}
+
+void PvrXrApplication::OnDataChannelOpen() {
+    Application::OnDataChannelOpen();
+    LOGV("***************OnDataChannelOpen");
+}

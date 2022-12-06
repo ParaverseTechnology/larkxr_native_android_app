@@ -220,7 +220,6 @@ void SetupServerAddr::onInput(const Keyboard::Key &key) {
 void SetupServerAddr::Enter() {
     View::Enter();
 
-//    getMode();
     getServerAddr();
 
     if (lark::XRClient::GetServerHost().empty()) {
@@ -284,7 +283,7 @@ void SetupServerAddr::setServerAddr() {
     }
 
     // update region
-    if (get_region_list_) {
+    if (!ip.empty() && port != 0 && get_region_list_) {
         get_region_list_->SendAsync();
     }
     {

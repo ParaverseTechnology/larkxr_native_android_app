@@ -39,14 +39,16 @@ public:
     virtual void EnterAppliParams(const lark::EnterAppliParams& params) override;
     virtual void CloseAppli() override;
 
-    // unused
-    virtual bool InitGL() override { return false; };
-    virtual bool InitVR(android_app* app) override { return false; };
-    virtual bool InitVR() override { return false; };
-    virtual void InitJava() override {};
-    virtual void ShutdownVR() override {};
-    virtual void HandleVrModeChange() override {};
-    virtual bool OnUpdate() override { return false; };
+    // call by ui
+    // ui 设置帧率
+    virtual void SetupFPS(int fps) override;
+    // ui 设置云渲染使用的空间
+    // app space -> 使用app设置的地面高度和位置原点
+    // local space -> 使用固定的地面高度和初始位置原点
+    virtual void SetupSapce(Space space) override;
+    // ui 设置天空盒, 更新场景中的天空盒
+    virtual void SetupSkyBox(int index) override;
+
     //
     // xr client callback
     virtual void OnConnected() override;
@@ -59,7 +61,7 @@ public:
     virtual void OnMediaReady() override;
     virtual void RequestTrackingInfo() override;
     virtual void OnSyncPlayerSpace(larkxrPlaySpace* playSpace) override;
-
+    virtual void OnDataChannelOpen() override;
 #ifdef ENABLE_CLOUDXR
     virtual void OnCloudXRReady(const std::string& appServerIp, const std::string& preferOutIp) override;
 #endif

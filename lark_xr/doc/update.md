@@ -308,3 +308,9 @@ XRClient 类添加如下成员方法：
     */
 void SendAudioData(const char* buffer, int length);
 ```
+
+## V3.2.2.1
+
+1. DEMO 添加 CloudXR 支持。
+2. 添加 PicoOpenXR Demo, 支持 Pico 4 以及 Pico Neo3 最新系统。
+3. 优化 SDK 提高兼容性减小体机。

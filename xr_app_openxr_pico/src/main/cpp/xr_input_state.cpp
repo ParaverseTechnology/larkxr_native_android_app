@@ -73,13 +73,6 @@ void InputState::InitializeActions(const XrInstance& instance, const XrSession& 
         /**********************************pico***************************************/
         // Create input actions for toucpad key using the left and right controller.
         actionInfo.actionType = XR_ACTION_TYPE_BOOLEAN_INPUT;
-        strcpy_s(actionInfo.actionName, "touchpad");
-        strcpy_s(actionInfo.localizedActionName, "Touchpad");
-        actionInfo.countSubactionPaths = uint32_t(handSubactionPath.size());
-        actionInfo.subactionPaths = handSubactionPath.data();
-        CHECK_XRCMD(xrCreateAction(actionSet, &actionInfo, &touchpadAction));
-
-        actionInfo.actionType = XR_ACTION_TYPE_BOOLEAN_INPUT;
         strcpy_s(actionInfo.actionName, "axkey");
         strcpy_s(actionInfo.localizedActionName, "AXkey");
         actionInfo.countSubactionPaths = uint32_t(handSubactionPath.size());
@@ -108,13 +101,6 @@ void InputState::InitializeActions(const XrInstance& instance, const XrSession& 
         actionInfo.subactionPaths = handSubactionPath.data();
         CHECK_XRCMD(xrCreateAction(actionSet, &actionInfo, &backAction));
 
-        actionInfo.actionType = XR_ACTION_TYPE_BOOLEAN_INPUT;
-        strcpy_s(actionInfo.actionName, "sidekey");
-        strcpy_s(actionInfo.localizedActionName, "Sidekey");
-        actionInfo.countSubactionPaths = uint32_t(handSubactionPath.size());
-        actionInfo.subactionPaths = handSubactionPath.data();
-        CHECK_XRCMD(xrCreateAction(actionSet, &actionInfo, &sideAction));
-
         actionInfo.actionType = XR_ACTION_TYPE_FLOAT_INPUT;
         strcpy_s(actionInfo.actionName, "trigger");
         strcpy_s(actionInfo.localizedActionName, "Trigger");
@@ -123,11 +109,18 @@ void InputState::InitializeActions(const XrInstance& instance, const XrSession& 
         CHECK_XRCMD(xrCreateAction(actionSet, &actionInfo, &triggerAction));
 
         actionInfo.actionType = XR_ACTION_TYPE_VECTOR2F_INPUT;
-        strcpy_s(actionInfo.actionName, "joystick");
-        strcpy_s(actionInfo.localizedActionName, "Joystick");
+        strcpy_s(actionInfo.actionName, "joystick_left");
+        strcpy_s(actionInfo.localizedActionName, "JoystickLeft");
         actionInfo.countSubactionPaths = uint32_t(handSubactionPath.size());
         actionInfo.subactionPaths = handSubactionPath.data();
-        CHECK_XRCMD(xrCreateAction(actionSet, &actionInfo, &joystickAction));
+        CHECK_XRCMD(xrCreateAction(actionSet, &actionInfo, &JoystickValueLeftAction));
+
+        actionInfo.actionType = XR_ACTION_TYPE_VECTOR2F_INPUT;
+        strcpy_s(actionInfo.actionName, "joystick_right");
+        strcpy_s(actionInfo.localizedActionName, "JoystickRight");
+        actionInfo.countSubactionPaths = uint32_t(handSubactionPath.size());
+        actionInfo.subactionPaths = handSubactionPath.data();
+        CHECK_XRCMD(xrCreateAction(actionSet, &actionInfo, &JoystickValueRightAction));
 
         actionInfo.actionType = XR_ACTION_TYPE_FLOAT_INPUT;
         strcpy_s(actionInfo.actionName, "battery");
@@ -150,19 +143,37 @@ void InputState::InitializeActions(const XrInstance& instance, const XrSession& 
         actionInfo.subactionPaths = handSubactionPath.data();
         CHECK_XRCMD(xrCreateAction(actionSet, &actionInfo, &BYTouchAction));
 
+        // trigger touch left
         actionInfo.actionType = XR_ACTION_TYPE_BOOLEAN_INPUT;
-        strcpy_s(actionInfo.actionName, "rockertouch");
-        strcpy_s(actionInfo.localizedActionName, "Rockertouch");
+        strcpy_s(actionInfo.actionName, "triggertouch_left");
+        strcpy_s(actionInfo.localizedActionName, "TriggertouchLeft");
         actionInfo.countSubactionPaths = uint32_t(handSubactionPath.size());
         actionInfo.subactionPaths = handSubactionPath.data();
-        CHECK_XRCMD(xrCreateAction(actionSet, &actionInfo, &RockerTouchAction));
+        CHECK_XRCMD(xrCreateAction(actionSet, &actionInfo, &TriggerTouchLeftAction));
 
+        // trigger touch right
         actionInfo.actionType = XR_ACTION_TYPE_BOOLEAN_INPUT;
-        strcpy_s(actionInfo.actionName, "triggertouch");
-        strcpy_s(actionInfo.localizedActionName, "Triggertouch");
+        strcpy_s(actionInfo.actionName, "triggertouch_right");
+        strcpy_s(actionInfo.localizedActionName, "TriggertouchRight");
         actionInfo.countSubactionPaths = uint32_t(handSubactionPath.size());
         actionInfo.subactionPaths = handSubactionPath.data();
-        CHECK_XRCMD(xrCreateAction(actionSet, &actionInfo, &TriggerTouchAction));
+        CHECK_XRCMD(xrCreateAction(actionSet, &actionInfo, &TriggerTouchRightAction));
+
+        // trigger left click
+        actionInfo.actionType = XR_ACTION_TYPE_BOOLEAN_INPUT;
+        strcpy_s(actionInfo.actionName, "triggerclickleft");
+        strcpy_s(actionInfo.localizedActionName, "TriggerClickLeft");
+        actionInfo.countSubactionPaths = uint32_t(handSubactionPath.size());
+        actionInfo.subactionPaths = handSubactionPath.data();
+        CHECK_XRCMD(xrCreateAction(actionSet, &actionInfo, &TriggerClickLeftAction));
+
+        // trigger right click
+        actionInfo.actionType = XR_ACTION_TYPE_BOOLEAN_INPUT;
+        strcpy_s(actionInfo.actionName, "triggerclickright");
+        strcpy_s(actionInfo.localizedActionName, "TriggerClickRight");
+        actionInfo.countSubactionPaths = uint32_t(handSubactionPath.size());
+        actionInfo.subactionPaths = handSubactionPath.data();
+        CHECK_XRCMD(xrCreateAction(actionSet, &actionInfo, &TriggerClickRightAction));
 
         actionInfo.actionType = XR_ACTION_TYPE_BOOLEAN_INPUT;
         strcpy_s(actionInfo.actionName, "thumbresttouch");
@@ -171,12 +182,69 @@ void InputState::InitializeActions(const XrInstance& instance, const XrSession& 
         actionInfo.subactionPaths = handSubactionPath.data();
         CHECK_XRCMD(xrCreateAction(actionSet, &actionInfo, &ThumbrestTouchAction));
 
+        // grip left touch
         actionInfo.actionType = XR_ACTION_TYPE_FLOAT_INPUT;
-        strcpy_s(actionInfo.actionName, "gripvalue");
-        strcpy_s(actionInfo.localizedActionName, "GripValue");
+        strcpy_s(actionInfo.actionName, "gripvalue_left");
+        strcpy_s(actionInfo.localizedActionName, "GripValueLeft");
         actionInfo.countSubactionPaths = uint32_t(handSubactionPath.size());
         actionInfo.subactionPaths = handSubactionPath.data();
-        CHECK_XRCMD(xrCreateAction(actionSet, &actionInfo, &GripAction));
+        CHECK_XRCMD(xrCreateAction(actionSet, &actionInfo, &GripValueLeftAction));
+
+        // grip right touch
+        actionInfo.actionType = XR_ACTION_TYPE_FLOAT_INPUT;
+        strcpy_s(actionInfo.actionName, "gripvalue_right");
+        strcpy_s(actionInfo.localizedActionName, "GripValueRight");
+        actionInfo.countSubactionPaths = uint32_t(handSubactionPath.size());
+        actionInfo.subactionPaths = handSubactionPath.data();
+        CHECK_XRCMD(xrCreateAction(actionSet, &actionInfo, &GripValueRightAction));
+
+        // grip left click
+        actionInfo.actionType = XR_ACTION_TYPE_BOOLEAN_INPUT;
+        strcpy_s(actionInfo.actionName, "grip_click_left");
+        strcpy_s(actionInfo.localizedActionName, "GripClickLeft");
+        actionInfo.countSubactionPaths = uint32_t(handSubactionPath.size());
+        actionInfo.subactionPaths = handSubactionPath.data();
+        CHECK_XRCMD(xrCreateAction(actionSet, &actionInfo, &GripClickLeftAction));
+
+        // grip right click
+        actionInfo.actionType = XR_ACTION_TYPE_BOOLEAN_INPUT;
+        strcpy_s(actionInfo.actionName, "grip_click_right");
+        strcpy_s(actionInfo.localizedActionName, "GripClickRight");
+        actionInfo.countSubactionPaths = uint32_t(handSubactionPath.size());
+        actionInfo.subactionPaths = handSubactionPath.data();
+        CHECK_XRCMD(xrCreateAction(actionSet, &actionInfo, &GripClickRightAction));
+
+        // joyleft click
+        actionInfo.actionType = XR_ACTION_TYPE_BOOLEAN_INPUT;
+        strcpy_s(actionInfo.actionName, "joystick_click_left");
+        strcpy_s(actionInfo.localizedActionName, "JoystikClickLeft");
+        actionInfo.countSubactionPaths = uint32_t(handSubactionPath.size());
+        actionInfo.subactionPaths = handSubactionPath.data();
+        CHECK_XRCMD(xrCreateAction(actionSet, &actionInfo, &JoystickClickLeftAction));
+
+        // joyright click
+        actionInfo.actionType = XR_ACTION_TYPE_BOOLEAN_INPUT;
+        strcpy_s(actionInfo.actionName, "joystick_click_right");
+        strcpy_s(actionInfo.localizedActionName, "JoystikClickRight");
+        actionInfo.countSubactionPaths = uint32_t(handSubactionPath.size());
+        actionInfo.subactionPaths = handSubactionPath.data();
+        CHECK_XRCMD(xrCreateAction(actionSet, &actionInfo, &JoystickClickRightAction));
+
+        // joystick left touch
+        actionInfo.actionType = XR_ACTION_TYPE_BOOLEAN_INPUT;
+        strcpy_s(actionInfo.actionName, "joystick_touch_left");
+        strcpy_s(actionInfo.localizedActionName, "JoystickTouchLeft");
+        actionInfo.countSubactionPaths = uint32_t(handSubactionPath.size());
+        actionInfo.subactionPaths = handSubactionPath.data();
+        CHECK_XRCMD(xrCreateAction(actionSet, &actionInfo, &JoystickTouchLeftAction));
+
+        // joystick right touch
+        actionInfo.actionType = XR_ACTION_TYPE_BOOLEAN_INPUT;
+        strcpy_s(actionInfo.actionName, "joystick_touch_right");
+        strcpy_s(actionInfo.localizedActionName, "JoystickTouchRight");
+        actionInfo.countSubactionPaths = uint32_t(handSubactionPath.size());
+        actionInfo.subactionPaths = handSubactionPath.data();
+        CHECK_XRCMD(xrCreateAction(actionSet, &actionInfo, &JoystickTouchRightAction));
 
         //--------------add new----------zgt
         actionInfo.actionType = XR_ACTION_TYPE_BOOLEAN_INPUT;
@@ -248,6 +316,7 @@ void InputState::InitializeActions(const XrInstance& instance, const XrSession& 
     std::array<XrPath, Side::COUNT> systemPath;
     std::array<XrPath, Side::COUNT> thumbrestPath;
     std::array<XrPath, Side::COUNT> triggerTouchPath;
+    std::array<XrPath, Side::COUNT> triggerClickPath;
     std::array<XrPath, Side::COUNT> triggerValuePath;
     std::array<XrPath, Side::COUNT> thumbstickClickPath;
     std::array<XrPath, Side::COUNT> thumbstickTouchPath;
@@ -291,6 +360,8 @@ void InputState::InitializeActions(const XrInstance& instance, const XrSession& 
 
     CHECK_XRCMD(xrStringToPath(instance, "/user/hand/left/input/trigger/touch", &triggerTouchPath[Side::LEFT]));
     CHECK_XRCMD(xrStringToPath(instance, "/user/hand/right/input/trigger/touch", &triggerTouchPath[Side::RIGHT]));
+    CHECK_XRCMD(xrStringToPath(instance, "/user/hand/left/input/trigger/click", &triggerClickPath[Side::LEFT]));
+    CHECK_XRCMD(xrStringToPath(instance, "/user/hand/right/input/trigger/click", &triggerClickPath[Side::RIGHT]));
     CHECK_XRCMD(xrStringToPath(instance, "/user/hand/left/input/trigger/value", &triggerValuePath[Side::LEFT]));
     CHECK_XRCMD(xrStringToPath(instance, "/user/hand/right/input/trigger/value", &triggerValuePath[Side::RIGHT]));
 
@@ -414,22 +485,24 @@ void InputState::InitializeActions(const XrInstance& instance, const XrSession& 
                                    &picoMixedRealityInteractionProfilePath));
         std::vector<XrActionSuggestedBinding> bindings{{
 
-                                                               {touchpadAction, thumbstickClickPath[Side::LEFT]},
-                                                               {touchpadAction, thumbstickClickPath[Side::RIGHT]},
-                                                               {joystickAction, thumbstickPosPath[Side::LEFT]},
-                                                               {joystickAction, thumbstickPosPath[Side::RIGHT]},
-                                                               {RockerTouchAction, thumbstickTouchPath[Side::LEFT]},
-                                                               {RockerTouchAction, thumbstickTouchPath[Side::RIGHT]},
+                                                               {JoystickClickLeftAction, thumbstickClickPath[Side::LEFT]},
+                                                               {JoystickClickRightAction, thumbstickClickPath[Side::RIGHT]},
+                                                               {JoystickValueLeftAction, thumbstickPosPath[Side::LEFT]},
+                                                               {JoystickValueRightAction, thumbstickPosPath[Side::RIGHT]},
+                                                               {JoystickTouchLeftAction, thumbstickTouchPath[Side::LEFT]},
+                                                               {JoystickTouchRightAction, thumbstickTouchPath[Side::RIGHT]},
 
                                                                {triggerAction, triggerValuePath[Side::LEFT]},
                                                                {triggerAction, triggerValuePath[Side::RIGHT]},
-                                                               {TriggerTouchAction, triggerTouchPath[Side::LEFT]},
-                                                               {TriggerTouchAction, triggerTouchPath[Side::RIGHT]},
+                                                               {TriggerClickLeftAction, triggerClickPath[Side::LEFT]},
+                                                               {TriggerClickRightAction, triggerClickPath[Side::RIGHT]},
+                                                               {TriggerTouchLeftAction, triggerTouchPath[Side::LEFT]},
+                                                               {TriggerTouchRightAction, triggerTouchPath[Side::RIGHT]},
 
-                                                               {sideAction, squeezeClickPath[Side::LEFT]},
-                                                               {sideAction, squeezeClickPath[Side::RIGHT]},
-                                                               {GripAction, squeezeValuePath[Side::LEFT]},
-                                                               {GripAction, squeezeValuePath[Side::RIGHT]},
+                                                               {GripClickLeftAction, squeezeClickPath[Side::LEFT]},
+                                                               {GripClickRightAction, squeezeClickPath[Side::RIGHT]},
+                                                               {GripValueLeftAction, squeezeValuePath[Side::LEFT]},
+                                                               {GripValueRightAction, squeezeValuePath[Side::RIGHT]},
                                                                {poseAction, posePath[Side::LEFT]},
                                                                {poseAction, posePath[Side::RIGHT]},
 

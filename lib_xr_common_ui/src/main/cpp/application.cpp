@@ -56,6 +56,9 @@ void Application::EnterAppliParams(const lark::EnterAppliParams &params) {
 }
 
 void Application::CloseAppli() {
+    if (xr_client_) {
+        xr_client_->Close();
+    }
 }
 
 void Application::SetServerAddr(const std::string &ip, uint16_t port) {

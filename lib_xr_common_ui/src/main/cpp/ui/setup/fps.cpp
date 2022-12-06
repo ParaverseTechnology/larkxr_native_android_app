@@ -8,6 +8,8 @@
 #include "lark_xr/xr_config.h"
 #include "lark_xr/xr_client.h"
 #include "input.h"
+#include "application.h"
+
 #define LOG_TAG "fps"
 
 namespace {
@@ -89,6 +91,9 @@ void Fps::SetFps(int index) {
         if (i == index) {
             lark::XRConfig::fps = FPS_SETUPS[i].fps;
             fps_[i]->set_color(COLOR_ACTIVE);
+            if (Application::instance()) {
+                Application::instance()->SetupFPS(FPS_SETUPS[i].fps);
+            }
         } else {
             fps_[i]->set_color(COLOR_UN_ACTIVE);
         }

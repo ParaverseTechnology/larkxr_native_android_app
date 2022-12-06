@@ -180,6 +180,14 @@ namespace localization {
 
         std::wstring ui_setup_resolution_title;
 
+        std::wstring ui_setup_skybox_title;
+        std::wstring ui_setup_skybox_0;
+        std::wstring ui_setup_skybox_1;
+
+        std::wstring ui_setup_skybox_xrspace;
+        std::wstring ui_setup_skybox_xrspace_local;
+        std::wstring ui_setup_skybox_xrspace_app;
+
         std::wstring ui_keyboard_number;
 
         std::wstring ui_menu_view_title;

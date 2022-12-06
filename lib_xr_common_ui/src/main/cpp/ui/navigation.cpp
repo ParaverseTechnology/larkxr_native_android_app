@@ -30,12 +30,12 @@ std::string Navigation::s_toast_str_;
 bool Navigation::s_show_toast_ = false;
 uint64_t Navigation::s_last_toast_timestamp_ = 0;
 //
-Navigation::Navigation() :
+Navigation::Navigation(bool extAppSetup) :
+      toast_(new Text(L"")),
       home_page_(new Home(this)),
-      setup_(new Setup(this)),
+      setup_(new Setup(this, extAppSetup)),
       loading_(new Loading(this)),
-      setup_server_addr_(new SetupServerAddr(this)),
-      toast_(new Text(L""))
+      setup_server_addr_(new SetupServerAddr(this))
 {
 
 //    localization::Loader::load(true);

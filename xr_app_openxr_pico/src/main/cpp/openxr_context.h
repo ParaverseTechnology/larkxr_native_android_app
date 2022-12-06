@@ -11,6 +11,7 @@
 #include "graphics_device_android.h"
 #include "openxr/openxr.h"
 #include "xr_input_state.h"
+#include "frame_buffer.h"
 
 struct Swapchain {
     XrSwapchain handle;
@@ -20,6 +21,9 @@ struct Swapchain {
 
 class OpenxrContext {
 public:
+    static const int NUM_MULTI_SAMPLES = 4;
+    enum { ovrMaxNumEyes = 2 };
+
     OpenxrContext(const std::shared_ptr<Options>& options, const std::shared_ptr<IPlatformPlugin>& platformPlugin);
     ~OpenxrContext();
 
@@ -60,12 +64,15 @@ public:
     inline GraphicsDeviceAndroid* graphics_plugin() { return graphics_plugin_.get(); }
     inline const XrViewConfigurationType& view_config_type() { return view_config_type_; }
     inline const std::vector<XrViewConfigurationView>& config_views() { return config_views_; }
-    inline const std::map<XrSwapchain, std::vector<XrSwapchainImageBaseHeader*>>& swapchain_images() {
-        return swapchain_images_;
-    }
-    inline const std::vector<Swapchain>& swapchains() { return swapchains_; }
+
     inline int color_swapchain_format() { return color_swapchain_format_; }
     inline XrSystemId system_id() { return system_id_; }
+
+    inline picoxr::FrameBuffer* frame_buffer() { return frame_buffer_; }
+    inline picoxr::FrameBuffer& frame_buffer(int eye) { return frame_buffer_[eye]; }
+
+    float GetFPS();
+    void SetFPS(float fps);
 private:
     void LogInstanceInfo();
     void LogViewConfigurations();
@@ -90,8 +97,6 @@ private:
     XrSystemId system_id_{XR_NULL_SYSTEM_ID};
 
     std::vector<XrViewConfigurationView> config_views_;
-    std::vector<Swapchain> swapchains_;
-    std::map<XrSwapchain, std::vector<XrSwapchainImageBaseHeader*>> swapchain_images_;
     std::vector<XrView> views_;
     int64_t color_swapchain_format_{-1};
 
@@ -105,6 +110,8 @@ private:
     PFN_xrResetSensorPICO  pfn_xr_reset_sensor_pico_ = nullptr;
     PFN_xrGetConfigPICO    pfn_xr_get_config_pico_ = nullptr;
     PFN_xrSetConfigPICO    pfn_xr_set_config_pico_ = nullptr;
+
+    picoxr::FrameBuffer frame_buffer_[ovrMaxNumEyes];
 };
 
 

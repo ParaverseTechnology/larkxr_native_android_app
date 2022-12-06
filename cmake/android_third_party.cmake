@@ -71,6 +71,9 @@ ANDROID_THIRD_PARTY_SHARED(${project_base_dir} lib_wave_api wvr_client libwvr_ap
 # openxr
 ANDROID_THIRD_PARTY_SHARED(${project_base_dir} lib_openxr_loader openxr libopenxr_loader)
 
+# openxr oculus
+ANDROID_THIRD_PARTY_SHARED(${project_base_dir} lib_openxr_loader_oculus openxr_oculus libopenxr_loader)
+
 # svr-xms
 ANDROID_THIRD_PARTY_SHARED(${project_base_dir} lib_svrapi svr_xms libsvrapi)
 
@@ -83,6 +86,12 @@ ANDROID_THIRD_PARTY_SHARED(${project_base_dir} libconvert_value_with_hmd nolo_de
 ANDROID_THIRD_PARTY_SHARED(${project_base_dir} libapp_api nolo_dev_api libapp_api)
 ANDROID_THIRD_PARTY_SHARED(${project_base_dir} libnvr_local nolo_nibiru libnvr_local)
 ANDROID_THIRD_PARTY_SHARED(${project_base_dir} libnvr_ndk_helper nolo_nibiru libnvr_ndk_helper)
+
+# qiyu
+ANDROID_THIRD_PARTY_SHARED(${project_base_dir} libashreader qiyu libashreader)
+ANDROID_THIRD_PARTY_SHARED(${project_base_dir} libqiyivrsdkcore qiyu libqiyivrsdkcore)
+ANDROID_THIRD_PARTY_SHARED(${project_base_dir} libsxrapi qiyu libsxrapi)
+ANDROID_THIRD_PARTY_SHARED(${project_base_dir} libqiyuapi qiyu libqiyuapi)
 
 # oboe
 ANDROID_THIRD_PARTY_SHARED(${project_base_dir} liboboe oboe liboboe)

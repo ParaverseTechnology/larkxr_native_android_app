@@ -11,6 +11,7 @@
 #include "graphics_device_android.h"
 #include "test_obj.h"
 #include "xr_input_state.h"
+#include "frame_buffer.h"
 
 class PvrXRScene {
 public:
@@ -19,8 +20,7 @@ public:
 
     virtual void InitGL(GraphicsDeviceAndroid* device);
     virtual void HandleInput(const InputState& input_state, const XrSession& session, const XrSpace& space);
-    virtual void RenderView(lark::Object::Eye eye, const XrCompositionLayerProjectionView& layerView, const XrSwapchainImageBaseHeader* swapchainImage,
-                    int64_t swapchainFormat);
+    virtual void RenderView(lark::Object::Eye eye, const XrCompositionLayerProjectionView& layerView, picoxr::FrameBuffer& frameBuffer);
     virtual void ReleaseGL();
 
 protected:
