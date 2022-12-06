@@ -14,19 +14,22 @@
 cmake-----------------------------cmake 配置
 doc-------------------------------文档
 lib_pxygl-------------------------适用于 VR 双目渲染的 opengl 的封装
-lib_xr_common_ui------------------app 的通用原生 ui
-xr_app_oculus---------------------oculus quest 系列头显适配
-xr_app_htc------------------------htc focus 系列头显适配
-xr_app_pico-----------------------pico neo 系列头显的适配
+lib_xr_common_ui------------------APP 的通用原生 ui
+xr_app_htc------------------------HTC focus 系列头显适配
+xr_app_oculus---------------------Meta Oculus Quest 系列头显适配(系统版本46以下)
+xr_app_openxr_oculus--------------Meta Oculus Quest 系列头显适配
+xr_app_openxr_pico----------------Pico4/Pico Neo3 系列头显的适配
 third_party-----------------------第三方库
 ```
 
 ## Lark VR SDK 兼容测试
 
-- [:heavy_check_mark:] [oculus quest](https://www.oculus.com/quest-2/)
-- [:heavy_check_mark:] [htc focus](https://www.vive.com/cn/product/vive-focus/)
-- [:heavy_check_mark:] [pico neo](https://www.pico-interactive.com/)
-- [:heavy_check_mark:] [nolo Sonic](https://www.nolovr.com/index)
+- [:heavy_check_mark:] [Meta Qculus Quest(Include > 46.0)](https://www.oculus.com/quest-2/)
+- [:heavy_check_mark:] [HTC Focus](https://www.vive.com/cn/product/vive-focus/)
+- [:heavy_check_mark:] [Pico4/Pico Neo3](https://www.pico-interactive.com/)
+- [:heavy_check_mark:] [Nolo Sonic](https://www.nolovr.com/index)
+- [:heavy_check_mark:] [奇遇](https://dev-qiyu.iqiyi.com/)
+- [:heavy_check_mark:] [Nreal](https://www.nreal.cn/nrealapp/)
 
 ## code style
 
