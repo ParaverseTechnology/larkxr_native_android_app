@@ -1,0 +1,117 @@
+apply plugin: 'com.android.application'
+
+apply from:"$projectDir/../config.gradle"
+
+android {
+    compileSdkVersion COMPILE_SDK_VERSION
+    buildToolsVersion BUILD_TOOS_VERSION
+    ndkVersion NDK_VERSION
+//    ndkVersion '22.1.7171670'
+    defaultConfig {
+        applicationId "com.pxy.cloudlarkxrpico"
+        minSdkVersion 22
+        targetSdkVersion TARGET_SDK_VERSION
+        versionCode 1
+        versionName "3.2.1.5"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        externalNativeBuild {
+            cmake {
+                arguments "-frtti -fexceptions -std=c++11 -DANDROID_NDK_BUILD=1"
+                arguments "-DANDROID_STL=c++_shared"
+                targets 'lark_xr_pico'
+            }
+            ndk {
+                abiFilters 'arm64-v8a'
+            }
+            ndkBuild {
+                abiFilters 'arm64-v8a'
+            }
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JAVA_VERSION
+        targetCompatibility JAVA_VERSION
+    }
+
+    externalNativeBuild {
+        cmake {
+            path "src/main/cpp/CMakeLists.txt"
+            version "3.10.2"
+        }
+    }
+
+    sourceSets {
+        main {
+            def base = "../"
+            def lib_prex = "lib/android/"
+            // let gradle pack the shared library into apk
+            jniLibs.srcDirs = [
+            ]
+        }
+    }
+
+    buildTypes {
+        debug {
+            buildConfigField "boolean","ENABLE_2D_LIST", "true"
+        }
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            buildConfigField "boolean","ENABLE_2D_LIST", "true"
+        }
+        pure3d {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            buildConfigField "boolean","ENABLE_2D_LIST", "false"
+        }
+    }
+
+    repositories {
+        flatDir {
+            dirs 'libs', '../lark_xr'
+        }
+    }
+    packagingOptions {
+        jniLibs {
+            pickFirsts += ['lib/arm64-v8a/libglm.so', 'lib/armeabi-v7a/libglm.so', 'lib/arm64-v8a/libPocoFoundation.so', 'lib/armeabi-v7a/libPocoFoundation.so', 'lib/arm64-v8a/libprotobuf.so', 'lib/armeabi-v7a/libprotobuf.so', 'lib/arm64-v8a/libc++_shared.so', 'lib/armeabi-v7a/libc++_shared.so']
+        }
+    }
+
+    applicationVariants.all { variant ->
+        variant.outputs.all { output ->
+//            def date = new Date().format("mmss");
+            def build = 1
+            def abi = "all";
+            if (output.filters[0] != null) {
+                abi = output.filters[0].identifier
+            }
+            def type = "pico";
+            outputFileName =  "lark-xr-" +
+                    defaultConfig.versionName + "-build-" +
+                    build + "-" + type + "-beta-" + variant.buildType.name + "-"+ abi + ".apk"
+        }
+    }
+
+    lintOptions {
+
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation 'androidx.appcompat:appcompat:1.3.0'
+    implementation (name:'PvrSDK-Native-20210730', ext:'aar')
+    implementation 'com.squareup.okhttp3:okhttp:3.12.+'
+    //
+    implementation project(':lib_pxygl')
+    implementation project(':lib_xr_common_ui')
+    implementation(name: 'larkxr-kit-3.2.2.0-build-1', ext: 'aar')
+    implementation(name: 'lark-core-kit-3.2.0.0-build-1', ext: 'aar')
+    implementation 'androidx.recyclerview:recyclerview:1.1.0'
+    implementation 'com.github.bumptech.glide:glide:4.11.0'
+    implementation 'com.alibaba:fastjson:1.2.44'
+    implementation 'com.google.android.material:material:1.3.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
+}

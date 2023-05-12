@@ -317,5 +317,5 @@ void SendAudioData(const char* buffer, int length);
 
 ## V3.2.2.2 
 
-1. 添加 Meta Oculus OpenXR SDK 支持 Meta 46 以上系统
+1. 添加 Meta Oculus OpenXR Demo 支持 Meta 46 以上系统
 2. 优化 Pico OpenXR Demo，添加 MASS X 4 支持
