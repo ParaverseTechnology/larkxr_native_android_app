@@ -5,7 +5,7 @@
 #include "openxr_context.h"
 #include "common.h"
 #include "pvr_xr_utils.h"
-#include "pController.h"
+// #include "pController.h"
 
 using namespace pxrutils;
 
@@ -105,13 +105,16 @@ void OpenxrContext::CreateInstance() {
     std::transform(graphicsExtensions.begin(), graphicsExtensions.end(), std::back_inserter(extensions),
                    [](const std::string& ext) { return ext.c_str(); });
 
-    extensions.push_back(XR_PICO_VIEW_STATE_EXT_ENABLE_EXTENSION_NAME);
-    extensions.push_back(XR_PICO_FRAME_END_INFO_EXT_EXTENSION_NAME);
+    // pico 2.2.0
+    // https://developer-cn.pico-interactive.com/document/native/release-notes/
+    // extensions.push_back(XR_PICO_VIEW_STATE_EXT_ENABLE_EXTENSION_NAME);
+    // extensions.push_back(XR_PICO_FRAME_END_INFO_EXT_EXTENSION_NAME);
     //Enable Pico controller extension
-    extensions.push_back(XR_PICO_ANDROID_CONTROLLER_FUNCTION_EXT_ENABLE_EXTENSION_NAME);
+    // extensions.push_back(XR_PICO_ANDROID_CONTROLLER_FUNCTION_EXT_ENABLE_EXTENSION_NAME);
     // Enable reset haed sensor extension
-    extensions.push_back(XR_PICO_CONFIGS_EXT_EXTENSION_NAME);
-    extensions.push_back(XR_PICO_RESET_SENSOR_EXTENSION_NAME);
+    // extensions.push_back(XR_PICO_CONFIGS_EXT_EXTENSION_NAME);
+    // extensions.push_back(XR_PICO_RESET_SENSOR_EXTENSION_NAME);
+
     XrInstanceCreateInfo createInfo{XR_TYPE_INSTANCE_CREATE_INFO};
     createInfo.next = platform_plugin_->GetInstanceCreateExtension();
     createInfo.enabledExtensionCount = (uint32_t)extensions.size();
@@ -121,13 +124,19 @@ void OpenxrContext::CreateInstance() {
     createInfo.applicationInfo.apiVersion = XR_CURRENT_API_VERSION;
 
     CHECK_XRCMD(xrCreateInstance(&createInfo, &instance_));
-    pxr::InitializeGraphicDeivce(instance_);
-    xrGetInstanceProcAddr(instance_,"xrGetConfigPICO",
-                          reinterpret_cast<PFN_xrVoidFunction *>(&pfn_xr_get_config_pico_));
-    xrGetInstanceProcAddr(instance_,"xrSetConfigPICO",
-                          reinterpret_cast<PFN_xrVoidFunction *>(&pfn_xr_set_config_pico_));
-    xrGetInstanceProcAddr(instance_,"xrResetSensorPICO",
-                          reinterpret_cast<PFN_xrVoidFunction *>(&pfn_xr_reset_sensor_pico_));
+
+    // PICO 2.2.0
+    // pxr::InitializeGraphicDeivce(instance_);
+
+    // PICO 2.2.0
+    // https://developer-cn.pico-interactive.com/document/native/release-notes/
+//    xrGetInstanceProcAddr(instance_,"xrGetConfigPICO",
+//                          reinterpret_cast<PFN_xrVoidFunction *>(&pfn_xr_get_config_pico_));
+//    xrGetInstanceProcAddr(instance_,"xrSetConfigPICO",
+//                          reinterpret_cast<PFN_xrVoidFunction *>(&pfn_xr_set_config_pico_));
+//    xrGetInstanceProcAddr(instance_,"xrResetSensorPICO",
+//                          reinterpret_cast<PFN_xrVoidFunction *>(&pfn_xr_reset_sensor_pico_));
+
     LogInstanceInfo();
 }
 
@@ -159,6 +168,8 @@ void OpenxrContext::LogViewConfigurations() {
 
         XrViewConfigurationProperties viewConfigProperties{XR_TYPE_VIEW_CONFIGURATION_PROPERTIES};
         CHECK_XRCMD(xrGetViewConfigurationProperties(instance_, system_id_, viewConfigType, &viewConfigProperties));
+
+        viewport_config_ = viewConfigProperties;
 
         Log::Write(Log::Level::Info,
                    Fmt("  View configuration FovMutable=%s", viewConfigProperties.fovMutable == XR_TRUE ? "True" : "False"));
@@ -261,15 +272,49 @@ void OpenxrContext::InitializeSession() {
         CHECK_XRCMD(xrCreateSession(instance_, &createInfo, &session_));
     }
 
-    //set eye level
-    pfn_xr_set_config_pico_(session_, TRACKING_ORIGIN, "0");
+    // set eye level
+    // PICO 2.2.0
+    // pfn_xr_set_config_pico_(session_, TRACKING_ORIGIN, "0");
 
     LogReferenceSpaces();
     input_.InitializeActions(instance_, session_);
 
     {
-        XrReferenceSpaceCreateInfo referenceSpaceCreateInfo = GetXrReferenceSpaceCreateInfo(options_->AppSpace);
-        CHECK_XRCMD(xrCreateReferenceSpace(session_, &referenceSpaceCreateInfo, &app_space_));
+        bool stageSupported = false;
+
+        uint32_t spaceCount;
+        CHECK_XRCMD(xrEnumerateReferenceSpaces(session_, 0, &spaceCount, nullptr));
+        std::vector<XrReferenceSpaceType> spaces(spaceCount);
+        CHECK_XRCMD(xrEnumerateReferenceSpaces(session_, spaceCount, &spaceCount, spaces.data()));
+
+        Log::Write(Log::Level::Info, Fmt("Available reference spaces: %d", spaceCount));
+        for (XrReferenceSpaceType space : spaces) {
+            if (space == XR_REFERENCE_SPACE_TYPE_STAGE) {
+                stageSupported = true;
+                break;
+            }
+            Log::Write(Log::Level::Verbose, Fmt("  Name: %s", to_string(space)));
+        }
+
+        XrReferenceSpaceCreateInfo referenceSpaceCreateInfo = GetXrReferenceSpaceCreateInfo(options_->ViewSpace);
+        CHECK_XRCMD(xrCreateReferenceSpace(session_, &referenceSpaceCreateInfo, &head_space_));
+
+
+        referenceSpaceCreateInfo = {};
+        referenceSpaceCreateInfo = GetXrReferenceSpaceCreateInfo(options_->LocalSpace);
+        CHECK_XRCMD(xrCreateReferenceSpace(session_, &referenceSpaceCreateInfo, &local_space_));
+
+        referenceSpaceCreateInfo = {};
+        if (stageSupported) {
+            referenceSpaceCreateInfo = GetXrReferenceSpaceCreateInfo(options_->StateSpace);
+            CHECK_XRCMD(xrCreateReferenceSpace(session_, &referenceSpaceCreateInfo, &app_space_));
+            LOGV("Created stage space");
+        } else {
+            referenceSpaceCreateInfo = GetXrReferenceSpaceCreateInfo(options_->LocalSpace);
+            referenceSpaceCreateInfo.poseInReferenceSpace.position.y = -1.6750f;
+            CHECK_XRCMD(xrCreateReferenceSpace(session_, &referenceSpaceCreateInfo, &app_space_));
+            LOGV("Created fake stage space from local space with offset");
+        }
     }
 }
 
@@ -393,12 +438,14 @@ void OpenxrContext::PollEvents(bool *exitRenderLoop, bool *requestRestart) {
                 HandleSessionStateChangedEvent(sessionStateChangedEvent, exitRenderLoop, requestRestart);
                 break;
             }
-            case XR_TYPE_EVENT_CONTROLLER_STATE_CHANGED: {
-                auto eventDataPerfSettingsEXT = *reinterpret_cast<const XrControllerEventChanged *>(event);
-                Log::Write(Log::Level::Info, Fmt("controller event callback controller %d, status %d  eventtype %d",
-                                                 eventDataPerfSettingsEXT.controller,eventDataPerfSettingsEXT.status,eventDataPerfSettingsEXT.eventtype));
-                break;
-            }
+            // PICO 2.2.0
+            // https://developer-cn.pico-interactive.com/document/native/release-notes/
+//            case XR_TYPE_EVENT_CONTROLLER_STATE_CHANGED: {
+//                auto eventDataPerfSettingsEXT = *reinterpret_cast<const XrControllerEventChanged *>(event);
+//                Log::Write(Log::Level::Info, Fmt("controller event callback controller %d, status %d  eventtype %d",
+//                                                 eventDataPerfSettingsEXT.controller,eventDataPerfSettingsEXT.status,eventDataPerfSettingsEXT.eventtype));
+//                break;
+//            }
             case XR_TYPE_EVENT_DATA_INTERACTION_PROFILE_CHANGED:
                 LogActionSourceName(input_.grabAction, "Grab");
                 LogActionSourceName(input_.quitAction, "Quit");
@@ -497,17 +544,19 @@ void OpenxrContext::LogActionSourceName(XrAction action, const std::string& acti
                Fmt("%s action is bound to %s", actionName.c_str(), ((!sourceName.empty()) ? sourceName.c_str() : "nothing")));
 }
 
-void OpenxrContext::ResetSensor(const XrResetSensorOption& option) {
-    if (pfn_xr_reset_sensor_pico_ != nullptr && session_ != XR_NULL_HANDLE) {
-        pfn_xr_reset_sensor_pico_(session_, option);
-    }
-}
+// PICO 2.2.0
+// https://developer-cn.pico-interactive.com/document/native/release-notes/
+//void OpenxrContext::ResetSensor(const XrResetSensorOption& option) {
+//    if (pfn_xr_reset_sensor_pico_ != nullptr && session_ != XR_NULL_HANDLE) {
+//        pfn_xr_reset_sensor_pico_(session_, option);
+//    }
+//}
 
-void OpenxrContext::GetConfig(enum ConfigsEXT configIndex, float *configData) {
-    if (pfn_xr_get_config_pico_ != nullptr && session_ != XR_NULL_HANDLE) {
-        pfn_xr_get_config_pico_(session_, configIndex, configData);
-    }
-}
+//void OpenxrContext::GetConfig(enum ConfigsEXT configIndex, float *configData) {
+//    if (pfn_xr_get_config_pico_ != nullptr && session_ != XR_NULL_HANDLE) {
+//        pfn_xr_get_config_pico_(session_, configIndex, configData);
+//    }
+//}
 
 void OpenxrContext::PollActions() {
     bool ret = false;
@@ -530,18 +579,20 @@ void OpenxrContext::PollActions() {
     }
 }
 
-float OpenxrContext::GetFPS() {
-    float fps = 0;
-    ConfigsEXT configsExt = ConfigsEXT::DISPLAY_REFRESH_RATE;
-    GetConfig(configsExt, &fps);
-    return fps;
-}
+// PICO 2.2.0
+// https://developer-cn.pico-interactive.com/document/native/release-notes/
+//float OpenxrContext::GetFPS() {
+//    float fps = 0;
+//    ConfigsEXT configsExt = ConfigsEXT::DISPLAY_REFRESH_RATE;
+//    GetConfig(configsExt, &fps);
+//    return fps;
+//}
 
-void OpenxrContext::SetFPS(float fps) {
-    char buffer[50] = {};
-    sprintf(buffer, "%f", fps);
-    if (pfn_xr_set_config_pico_ && session_) {
-        XrResult result = pfn_xr_set_config_pico_(session_, ConfigsSetEXT::SET_DISPLAY_RATE, buffer);
-        LOGV("set fps %f result %d", fps, result);
-    }
-}
+//void OpenxrContext::SetFPS(float fps) {
+//    char buffer[50] = {};
+//    sprintf(buffer, "%f", fps);
+//    if (pfn_xr_set_config_pico_ && session_) {
+//        XrResult result = pfn_xr_set_config_pico_(session_, ConfigsSetEXT::SET_DISPLAY_RATE, buffer);
+//        LOGV("set fps %f result %d", fps, result);
+//    }
+//}

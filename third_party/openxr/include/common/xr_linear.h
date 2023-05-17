@@ -784,4 +784,117 @@ inline static bool XrMatrix4x4f_CullBounds(const XrMatrix4x4f* mvp, const XrVect
     return i == 8;
 }
 
+
+
+
+static inline XrQuaternionf XrQuaternionf_Normalize(const XrQuaternionf q) {
+    double n = sqrtf(q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w);
+    if (n != 0.0f) {
+        n = 1.0f / n;
+    }
+    XrQuaternionf c;
+    c.x = q.x * n;
+    c.y = q.y * n;
+    c.z = q.z * n;
+    c.w = q.w * n;
+
+    return c;
+}
+
+//
+// from oculus
+//
+static inline XrQuaternionf XrQuaternionf_Identity() {
+    XrQuaternionf r;
+    r.x = r.y = r.z = 0.0;
+    r.w = 1.0f;
+    return r;
+}
+
+static inline XrVector3f XrVector3f_Zero() {
+    XrVector3f r;
+    r.x = r.y = r.z = 0.0f;
+    return r;
+}
+
+
+static inline XrQuaternionf XrQuaternionf_Multiply(const XrQuaternionf a, const XrQuaternionf b) {
+    XrQuaternionf c;
+    c.x = a.w * b.x + a.x * b.w + a.y * b.z - a.z * b.y;
+    c.y = a.w * b.y - a.x * b.z + a.y * b.w + a.z * b.x;
+    c.z = a.w * b.z + a.x * b.y - a.y * b.x + a.z * b.w;
+    c.w = a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z;
+    return c;
+}
+
+static inline XrVector3f XrVector3f_Add(const XrVector3f u, const XrVector3f v) {
+    XrVector3f w;
+    w.x = u.x + v.x;
+    w.y = u.y + v.y;
+    w.z = u.z + v.z;
+    return w;
+}
+
+static inline XrPosef XrPosef_Identity() {
+    XrPosef r;
+    r.orientation = XrQuaternionf_Identity();
+    r.position = XrVector3f_Zero();
+    return r;
+}
+
+static inline XrPosef XrPosef_Create(const XrQuaternionf orientation, const XrVector3f position) {
+    XrPosef r;
+    r.orientation = orientation;
+    r.position = position;
+    return r;
+}
+
+static inline XrQuaternionf XrQuaternionf_Inverse(const XrQuaternionf q) {
+    XrQuaternionf r;
+    r.x = -q.x;
+    r.y = -q.y;
+    r.z = -q.z;
+    r.w = q.w;
+    return r;
+}
+
+static inline XrVector3f XrQuaternionf_Rotate(const XrQuaternionf a, const XrVector3f v) {
+    XrVector3f r;
+    XrQuaternionf q = {v.x, v.y, v.z, 0.0f};
+    XrQuaternionf aq = XrQuaternionf_Multiply(a, q);
+    XrQuaternionf aInv = XrQuaternionf_Inverse(a);
+    XrQuaternionf aqaInv = XrQuaternionf_Multiply(aq, aInv);
+    r.x = aqaInv.x;
+    r.y = aqaInv.y;
+    r.z = aqaInv.z;
+    return r;
+}
+
+static inline XrVector3f XrVector3f_ScalarMultiply(const XrVector3f v, float scale) {
+    XrVector3f u;
+    u.x = v.x * scale;
+    u.y = v.y * scale;
+    u.z = v.z * scale;
+    return u;
+}
+
+static inline XrVector3f XrPosef_Transform(const XrPosef a, const XrVector3f v) {
+    XrVector3f r0 = XrQuaternionf_Rotate(a.orientation, v);
+    return XrVector3f_Add(r0, a.position);
+}
+
+static inline XrPosef XrPosef_Multiply(const XrPosef a, const XrPosef b) {
+    XrPosef c;
+    c.orientation = XrQuaternionf_Multiply(a.orientation, b.orientation);
+    c.position = XrPosef_Transform(a, b.position);
+    return c;
+}
+
+static inline XrPosef XrPosef_Inverse(const XrPosef a) {
+    XrPosef b;
+    b.orientation = XrQuaternionf_Inverse(a.orientation);
+    b.position = XrQuaternionf_Rotate(b.orientation, XrVector3f_ScalarMultiply(a.position, -1.0f));
+    return b;
+}
+
 #endif  // XR_LINEAR_H_

@@ -76,10 +76,21 @@ private:
     bool RenderLayer(XrTime predictedDisplayTime, std::vector<XrCompositionLayerProjectionView>& projectionLayerViews,
                      XrCompositionLayerProjection& layer, const larkxrTrackingFrame& trackingFrame, bool hasNewFrame);
 
+    bool GetViewTransform(const XrSpace& space,
+                          const XrTime& predictedDisplayTime,
+                          XrPosef *viewTransform,
+                          int viewTransformCount,
+                          XrPosef* xfStageFromHead);
+
+    inline XrSpace GetSelectedXRSpace() { return current_cloud_space_ == Space_Local ? context_->local_space() : context_->app_space(); }
+
     std::shared_ptr<PvrXRSceneLocal> scene_local_ = nullptr;
     std::shared_ptr<PvrXRSceneCloud> scene_cloud_ = nullptr;
     OpenxrContext* context_ = nullptr;
-    XrFrameEndInfoEXT xr_frame_end_info_ext_ = {};
+
+    // PICO 2.2.0
+    // https://developer-cn.pico-interactive.com/document/native/release-notes/
+    // XrFrameEndInfoEXT xr_frame_end_info_ext_ = {};
 
 #ifdef ENABLE_CLOUDXR
     static const int MAXIMUM_TRACKING_FRAMES = 50;
@@ -95,6 +106,8 @@ private:
 #endif
 
     bool config_inited_ = false;
+
+    Space current_cloud_space_ = Space_Local;
 };
 
 

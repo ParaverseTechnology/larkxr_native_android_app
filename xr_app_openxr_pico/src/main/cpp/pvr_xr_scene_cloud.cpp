@@ -331,8 +331,14 @@ void PvrXRSceneCloud::OnMenuViewSelect(bool submit) {
 
 void PvrXRSceneCloud::ShowMenu() {
     LOGV("show menu");
-    glm::quat rotate = pvr::toGlm(view_state_.headpose.orientation);
-    glm::vec3 position = pvr::toGlm(view_state_.headpose.position);
+
+    // PICO 2.2.0
+    // https://developer-cn.pico-interactive.com/document/native/release-notes/
+    // glm::quat rotate = pvr::toGlm(view_state_.headpose.orientation);
+    // glm::vec3 position = pvr::toGlm(view_state_.headpose.position);
+    glm::quat rotate = pvr::toGlm(headpose_.orientation);
+    glm::vec3 position = pvr::toGlm(headpose_.position);
+
     fake_hmd_->set_transform(lark::Transform(rotate, position));
     menu_view_->set_active(true);
     controller_left_->set_active(true);

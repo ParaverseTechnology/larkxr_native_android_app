@@ -54,13 +54,17 @@ public:
 
     inline const XrInstance& instance() const { return instance_; }
     inline const XrSession& session() const  { return session_; }
+    // PICO 2.2.0
     inline const XrSpace& app_space() const { return app_space_; }
+    inline const XrSpace& local_space() const { return local_space_; }
+    inline const XrSpace& head_space() const { return head_space_; }
     inline const InputState& input() { return input_;}
     inline const XrEnvironmentBlendMode& environment_blend_mode() { return environment_blend_mode_; }
-    inline const std::vector<XrView>& views() { return views_; }
 
-    void ResetSensor(const XrResetSensorOption& option);
-    void GetConfig(enum ConfigsEXT configIndex, float* configData);
+    // PICO 2.2.0
+    // void ResetSensor(const XrResetSensorOption& option);
+    // void GetConfig(enum ConfigsEXT configIndex, float* configData);
+
     inline GraphicsDeviceAndroid* graphics_plugin() { return graphics_plugin_.get(); }
     inline const XrViewConfigurationType& view_config_type() { return view_config_type_; }
     inline const std::vector<XrViewConfigurationView>& config_views() { return config_views_; }
@@ -71,8 +75,13 @@ public:
     inline picoxr::FrameBuffer* frame_buffer() { return frame_buffer_; }
     inline picoxr::FrameBuffer& frame_buffer(int eye) { return frame_buffer_[eye]; }
 
-    float GetFPS();
-    void SetFPS(float fps);
+    inline XrViewConfigurationProperties viewport_config() { return viewport_config_; }
+
+    inline std::vector<XrView>& views() { return views_; }
+
+    // PICO 2.2.0
+    // float GetFPS();
+    // void SetFPS(float fps);
 private:
     void LogInstanceInfo();
     void LogViewConfigurations();
@@ -91,11 +100,15 @@ private:
     XrInstance instance_{XR_NULL_HANDLE};
     XrSession session_{XR_NULL_HANDLE};
     XrSpace app_space_{XR_NULL_HANDLE};
+    XrSpace head_space_{XR_NULL_HANDLE};
+    XrSpace local_space_{XR_NULL_HANDLE};
     XrFormFactor form_factor_{XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY};
     XrViewConfigurationType view_config_type_{XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO};
     XrEnvironmentBlendMode environment_blend_mode_{XR_ENVIRONMENT_BLEND_MODE_OPAQUE};
     XrSystemId system_id_{XR_NULL_SYSTEM_ID};
 
+    // views
+    XrViewConfigurationProperties viewport_config_ = {};
     std::vector<XrViewConfigurationView> config_views_;
     std::vector<XrView> views_;
     int64_t color_swapchain_format_{-1};
@@ -107,9 +120,10 @@ private:
     XrEventDataBuffer event_data_buffer_;
     InputState input_;
 
-    PFN_xrResetSensorPICO  pfn_xr_reset_sensor_pico_ = nullptr;
-    PFN_xrGetConfigPICO    pfn_xr_get_config_pico_ = nullptr;
-    PFN_xrSetConfigPICO    pfn_xr_set_config_pico_ = nullptr;
+    // PICO 2.2.0
+    // PFN_xrResetSensorPICO  pfn_xr_reset_sensor_pico_ = nullptr;
+    // PFN_xrGetConfigPICO    pfn_xr_get_config_pico_ = nullptr;
+    // PFN_xrSetConfigPICO    pfn_xr_set_config_pico_ = nullptr;
 
     picoxr::FrameBuffer frame_buffer_[ovrMaxNumEyes];
 };

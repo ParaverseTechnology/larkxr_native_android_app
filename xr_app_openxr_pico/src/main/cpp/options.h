@@ -13,7 +13,7 @@ struct Options {
 
     std::string EnvironmentBlendMode{"Opaque"};
 
-    std::string AppSpace{"Local"};
-//    std::string AppSpace{"View"};
-//    std::string AppSpace{"Stage"};
+    std::string LocalSpace{"Local"};
+    std::string ViewSpace{"View"};
+    std::string StateSpace{"Stage"};
 };

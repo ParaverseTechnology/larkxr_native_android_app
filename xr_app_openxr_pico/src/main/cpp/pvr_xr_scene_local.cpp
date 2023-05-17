@@ -8,7 +8,6 @@
 #include "pch.h"
 #include "common.h"
 #include "pvr_xr_utils.h"
-#include "pController.h"
 
 PvrXRSceneLocal::PvrXRSceneLocal() = default;
 

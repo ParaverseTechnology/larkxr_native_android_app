@@ -9,7 +9,7 @@
 #include "oboe/Oboe.h"
 #include "lark_xr/xr_client.h"
 
-//#define LARK_SDK_ID "请配置SDK ID. 如果没有请联系商务获取. https://www.pingxingyun.com/index.html"
+#define LARK_SDK_ID "请配置SDK ID. 如果没有请联系商务获取. https://www.pingxingyun.com/index.html"
 
 #ifndef LARK_SDK_ID
 #error "请配置SDK ID. 如果没有请联系商务获取. https://www.pingxingyun.com/index.html"

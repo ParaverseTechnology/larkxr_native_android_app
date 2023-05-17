@@ -17,7 +17,9 @@
 #define USE_RENDER_QUEUE = 1;
 //#define OPENXR_FOV_SETUP 1
 
-const float ROOM_HEIGHT = 1.5f;
+namespace {
+    const float CLOUD_LOCALSPACE_HEIGHT_OFFSET = 1.5f;
+}
 
 PvrXrApplication::PvrXrApplication() {
     RegiseredInstance(this);
@@ -67,12 +69,16 @@ bool PvrXrApplication::InitGL(OpenxrContext *context) {
     };
     lark::AssetLoader::instance()->Load(&context_config, Assetlist);
 
+    // TODO
+    // PICO SDK 2.2.0
     // init xrconfig
-    if (context_ && context_->GetFPS() != 0) {
-        lark::XRConfig::fps = context_->GetFPS();
-    } else {
-        lark::XRConfig::fps = 72;
-    }
+//    if (context_ && context_->GetFPS() != 0) {
+//        lark::XRConfig::fps = context_->GetFPS();
+//    } else {
+//        lark::XRConfig::fps = 72;
+//    }
+
+    lark::XRConfig::fps = 72;
     lark::XRConfig::request_pose_fps = 72 * 2;
 
     // pico4
@@ -151,12 +157,7 @@ bool PvrXrApplication::InitGL(OpenxrContext *context) {
     xr_client_->Init(Context::instance()->vm(), false);
     xr_client_->InitGLShareContext();
     xr_client_->RegisterObserver(this);
-    xr_client_->EnableDebugMode(false);
-
-    if (!xr_client_->InitSdkAuthorization(LARK_SDK_ID)) {
-        LOGV("init sdk auth faild %d %s", xr_client_->last_error_code(), xr_client_->last_error_message().c_str());
-        Navigation::ShowToast(xr_client_->last_error_message());
-    }
+    xr_client_->EnableDebugMode(true);
 
     LOGI("view cout %ld", context_->views().size());
 
@@ -230,10 +231,46 @@ void PvrXrApplication::ShutdownGL() {
 
 void PvrXrApplication::EnterAppli(const std::string &appId) {
     LOGV("on enter appli");
-    if (xr_client_) {
-        xr_client_->EnterAppli(appId);
-//        xr_client_->EnterAppli("846813152229195776");
+#if 1
+    xr_client_->EnterAppli(appId);
+#else
+    larkCommonConfig config;
+    config.width = lark::XRConfig::align32ed_scaled_render_width();
+    config.height = lark::XRConfig::align32ed_scaled_render_height();
+    config.bitrateKbps = lark::XRConfig::bitrate;
+    config.fps = lark::XRConfig::fps;
+    for(int i = 0; i < 2; i++) {
+        config.fovList[i] = {
+                lark::XRConfig::fov[i].left,
+                lark::XRConfig::fov[i].right,
+                lark::XRConfig::fov[i].top,
+                lark::XRConfig::fov[i].bottom,
+        };
     }
+    config.roomHeight = lark::XRConfig::room_height;
+    config.ipd = lark::XRConfig::XRConfig::ipd;
+    config.useKcp = lark::XRConfig::XRConfig::use_kcp;
+    config.useH265 = lark::XRConfig::XRConfig::use_h265;
+    // oculus use touch controller.
+    config.hasTouchcontroller = true;
+    {
+        // test
+        config.appServer = "192.168.0.223";
+//            config.appServer = "192.168.0.35";
+        config.appPort = 10002;
+//            config.width = 1920;
+//            config.height = 1080;
+        config.taskId = "123456";
+        config.debugTask = true;
+        config.useProxy = false;
+        config.playerMode = PlayerModeType_Normal;
+        config.userType = UserType_Player;
+    }
+
+    config.headSetDesc = lark::XRConfig::headset_desc;
+    config.vrVideoDesc = lark::XRConfig::GetVideoDesc();
+    xr_client_->Connect(config);
+#endif
 }
 
 void PvrXrApplication::EnterAppliParams(const lark::EnterAppliParams &params) {
@@ -254,6 +291,30 @@ void PvrXrApplication::CloseAppli() {
 void PvrXrApplication::Update() {
     if (xr_client_->is_connected()) {
         scene_cloud_->HandleInput(context_->input(), context_->session(), context_->app_space());
+// TEST datachannel
+//        {
+//            XrActionStateGetInfo getInfo{XR_TYPE_ACTION_STATE_GET_INFO};
+//            getInfo.action = context_->input().AAction;
+//            XrActionStateBoolean AValue{XR_TYPE_ACTION_STATE_BOOLEAN};
+//            CHECK_XRCMD(xrGetActionStateBoolean(context_->session(), &getInfo, &AValue));
+//            if (AValue.changedSinceLastSync && AValue.isActive) {
+//                if (AValue.currentState) {
+//                    xr_client_->SendData("A press down");
+//                } else {
+//                    xr_client_->SendData("A press up");
+//                }
+//            }
+//            getInfo.action = context_->input().BAction;
+//            XrActionStateBoolean BValue{XR_TYPE_ACTION_STATE_BOOLEAN};
+//            CHECK_XRCMD(xrGetActionStateBoolean(context_->session(), &getInfo, &BValue));
+//            if (BValue.changedSinceLastSync && BValue.isActive) {
+//                if (AValue.currentState) {
+//                    xr_client_->SendData("B press down");
+//                } else {
+//                    xr_client_->SendData("B press up");
+//                }
+//            }
+//        }
     } else {
         scene_local_->HandleInput(context_->input(), context_->session(), context_->app_space());
     }
@@ -366,9 +427,13 @@ void PvrXrApplication::RenderFrame() {
     }
 
     XrFrameEndInfo frameEndInfo{XR_TYPE_FRAME_END_INFO};
-    xr_frame_end_info_ext_.type = XR_TYPE_FRAME_END_INFO;
 
-    frameEndInfo.next = (void *)&xr_frame_end_info_ext_;
+    // PICO 2.2.0
+    // https://developer-cn.pico-interactive.com/document/native/release-notes/
+    // xr_frame_end_info_ext_.type = XR_TYPE_FRAME_END_INFO;
+    // frameEndInfo.next = (void *)&xr_frame_end_info_ext_;
+
+    frameEndInfo.next = nullptr;
     frameEndInfo.displayTime = frameState.predictedDisplayTime;
     frameEndInfo.environmentBlendMode = context_->environment_blend_mode();
     frameEndInfo.layerCount = (uint32_t)layers.size();
@@ -377,21 +442,14 @@ void PvrXrApplication::RenderFrame() {
 
 #ifdef USE_RENDER_QUEUE
     if (has_new_frame_pxy_stream) {
-        auto views = context_->views();
+        XrSpaceLocation loc = {};
+        loc.type = XR_TYPE_SPACE_LOCATION;
 
-        XrViewState viewState{XR_TYPE_VIEW_STATE};
-        uint32_t viewCapacityInput = (uint32_t)views.size();
-        uint32_t viewCountOutput;
+        // get head pose
+        OXR(xrLocateSpace(
+                context_->head_space(), GetSelectedXRSpace(), frameState.predictedDisplayTime, &loc));
 
-        XrViewLocateInfo viewLocateInfo{XR_TYPE_VIEW_LOCATE_INFO};
-        viewLocateInfo.viewConfigurationType = context_->view_config_type();
-        viewLocateInfo.displayTime = 0;
-        viewLocateInfo.space = context_->app_space();
-        XrViewStatePICOEXT  xrViewStatePICOEXT;
-        viewState.next=(void *)&xrViewStatePICOEXT;
-        xrLocateViews(session, &viewLocateInfo, &viewState, viewCapacityInput, &viewCountOutput, views.data());
-
-        glm::vec3 trackingAng = glm::eulerAngles(pvr::toGlm(xrViewStatePICOEXT.headpose.orientation));
+        glm::vec3 trackingAng = glm::eulerAngles(pvr::toGlm(loc.pose.orientation));
         glm::vec3 renderAng = glm::eulerAngles(trackingFrame.tracking.rotation);
         float degree = glm::degrees(renderAng.y - trackingAng.y);
 
@@ -427,8 +485,13 @@ bool PvrXrApplication::RenderLayer(XrTime predictedDisplayTime,
     viewLocateInfo.viewConfigurationType = context_->view_config_type();
     viewLocateInfo.displayTime = predictedDisplayTime;
     viewLocateInfo.space = app_space;
-    XrViewStatePICOEXT  xrViewStatePICOEXT;
-    viewState.next=(void *)&xrViewStatePICOEXT;
+
+    // PICO SDK 2.2.0
+    // XrViewStatePICOEXT  xrViewStatePICOEXT;
+    // viewState.next=(void *)&xrViewStatePICOEXT;
+
+    viewState.next = nullptr;
+
     res = xrLocateViews(session, &viewLocateInfo, &viewState, viewCapacityInput, &viewCountOutput, views.data());
 
 //    LOGV("get pico pose pico %f %f %f; view[0] %f %f %f; view[1] %f %f %f",
@@ -597,78 +660,37 @@ void PvrXrApplication::OnMediaReady() {
 void PvrXrApplication::RequestTrackingInfo() {
     Application::RequestTrackingInfo();
 
-//    LOGV("RequestTrackingInfo %ld %f", utils::GetTimestampUs(), utils::GetTimeInSeconds());
-
-    // scene_cloud_->HandleInput(context_->input(), context_->session(), context_->app_space());
-
-    auto views = context_->views();
-    auto session = context_->session();
-
-    XrViewState viewState{XR_TYPE_VIEW_STATE};
-    uint32_t viewCapacityInput = (uint32_t)views.size();
-    uint32_t viewCountOutput;
-
-    XrViewLocateInfo viewLocateInfo{XR_TYPE_VIEW_LOCATE_INFO};
-    viewLocateInfo.viewConfigurationType = context_->view_config_type();
-
-    // xr time
-//    struct timespec now;
-//    clock_gettime( CLOCK_MONOTONIC, &now );
-//    XrTime xr_now = {};
-//    xrConvertTimespecTimeToTimeKHR(context_->instance(), &now, &xr_now);
     uint64_t now = utils::GetTimestampNs();
+    XrTime predictedDisplayTime = now + 1000 * 1000 * 40;
+    XrSpace space = GetSelectedXRSpace();
+    XrPosef xfStageFromHead = {};
+    XrPosef viewTransform[2];
 
-    // TODO predit pose time
-    viewLocateInfo.displayTime = now + 1000 * 1000 * 50;
-//    viewLocateInfo.displayTime = utils::GetTimestampUs() + 20;
-//    viewLocateInfo.displayTime = 0;
-    viewLocateInfo.space = context_->app_space();
-    XrViewStatePICOEXT  xrViewStatePICOEXT;
-    viewState.next=(void *)&xrViewStatePICOEXT;
-    xrLocateViews(session, &viewLocateInfo, &viewState, viewCapacityInput, &viewCountOutput, views.data());
-
-    if ((viewState.viewStateFlags & XR_VIEW_STATE_POSITION_VALID_BIT) == 0 ||
-        (viewState.viewStateFlags & XR_VIEW_STATE_ORIENTATION_VALID_BIT) == 0) {
-        return;  // There is no valid tracking poses for the views.
+    if (!GetViewTransform(space, predictedDisplayTime, viewTransform, 2, &xfStageFromHead)) {
+        return;
     }
 
     // save hmd pose for pop up menu
-    scene_cloud_->set_view_state(xrViewStatePICOEXT);
+    scene_cloud_->set_headpose(xfStageFromHead);
 
-//    LOGV("get pico pose pico %f %f %f; view[0] %f %f %f; view[1] %f %f %f",
-//         xrViewStatePICOEXT.headpose.orientation.x, xrViewStatePICOEXT.headpose.orientation.y, xrViewStatePICOEXT.headpose.orientation.z,
-//         views[0].pose.orientation.x, views[0].pose.orientation.y, views[0].pose.orientation.z,
-//         views[1].pose.orientation.x, views[1].pose.orientation.y, views[1].pose.orientation.y);
-
-//    LOGV("xrViewStatePICOEXT xr_now[%ld] displayTime[%ld] poseTimeStampNs[%ld] poseFetchTimeNs[%ld] expectedDisplayTimeNs[%ld]",
-//            now,
-//            viewLocateInfo.displayTime,
-//            xrViewStatePICOEXT.poseTimeStampNs,
-//            xrViewStatePICOEXT.poseFetchTimeNs,
-//            xrViewStatePICOEXT.expectedDisplayTimeNs
-//         );
+    if (current_cloud_space_ == Space_Local) {
+        // TODO config height
+        // add fixed height for local space
+        xfStageFromHead.position.y += CLOUD_LOCALSPACE_HEIGHT_OFFSET;
+    }
 
     larkxrTrackedPose pose = {};
     pose.device = Larkxr_Device_Type_HMD;
     pose.isConnected = true;
     pose.is6Dof = true;
     pose.isValidPose = true;
-    pose.rotation = pvr::toGlm(xrViewStatePICOEXT.headpose.orientation);
-    pose.position = pvr::toGlm(xrViewStatePICOEXT.headpose.position);
-    // TODO handel room height
-    pose.position.y += ROOM_HEIGHT;
-    // timestamp
-    pose.timestamp = xrViewStatePICOEXT.poseTimeStampNs;
-    pose.poseFetchTime = xrViewStatePICOEXT.poseFetchTimeNs;
-    pose.expectedDisplayTime = xrViewStatePICOEXT.expectedDisplayTimeNs;
-    pose.status = xrViewStatePICOEXT.poseStatus;
-    pose.rawPosition.x = xrViewStatePICOEXT.gsIndex;
+    pose.rotation = pvr::toGlm(xfStageFromHead.orientation);
+    pose.position = pvr::toGlm(xfStageFromHead.position);
 
     for (int i = 0; i < 2; i++) {
-        pose.eye[i].viewPosition = pvr::toGlm(views[i].pose.position);
-        pose.eye[i].viewRotation = pvr::toGlm(views[i].pose.orientation);
+        pose.eye[i].viewPosition = pvr::toGlm(viewTransform[i].position);
+        pose.eye[i].viewRotation = pvr::toGlm(viewTransform[i].orientation);
     }
-
 //    LOGV("update pose %f %f %f; %f %f %f",
 //            view_state_pico_.headpose.position.x, view_state_pico_.headpose.position.y, view_state_pico_.headpose.position.z,
 //            hmd_view_pose[0].position.x, hmd_view_pose[0].position.y, hmd_view_pose[0].position.z);
@@ -678,7 +700,12 @@ void PvrXrApplication::RequestTrackingInfo() {
 
     for (auto hand : {Side::LEFT, Side::RIGHT}) {
         devicePair.controllerState[hand] = scene_cloud_->GetControllerState(hand);
-        devicePair.controllerState[hand].pose.position.y += ROOM_HEIGHT;
+
+        if (current_cloud_space_ == Space_Local) {
+            // TODO config height
+            // add fixed height for local space
+            devicePair.controllerState[hand].pose.position.y += CLOUD_LOCALSPACE_HEIGHT_OFFSET;
+        }
 
 //        devicePair.controllerState[hand].pose.position = {hand * 0.5, 0, 0};
 //        devicePair.controllerState[hand].pose.position = {0, 0, 0};
@@ -705,10 +732,13 @@ void PvrXrApplication::RequestTrackingInfo() {
 //         devicePair.controllerState[1].pose.rotation.x, devicePair.controllerState[1].pose.rotation.y, devicePair.controllerState[1].pose.rotation.z, devicePair.controllerState[1].pose.rotation.w,
 //         ROOM_HEIGHT, devicePair.controllerState[0].deviceType, devicePair.controllerState[1].deviceType);
 
+    static uint64_t frame_index = 0;
+    frame_index++;
+
     larkxrTrackingDevicePairFrame devicePairFrame = {
-            static_cast<uint64_t>(xrViewStatePICOEXT.gsIndex),
-            xrViewStatePICOEXT.poseFetchTimeNs,
-            static_cast<double>(xrViewStatePICOEXT.expectedDisplayTimeNs),
+            frame_index,
+            now,
+            static_cast<double>(predictedDisplayTime),
             devicePair,
     };
     xr_client_->SendDevicePair(devicePairFrame);
@@ -802,49 +832,36 @@ void PvrXrApplication::GetTrackingState(cxrVRTrackingState *state) {
     static uint64_t frameIndex = 0;
     frameIndex++;
 
-    auto views = context_->views();
-    auto session = context_->session();
+    uint64_t now = utils::GetTimestampNs();
+    XrTime predictedDisplayTime = now + 1000 * 1000 * 40;
+    XrSpace space = GetSelectedXRSpace();
+    XrPosef xfStageFromHead = {};
+    XrPosef viewTransform[2];
 
-    XrViewState viewState{XR_TYPE_VIEW_STATE};
-    uint32_t viewCapacityInput = (uint32_t)views.size();
-    uint32_t viewCountOutput;
-
-    XrViewLocateInfo viewLocateInfo{XR_TYPE_VIEW_LOCATE_INFO};
-    viewLocateInfo.viewConfigurationType = context_->view_config_type();
-    viewLocateInfo.displayTime = utils::GetTimestampUs() + 20;
-//    viewLocateInfo.displayTime = 10;
-    viewLocateInfo.space = context_->app_space();
-    XrViewStatePICOEXT  xrViewStatePICOEXT;
-    viewState.next=(void *)&xrViewStatePICOEXT;
-    xrLocateViews(session, &viewLocateInfo, &viewState, viewCapacityInput, &viewCountOutput, views.data());
-
-    if ((viewState.viewStateFlags & XR_VIEW_STATE_POSITION_VALID_BIT) == 0 ||
-        (viewState.viewStateFlags & XR_VIEW_STATE_ORIENTATION_VALID_BIT) == 0) {
-        return;  // There is no valid tracking poses for the views.
+    if (!GetViewTransform(space, predictedDisplayTime, viewTransform, 2, &xfStageFromHead)) {
+        return;
     }
 
     // save hmd pose for pop up menu
-    scene_cloud_->set_view_state(xrViewStatePICOEXT);
+    scene_cloud_->set_headpose(xfStageFromHead);
+
+    if (current_cloud_space_ == Space_Local) {
+        // TODO config height
+        // add fixed height for local space
+        xfStageFromHead.position.y += CLOUD_LOCALSPACE_HEIGHT_OFFSET;
+    }
 
     larkxrTrackedPose pose = {};
     pose.device = Larkxr_Device_Type_HMD;
     pose.isConnected = true;
     pose.is6Dof = true;
     pose.isValidPose = true;
-    pose.rotation = pvr::toGlm(xrViewStatePICOEXT.headpose.orientation);
-    pose.position = pvr::toGlm(xrViewStatePICOEXT.headpose.position);
-    // TODO handel room height
-    pose.position.y += ROOM_HEIGHT;
-    // timestamp
-    pose.timestamp = xrViewStatePICOEXT.poseTimeStampNs;
-    pose.poseFetchTime = xrViewStatePICOEXT.poseFetchTimeNs;
-    pose.expectedDisplayTime = xrViewStatePICOEXT.expectedDisplayTimeNs;
-    pose.status = xrViewStatePICOEXT.poseStatus;
-    pose.rawPosition.x = xrViewStatePICOEXT.gsIndex;
+    pose.rotation = pvr::toGlm(xfStageFromHead.orientation);
+    pose.position = pvr::toGlm(xfStageFromHead.position);
 
     for (int i = 0; i < 2; i++) {
-        pose.eye[i].viewPosition = pvr::toGlm(views[i].pose.position);
-        pose.eye[i].viewRotation = pvr::toGlm(views[i].pose.orientation);
+        pose.eye[i].viewPosition = pvr::toGlm(viewTransform[i].position);
+        pose.eye[i].viewRotation = pvr::toGlm(viewTransform[i].orientation);
     }
 
     larkxrDevicePair devicePair = {};
@@ -852,13 +869,13 @@ void PvrXrApplication::GetTrackingState(cxrVRTrackingState *state) {
 
     for (auto hand : {Side::LEFT, Side::RIGHT}) {
         devicePair.controllerState[hand] = scene_cloud_->GetControllerState(hand);
-        devicePair.controllerState[hand].pose.position.y += ROOM_HEIGHT;
+        devicePair.controllerState[hand].pose.position.y += CLOUD_LOCALSPACE_HEIGHT_OFFSET;
     }
 
     larkxrTrackingDevicePairFrame devicePairFrame = {
             frameIndex,
-            xrViewStatePICOEXT.poseFetchTimeNs,
-            static_cast<double>(xrViewStatePICOEXT.expectedDisplayTimeNs),
+            now,
+            static_cast<double>(predictedDisplayTime),
             devicePair,
     };
 
@@ -885,15 +902,19 @@ void PvrXrApplication::GetTrackingState(cxrVRTrackingState *state) {
 
 void PvrXrApplication::SetupFPS(int fps) {
     Application::SetupFPS(fps);
-    if (context_) {
-        LOGV("current fps %f", context_->GetFPS());
-        context_->SetFPS(fps);
-        LOGV("set fps %f", context_->GetFPS());
-    }
+    // TODO
+    // PICO SDK 2.2.0
+
+//    if (context_) {
+//        LOGV("current fps %f", context_->GetFPS());
+//        context_->SetFPS(fps);
+//        LOGV("set fps %f", context_->GetFPS());
+//    }
 }
 
 void PvrXrApplication::SetupSapce(Application::Space space) {
     Application::SetupSapce(space);
+    current_cloud_space_ = space;
 }
 
 void PvrXrApplication::SetupSkyBox(int index) {
@@ -908,4 +929,63 @@ void PvrXrApplication::SetupSkyBox(int index) {
 void PvrXrApplication::OnDataChannelOpen() {
     Application::OnDataChannelOpen();
     LOGV("***************OnDataChannelOpen");
+
+//    xr_client_->SendData("============OnDataChannelOpen");
+//    xr_client_->SendData("============OnDataChannelOpen");
+//    xr_client_->SendData("============OnDataChannelOpen");
+//    xr_client_->SendData("============OnDataChannelOpen");
+//    xr_client_->SendData("============OnDataChannelOpen");
+}
+
+bool PvrXrApplication::GetViewTransform(XrSpace const &space, const XrTime &predictedDisplayTime,
+                                        XrPosef *viewTransform, int viewTransformCount,
+                                        XrPosef *xfStageFromHead) {
+    // only support view count 2
+    assert(viewTransformCount == 2);
+
+    XrSpaceLocation loc = {};
+    loc.type = XR_TYPE_SPACE_LOCATION;
+
+    // get head pose
+    OXR(xrLocateSpace(
+            context_->head_space(), space, predictedDisplayTime, &loc));
+    *xfStageFromHead = loc.pose;
+
+    XrViewLocateInfo projectionInfo = {};
+    projectionInfo.type = XR_TYPE_VIEW_LOCATE_INFO;
+    projectionInfo.viewConfigurationType = context_->viewport_config().viewConfigurationType;
+    projectionInfo.displayTime = predictedDisplayTime;
+    projectionInfo.space = context_->head_space();
+
+    XrViewState viewState = {XR_TYPE_VIEW_STATE, nullptr};
+
+    uint32_t projectionCapacityInput = 2;
+    uint32_t projectionCountOutput = projectionCapacityInput;
+
+    xrLocateViews(
+            context_->session(),
+            &projectionInfo,
+            &viewState,
+            projectionCapacityInput,
+            &projectionCountOutput,
+            context_->views().data());
+
+    // TODO config eyes
+    // only support 2 eyes for now.
+    assert(projectionCountOutput == 2);
+
+    for (int eye = 0; eye < 2; eye++) {
+        XrPosef xfHeadFromEye = context_->views()[eye].pose;
+        // head pose to left and right eye
+        XrPosef xfStageFromEye = XrPosef_Multiply(*xfStageFromHead, xfHeadFromEye);
+        viewTransform[eye] = xfStageFromEye;
+    }
+
+
+    if ((viewState.viewStateFlags & XR_VIEW_STATE_POSITION_VALID_BIT) == 0 ||
+        (viewState.viewStateFlags & XR_VIEW_STATE_ORIENTATION_VALID_BIT) == 0) {
+        return false;  // There is no valid tracking poses for the views.
+    }
+
+    return true;
 }

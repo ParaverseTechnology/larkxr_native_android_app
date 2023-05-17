@@ -7,7 +7,8 @@
 #include "options.h"
 #include "platformdata.h"
 #include "platformplugin.h"
-#include "pController.h"
+// PICO 2.2.0
+// #include "pController.h"
 #include "openxr_context.h"
 #include "pvr_xr_application.h"
 
@@ -130,8 +131,9 @@ static void app_handle_cmd(struct android_app* app, int32_t cmd) {
             if (appState->pvrXrApplication) {
                 appState->pvrXrApplication->OnResume();
             }
-            pxr::Pxr_SetEngineVersion("2.8.0.1");
-            pxr::Pxr_StartCVControllerThread(PXR_HMD_6DOF, PXR_CONTROLLER_6DOF);
+            // PICO 2.2.0
+            // pxr::Pxr_SetEngineVersion("2.8.0.1");
+            // pxr::Pxr_StartCVControllerThread(PXR_HMD_6DOF, PXR_CONTROLLER_6DOF);
             break;
         }
         case APP_CMD_PAUSE: {
@@ -141,8 +143,9 @@ static void app_handle_cmd(struct android_app* app, int32_t cmd) {
             if (appState->pvrXrApplication) {
                 appState->pvrXrApplication->OnPause();
             }
-            pxr::Pxr_SetEngineVersion("2.7.0.0");
-            pxr::Pxr_StopCVControllerThread(PXR_HMD_6DOF, PXR_CONTROLLER_6DOF);
+            // PICO 2.2.0
+            // pxr::Pxr_SetEngineVersion("2.7.0.0");
+            // pxr::Pxr_StopCVControllerThread(PXR_HMD_6DOF, PXR_CONTROLLER_6DOF);
             break;
         }
         case APP_CMD_STOP: {

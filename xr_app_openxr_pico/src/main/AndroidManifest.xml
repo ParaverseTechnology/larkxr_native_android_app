@@ -25,17 +25,17 @@ SPDX-License-Identifier: Apache-2.0
     >
 
         <!--   start activity     -->
-        <activity
-            android:name=".StartActivity"
-            android:configChanges="keyboardHidden|orientation|screenSize"
-            android:screenOrientation="landscape"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
+<!--        <activity-->
+<!--            android:name=".StartActivity"-->
+<!--            android:configChanges="keyboardHidden|orientation|screenSize"-->
+<!--            android:screenOrientation="landscape"-->
+<!--            android:exported="true">-->
+<!--            <intent-filter>-->
+<!--                <action android:name="android.intent.action.MAIN" />-->
 
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+<!--                <category android:name="android.intent.category.LAUNCHER" />-->
+<!--            </intent-filter>-->
+<!--        </activity>-->
 
         <!-- The activity is the built-in NativeActivity framework class. -->
         <!-- launchMode is set to singleTask because there should never be multiple copies of the app running. -->
@@ -53,10 +53,10 @@ SPDX-License-Identifier: Apache-2.0
             <!-- Tell NativeActivity the name of the .so -->
             <meta-data android:name="android.app.lib_name" android:value="lark_xr_openxr_pico" />
             <!-- This filter lets the apk show up as a launchable icon. -->
-<!--            <intent-filter>-->
-<!--                <action android:name="android.intent.action.MAIN" />-->
-<!--                <category android:name="android.intent.category.LAUNCHER" />-->
-<!--            </intent-filter>-->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
             <meta-data android:name="pvr.app.type" android:value="vr" />
         </activity>
     </application>

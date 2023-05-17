@@ -40,7 +40,10 @@ public:
 
     inline bool IsMenuActive() { return menu_view_->active(); }
 
-    inline void set_view_state(XrViewStatePICOEXT state) { view_state_ = state; }
+    // PICO 2.2.0
+    // https://developer-cn.pico-interactive.com/document/native/release-notes/
+    // inline void set_view_state(XrViewStatePICOEXT state) { view_state_ = state; }
+    inline void set_headpose(XrPosef pose) { headpose_ = pose; }
 
     inline larkxrControllerDeviceState GetControllerState(int hand) {
         return controller_state_[hand];
@@ -71,7 +74,10 @@ private:
 
     std::shared_ptr<RectTexture> rect_texture_{};
 
-    XrViewStatePICOEXT view_state_ = {};
+    // PICO 2.2.0
+    // https://developer-cn.pico-interactive.com/document/native/release-notes/
+    // XrViewStatePICOEXT view_state_ = {};
+    XrPosef headpose_ = {};
 
     larkxrControllerDeviceState controller_state_[LARKVR_TOTAL_CONTROLLER_COUNT];
 
