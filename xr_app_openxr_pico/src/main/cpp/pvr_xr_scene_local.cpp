@@ -4,6 +4,7 @@
 
 #include <log.h>
 #include <application.h>
+#include <utils.h>
 #include "pvr_xr_scene_local.h"
 #include "pch.h"
 #include "common.h"
@@ -81,8 +82,10 @@ void PvrXRSceneLocal::HandleInput(const InputState& input_state, const XrSession
         XrSpaceLocation spaceLocation{XR_TYPE_SPACE_LOCATION};
         XrResult res;
 
-        // WARNING xrLocateSpace time must valid timestamp or 0
-        res = xrLocateSpace(input_state.handSpace[hand], space, 0, &spaceLocation);
+        // WARNING xrLocateSpace time must valid timestamp
+        uint64_t now = utils::GetTimestampNs();
+        XrTime predictedDisplayTime = now + 1000 * 1000 * 40;
+        res = xrLocateSpace(input_state.handSpace[hand], space, predictedDisplayTime, &spaceLocation);
 
 //        LOGI("hand xrLocateSpace hand %d res %d locationflags %ld active %d px %f py %f pz %f rx %f ry %f rz %f rw %f",
 //             hand, res, spaceLocation.locationFlags, input_state.handActive[hand],
