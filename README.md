@@ -38,7 +38,7 @@ third_party-----------------------
 - [:heavy_check_mark:] [HTC Focus](https://www.vive.com/cn/product/vive-focus/)
 - [:heavy_check_mark:] [Pico4/Pico Neo3](https://www.pico-interactive.com/)
 - [:heavy_check_mark:] [Nolo Sonic](https://www.nolovr.com/index)
-- [:heavy_check_mark:] [奇遇](https://dev-qiyu.iqiyi.com/)
+- [:heavy_check_mark:] [Qiyu](https://dev-qiyu.iqiyi.com/)
 - [:heavy_check_mark:] [Nreal](https://www.nreal.cn/nrealapp/)
 
 ## code style
