@@ -6,8 +6,6 @@
 
 ---
 
-本项目为使用云雀 VR Android SDK 接入 VR 云渲染的 Demo 项目。演示多种 VR 一体机头显设备接入的方式，包括 oculus quest 系列，htc focus 系列，pico neo 系列等。
-
 Demos show how to build cloudrending app with multi headset sdk, Meta openxr sdk for oculus, HTC Wave sdk fo HTC Foucus, Pico openxr sdk fro Pico Neo, use LarkVR Android SDK.
 
 Links：
