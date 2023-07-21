@@ -16,7 +16,7 @@ Links：
 
 [Experience](https://www.paraverse.cc/)
 
-项目目录结构如下：
+Folder:
 
 ```path
 cmake-----------------------------cmake config
