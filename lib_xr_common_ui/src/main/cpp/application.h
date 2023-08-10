@@ -7,6 +7,9 @@
 
 #include <android_native_app_glue.h>
 #include "oboe/Oboe.h"
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include "lark_xr/xr_client.h"
 
 #define LARK_SDK_ID "请配置SDK ID. 如果没有请联系商务获取. https://www.pingxingyun.com/index.html"
@@ -65,29 +68,11 @@ public:
     virtual void SetupSkyBox(int index) {};
 
     // xr client callback
-    virtual void OnSDKAuthorizationFailed(int code, const std::string& msg) override {};
-    virtual void OnCloudXRReady(const std::string& appServerIp, const std::string& perferOutIp) override {};
     virtual void OnConnected() override;
     virtual void OnClose(int code) override;
-    virtual void OnStreamingDisconnect() override {};
-    virtual void OnInfo(int infoCode, const std::string& msg) override;
-    virtual void OnError(int errCode, const std::string& msg) override;
-    virtual void OnDataChannelOpen() override {};
-    virtual void OnDataChannelClose() override {};
-    virtual void OnDataChannelData(const char* buffer, int length) override {};
-    virtual void OnDataChannelData(const std::string& data) override {};
-    // soft decoder
-    virtual void OnMediaReady() override  {};
-    // hw decoder callback textrue.
-    virtual void OnMediaReady(int nativeTextrure) override {};
-    virtual void OnMediaReady(int nativeTextrureLeft, int nativeTextureRight) override {};
-    virtual void OnTrackingFrame(std::unique_ptr<lark::XRTrackingFrame>&& frame) override {};
-    // hw decoder callback without textrue.
-    virtual void OnTrackingFrame(const larkxrTrackingFrame& trackingFrame) override {};
-    virtual void RequestTrackingInfo() override {};
-    virtual void OnHapticsFeedback(bool isLeft, uint64_t startTime, float amplitude, float duration, float frequency) override {};
+    virtual void OnInfo(int infoCode, const char* msg) override;
+    virtual void OnError(int errCode, const char* msg) override;
     // request player space
-    virtual void OnSyncPlayerSpace(larkxrPlaySpace* playSpace) override {};
     virtual void OnClientId(const std::string& clientId) override;
     // update server 3.2.5.0
     virtual void RequestAudioInput() override;

@@ -2,6 +2,10 @@
 // Created by Administrator on 2021/7/7.
 //
 #include "pch.h"
+// GLM
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <lark_xr/xr_client.h>
 #include <log.h>
 #include <lark_xr/app_list_task.h>
@@ -114,8 +118,7 @@ void PvrXRSceneCloud::HandleInput(const InputState &input_state, XrSession const
 
         // WARNING xrLocateSpace time must valid timestamp
         uint64_t now = utils::GetTimestampNs();
-        XrTime predictedDisplayTime = now + 1000 * 1000 * 40;
-        res = xrLocateSpace(input_state.handSpace[hand], space, predictedDisplayTime, &spaceLocation);
+        res = xrLocateSpace(input_state.handSpace[hand], space, now, &spaceLocation);
 
 //        LOGI("hand xrLocateSpace hand %d res %d locationflags %ld active %d px %f py %f pz %f rx %f ry %f rz %f rw %f",
 //             hand, res, spaceLocation.locationFlags, input_state.handActive[hand],

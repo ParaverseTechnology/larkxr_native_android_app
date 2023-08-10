@@ -401,7 +401,7 @@ void Home::UpdateAppList(int page) {
                 coverItem->SetCoverUrl("textures/ui/cover_11.jpg", true);
             } else {
 //                LOGV("update cover %s", item->picUrl.c_str());
-                std::string urlpath="http://"+lark::XRClient::GetServerHost()+":"+
+                std::string urlpath="http://" + std::string(lark::XRClient::GetServerHost()) + ":" +
                         std::to_string(lark::XRClient::GetServerPort())+
                         item->picUrl;
                 LOGV("urlpath--%s",urlpath.c_str());

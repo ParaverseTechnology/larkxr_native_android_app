@@ -30,7 +30,7 @@ const bool LK_CONFIG_DEFAULT_USE_H265 = false;
 const bool LK_CONFIG_DEFAULT_USE_HAPTICS_FEEDBACK = true;
 const bool LK_CONFIG_DEFAULT_USE_MULTIVIEW = true;
 const bool LK_CONFIG_DEFAULT_FLIP_DRAWING = false;
-const float LK_CONFIG_DEFAULT_SECONDS_FROM_VSYNC_TO_PHOTONS = 0.005;
+const float LK_CONFIG_DEFAULT_SECONDS_FROM_VSYNC_TO_PHOTONS = 0.005f;
 const bool LK_CONFIG_DEFAULT_USE_10BIT_ENCODER = false;
 const larkFoveatedRendering LK_CONFIG_DEFAULT_FOVEATED_RENDERING = {};
 const larkColorCorrention LK_CONFIG_DEFAULT_COLOR_CORRENTION = {};
@@ -64,7 +64,7 @@ typedef struct QuickConfigGroup_ {
 const QuickConfigLevel DEFAULT_QUICK_CONFIG_LEVEL = QuickConfigLevel_Normal;
 const QuickConfigGroup DEFALUT_QUICK_CONFIG_GROUP_FAST = {
         QuickConfigLevel_Fast,                   // 流畅
-        0.9,                             // 分辨率缩放 0.9
+        0.9f,                             // 分辨率缩放 0.9
         20 * 1000,                              // 码率 20M
         larkStreamType::larkStreamType_UDP, // 普通 udp
         true,                       // 启用 ffr
@@ -77,7 +77,7 @@ const QuickConfigGroup DEFALUT_QUICK_CONFIG_GROUP_NORMAL = {
         LK_CONFIG_DEFAULT_RESOLUTION_SCALE,            // 分辨率缩放 1
         LK_CONFIG_DEFAULT_BITRATE,                     // 码率 40M
         LK_CONFIG_DEFAULT_STREAM_TYPE,                 // 增强 udp
-        LK_CONFIG_DEFAULT_FOVEATED_RENDERING.enableFoveateRendering, // 启用 ffr
+        static_cast<bool>(LK_CONFIG_DEFAULT_FOVEATED_RENDERING.enableFoveateRendering), // 启用 ffr
         LK_CONFIG_DEFAULT_USE_H265,                    // 关闭 h265
         LK_CONFIG_DEFAULT_USE_10BIT_ENCODER,           // 关闭 10 bit 编码
         LK_CONFIG_DEFAULT_REPORT_FEC_FAILED,            // 发送 fec 失败

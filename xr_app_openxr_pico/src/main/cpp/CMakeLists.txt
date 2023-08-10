@@ -51,21 +51,42 @@ include_directories(${third_party_base_dir}/openxr/include)
 add_library( # Sets the name of the library.
         lark_xr_openxr_pico
 		SHARED
-        ${LOCAL_SOURCE}
-        ${LOCAL_HEADERS}
-		${VULKAN_SHADERS}
+        # ${LOCAL_SOURCE}
+        # ${LOCAL_HEADERS}
+		# ${VULKAN_SHADERS}
 		${third_party_base_dir}/openxr/include/common/gfxwrapper_opengl.c
-        pvr_xr_application.cpp
-		pvr_xr_utils.cpp
-		pvr_xr_scene.cpp
-		pvr_xr_scene_local.cpp
-		pvr_xr_scene_cloud.cpp
+		check.h
+		common.h
+		frame_buffer.h
+		frame_buffer.cpp
+		geometry.h
+		graphics_device_android.h
 		graphics_device_android.cpp
+		logger.h
+		logger.cpp
+		main.cpp
+		openxr_context.h
 		openxr_context.cpp
+		options.h
+		pch.h
+		pch.cpp
+		platformdata.h
+		platformplugin.h
+		platformplugin_android.cpp
+		platformplugin_factory.cpp
+		pvr_xr_application.h
+		pvr_xr_application.cpp
 		pvr_xr_jni.cpp
+		pvr_xr_scene.h
+		pvr_xr_scene.cpp
+		pvr_xr_scene_cloud.h
+		pvr_xr_scene_cloud.cpp
+		pvr_xr_scene_local.h
+		pvr_xr_scene_local.cpp
+		pvr_xr_utils.h
+		pvr_xr_utils.cpp
 		xr_input_state.h
 		xr_input_state.cpp
-		frame_buffer.cpp
 )
 
 source_group("Headers" FILES ${LOCAL_HEADERS})

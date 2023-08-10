@@ -6,11 +6,11 @@
 #include <asset_loader.h>
 #include <asset_files.h>
 #include <log.h>
-#include <lark_xr/xr_latency_collector.h>
-#include <lark_xr/xr_config.h>
 #include <unistd.h>
 #include <utils.h>
 #include "pvr_application.h"
+#include <lark_xr/xr_latency_collector.h>
+#include <lark_xr/xr_config.h>
 
 //#define USE_RENDER_QUEUE = 1;
 
@@ -280,7 +280,7 @@ void PvrApplication::FrameBegin(const pvr::PvrPose& pose) {
 #endif
     if (has_new_frame_) {
         lark::XRLatencyCollector::Instance().Rendered2(cloud_tracking_.frameIndex);
-        glm::vec3 renderAng = glm::eulerAngles(cloud_tracking_.tracking.rotation);
+        glm::vec3 renderAng = glm::eulerAngles(cloud_tracking_.tracking.rotation.toGlm());
         glm::vec3 trackingAng = glm::eulerAngles(hmd_pose_.rotation);
         float degree = glm::degrees(renderAng.y - trackingAng.y);
         lark::XRLatencyCollector::Instance().Submit(cloud_tracking_.frameIndex, degree);
@@ -347,20 +347,6 @@ void PvrApplication::UpdateControler(const pvr::PvrControllerState& controllerSt
     controller_[controllerState.type] = controllerState;
 }
 
-void PvrApplication::EnterAppli(const std::string &appId) {
-    LOGV("on enter appli");
-    if (xr_client_) {
-        xr_client_->EnterAppli(appId);
-    }
-}
-
-void PvrApplication::CloseAppli() {
-    LOGV("on close appli");
-    if (xr_client_) {
-        xr_client_->Close();
-    }
-}
-
 // callbacks
 void PvrApplication::OnConnected() {
     LOGV("=========on connected");
@@ -403,10 +389,10 @@ void PvrApplication::OnClose(int code) {
     ResetTracking(pvr::PvrTrackingOrigin_EyeLevel);
 }
 
-void PvrApplication::OnError(int errCode, const std::string &msg) {
+void PvrApplication::OnError(int errCode, const char* msg) {
     Application::OnError(errCode, msg);
 
-    LOGE("on xr client error %d; msg %s;", errCode, msg.c_str());
+    LOGE("on xr client error %d; msg %s;", errCode, msg);
     Navigation::ShowToast(msg);
     if (errCode == LK_API_ENTERAPPLI_FAILED) {
         // enter applifailed.

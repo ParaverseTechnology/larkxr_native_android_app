@@ -9,12 +9,11 @@
 #ifdef ENABLE_CLOUDXR
 #include <cloudxr_client.h>
 #endif
+#include "application.h"
 #include "ovr_egl.h"
 #include "utils.h"
 #include "ovr_scene_local.h"
 #include "ovr_scene_cloud.h"
-#include "lark_xr/xr_client.h"
-#include "application.h"
 
 class OvrApplication: public Application
 #ifdef ENABLE_CLOUDXR
@@ -45,16 +44,13 @@ public:
     //  callback from android native activity.
     virtual void HandleVrModeChange() override;
     virtual bool OnUpdate() override;
-    // 进入应用
-    virtual void EnterAppli(const std::string& appId) override;
-    virtual void CloseAppli() override;
 
     inline ovrMobile* ovr() { return ovr_; }
 
     // xr client callback
     virtual void OnConnected() override;
     virtual void OnClose(int code) override;
-    virtual void OnError(int errCode, const std::string& msg) override;
+    virtual void OnError(int errCode, const char* msg) override;
     virtual void OnHapticsFeedback(bool isLeft, uint64_t startTime, float amplitude, float duration, float frequency) override;
     // hw decoder callback textrue.
     virtual void OnMediaReady() override;
@@ -63,7 +59,7 @@ public:
     virtual void RequestTrackingInfo() override;
     virtual void OnSyncPlayerSpace(larkxrPlaySpace* playSpace) override;
 #ifdef ENABLE_CLOUDXR
-    virtual void OnCloudXRReady(const std::string& appServerIp, const std::string& preferOutIp) override;
+    virtual void OnCloudXRReady(const char* appServerIp, const char* preferOutIp) override;
 #endif
 
     // handle network change

@@ -43,6 +43,8 @@ void CloudXRClient::GetTrackingState(cxrVRTrackingState *state) {
 }
 
 cxrBool CloudXRClient::RenderAudio(const cxrAudioFrame *audioFrame) {
+    LOGI("RenderAudio %ld %p", audioFrame->streamSizeBytes, playback_stream_.get());
+
     if (!playback_stream_)
     {
         return cxrFalse;
@@ -50,8 +52,10 @@ cxrBool CloudXRClient::RenderAudio(const cxrAudioFrame *audioFrame) {
 
     const uint32_t timeout = audioFrame->streamSizeBytes / CXR_AUDIO_BYTES_PER_MS;
     const uint32_t numFrames = timeout * CXR_AUDIO_SAMPLING_RATE / 1000;
-    playback_stream_->write(audioFrame->streamBuffer, numFrames,
+    auto result = playback_stream_->write(audioFrame->streamBuffer, numFrames,
                             timeout * oboe::kNanosPerMillisecond);
+
+    LOGI("RenderAudio write result %d %d", result.value(), result.error());
 
     return cxrTrue;
 }

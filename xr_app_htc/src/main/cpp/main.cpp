@@ -77,12 +77,9 @@ Java_com_pxy_cloudlarkxrhtc_MainActivity_init(JNIEnv *env, jobject thiz, jobject
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_pxy_cloudlarkxrhtc_MainActivity_nativeCreated(JNIEnv *env, jobject thiz) {
-	WaveApplication* application = (WaveApplication*)WaveApplication::instance();
-	LOGV("native created %d", application == nullptr);
-	if (application != nullptr) {
-		application->OnCreate();
-	}
+Java_com_pxy_cloudlarkxrhtc_MainActivity_nativeCreated(JNIEnv *env, jobject thiz,
+													   jboolean is_vive_flow) {
+	WaveApplication::set_is_vive_flow(is_vive_flow);
 }
 
 extern "C"

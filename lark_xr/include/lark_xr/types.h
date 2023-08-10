@@ -5,10 +5,18 @@
 #ifndef CLOUDLARKVRMODULE_TYPES_H
 #define CLOUDLARKVRMODULE_TYPES_H
 
-#include <string>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
+#include <stdint.h>
+
+#define LARK_XR_TRUE                    1
+#define LARK_XR_FALSE                   0
+
+#define LARK_XR_MAX_NAME_SIZE           256
+#define LARK_XR_MAX_MACADDRESS_SIZE     256
+#define LARK_XR_MAX_VERSION_SIZE        256
+#define LARK_XR_MAX_PATH_SIZE           512
+
+// GLOBAL
+typedef int						        BOOL;
 
 //
 // 用户配置
@@ -63,20 +71,20 @@ typedef enum larkxrSDKVersion_ {
 //
 // 系统基本信息。将在 sdk 最开始初始化。
 //
-typedef struct larkxrSystemInfo_ {
-    bool                      initd;
+typedef struct larkxrSystemInfo {
+    BOOL                      initd;
     larkxrSystemType          sysType;
     larkxrPlatFromType        platFromType;
     larkxrHeadSetSDKVersion   headSetSdkVersion;
-    std::string               sdkVersionName;
-    std::string               supportServerVersion;
-    std::string               deviceName;
-    std::string               macAddress;
+    char                      sdkVersionName[LARK_XR_MAX_NAME_SIZE];
+    char                      supportServerVersion[LARK_XR_MAX_VERSION_SIZE];
+    char                      deviceName[LARK_XR_MAX_NAME_SIZE];
+    char                      macAddress[LARK_XR_MAX_MACADDRESS_SIZE];
     uint64_t                  diskTotal;
     uint64_t                  diskUsed;
     uint64_t                  sdTotal;
     uint64_t                  sdUsed;
-    std::string               dataPath;
+    char                      dataPath[LARK_XR_MAX_PATH_SIZE];
 }  larkxrSystemInfo;
 
 //
@@ -171,6 +179,217 @@ typedef enum larkxrIntensity_ {
     Larkxr_Intensity_Strong     = 4,   /**< The Intensity of vibrate is Strong. */
     Larkxr_Intensity_Severe     = 5,   /**< The Intensity of vibrate is Severe. */
 } larkxrIntensity;
+
+/**
+* math 
+* same as glm
+*/
+typedef struct larkxrVec2f {
+    float x;
+    float y;
+
+#ifdef __cplusplus
+    larkxrVec2f() : x(0), y(0) {}
+
+    larkxrVec2f(float x, float y) : x(x), y(y){}
+
+#ifdef GLM_SETUP_INCLUDED
+    larkxrVec2f(const glm::vec2& vec2) : x(vec2.x), y(vec2.y) {}
+
+    glm::vec2 toGlm() const { return glm::vec2(x, y); }
+
+    void operator = (const glm::vec2& vec2) {
+        x = vec2.x;
+        y = vec2.y;
+    }
+    void operator = (const larkxrVec2f& vec2) {
+        x = vec2.x;
+        y = vec2.y;
+    }
+#endif // GLM_SETUP_INCLUDED
+
+#endif
+} larkxrVec2f;
+
+typedef struct larkxrVec3f {
+    float x;
+    float y;
+    float z;
+
+#ifdef __cplusplus
+    larkxrVec3f(): x(0), y(0), z(0) {}
+
+    larkxrVec3f(float x, float y, float z): x(x), y(y), z(z) {}
+
+#ifdef GLM_SETUP_INCLUDED
+    larkxrVec3f(const glm::vec3& vec3) : x(vec3.x), y(vec3.y), z(vec3.z) {}
+
+    glm::vec3 toGlm() const { return glm::vec3(x, y, z);  }
+
+    void operator = (const glm::vec3& vec3) {
+        x = vec3.x;
+        y = vec3.y;
+        z = vec3.z;
+    }
+
+    void operator = (const larkxrVec3f& vec3) {
+        x = vec3.x;
+        y = vec3.y;
+        z = vec3.z;
+    }
+#endif // GLM_SETUP_INCLUDED
+
+#endif
+
+} larkxrVec3f;
+
+typedef struct larkxrQuatf {
+    float x;
+    float y;
+    float z;
+    float w;
+
+#ifdef __cplusplus
+    larkxrQuatf(): x(0), y(0), z(0), w(0) {}
+
+    larkxrQuatf(float w, float x, float y, float z): w(w), x(x), y(y), z(z) {}
+
+#ifdef GLM_SETUP_INCLUDED
+    larkxrQuatf(const glm::quat& quat): x(quat.x), y(quat.y), z(quat.z), w(quat.w) {}
+
+    glm::quat toGlm() const { return glm::quat(w, x, y, z); }
+
+    void operator = (const glm::quat& quat) {
+        x = quat.x;
+        y = quat.y;
+        z = quat.z;
+        w = quat.w;
+    }
+
+    void operator = (const larkxrQuatf& quat) {
+        x = quat.x;
+        y = quat.y;
+        z = quat.z;
+        w = quat.w;
+    }
+#endif // GLM_SETUP_INCLUDED
+
+#endif
+} larkxrQuatf;
+
+typedef struct larkxrMatrix4x4f {
+    float m[16];
+
+#ifdef __cplusplus
+    larkxrMatrix4x4f() {
+        m[0] = m[1] = m[2] = m[3] = m[4] = m[5] = m[6] = m[7] = m[8] = m[9] = m[10] = m[11] = m[12] = m[13] = m[14] = m[15] = 0;
+    }
+
+    larkxrMatrix4x4f(float m00, float m01, float m02, float m03,
+        float m10, float m11, float m12, float m13,
+        float m20, float m21, float m22, float m23,
+        float m30, float m31, float m32, float m33
+        ) {
+        m[0] = m00;
+        m[1] = m01;
+        m[2] = m02;
+        m[3] = m03;
+
+        m[4] = m10;
+        m[5] = m11;
+        m[6] = m12;
+        m[7] = m13;
+
+        m[8] = m20;
+        m[9] = m21;
+        m[10] = m22;
+        m[11] = m23;
+
+        m[12] = m30;
+        m[13] = m31;
+        m[14] = m32;
+        m[15] = m33;
+    }
+#ifdef GLM_SETUP_INCLUDED
+    larkxrMatrix4x4f(const glm::mat4& mat4) {
+        m[0] = mat4[0][0];
+        m[1] = mat4[0][1];
+        m[2] = mat4[0][2];
+        m[3] = mat4[0][3];
+
+        m[4] = mat4[1][0];
+        m[5] = mat4[1][1];
+        m[6] = mat4[1][2];
+        m[7] = mat4[1][3];
+
+        m[8] = mat4[2][0];
+        m[9] = mat4[2][1];
+        m[10] = mat4[2][2];
+        m[11] = mat4[2][3];
+
+        m[12] = mat4[3][0];
+        m[13] = mat4[3][1];
+        m[14] = mat4[3][2];
+        m[15] = mat4[3][3];
+    }
+
+    glm::mat4 toGlm() const {
+        return glm::mat4(
+            m[0],  m[1],  m[2],  m[3],  // col0 x0 y0 z0 w0
+            m[4],  m[5],  m[6],  m[7],  // col1 x1 y1 z1 w1
+            m[8],  m[9],  m[10], m[11], // col2 x2 y2 z2 w2
+            m[12], m[13], m[14], m[15]  // col3 x3 y3 z3 w3
+        );
+    }
+
+    void operator = (const larkxrMatrix4x4f& matrix4X4f) {
+        m[0] = matrix4X4f.m[0];
+        m[1] = matrix4X4f.m[1];
+        m[2] = matrix4X4f.m[2];
+        m[3] = matrix4X4f.m[3];
+
+        m[4] = matrix4X4f.m[4];
+        m[5] = matrix4X4f.m[5];
+        m[6] = matrix4X4f.m[6];
+        m[7] = matrix4X4f.m[7];
+
+        m[8] = matrix4X4f.m[8];
+        m[9] = matrix4X4f.m[9];
+        m[10] = matrix4X4f.m[10];
+        m[11] = matrix4X4f.m[11];
+
+        m[12] = matrix4X4f.m[12];
+        m[13] = matrix4X4f.m[13];
+        m[14] = matrix4X4f.m[14];
+        m[15] = matrix4X4f.m[15];
+    }
+
+    void operator = (const glm::mat4& mat4) {
+        m[0] = mat4[0][0];
+        m[1] = mat4[0][1];
+        m[2] = mat4[0][2];
+        m[3] = mat4[0][3];
+
+        m[4] = mat4[1][0];
+        m[5] = mat4[1][1];
+        m[6] = mat4[1][2];
+        m[7] = mat4[1][3];
+
+        m[8] = mat4[2][0];
+        m[9] = mat4[2][1];
+        m[10] = mat4[2][2];
+        m[11] = mat4[2][3];
+
+        m[12] = mat4[3][0];
+        m[13] = mat4[3][1];
+        m[14] = mat4[3][2];
+        m[15] = mat4[3][3];
+    }
+
+#endif // GLM_SETUP_INCLUDED
+#endif
+} larkxrMatrix4x4f;
+
 /**
  * 设备姿态数据。
  *  test data from wvr
@@ -181,37 +400,37 @@ typedef enum larkxrIntensity_ {
  */
 typedef struct larkxrTrackedPose_ {
     larkxrDeviceType device;
-    bool isConnected;
-    bool is6Dof;
-    bool isValidPose;
+    BOOL isConnected;
+    BOOL is6Dof;
+    BOOL isValidPose;
     int status;
     int64_t timestamp;                  /**< Absolute time (in nanosecond) of pose. */
     int64_t poseFetchTime;
     int64_t expectedDisplayTime;
     float predictedMilliSec;            /**< Number of milliseconds from now to predict poses. */
     larkxrPoseOriginModel poseOriginModel;
-    glm::vec3 position;
-    glm::quat rotation;
-    glm::vec3 velocity;
-    glm::vec3 angularVelocity;
-    glm::vec3 acceleration;
-    glm::vec3 angularAcceleration;
+    larkxrVec3f position;
+    larkxrQuatf rotation;
+    larkxrVec3f velocity;
+    larkxrVec3f angularVelocity;
+    larkxrVec3f acceleration;
+    larkxrVec3f angularAcceleration;
     // raw porstion from sene
-    glm::vec3 rawPosition;
-    glm::quat rawRotation;
+    larkxrVec3f rawPosition;
+    larkxrQuatf rawRotation;
     // pose matrix for htc wave
-    glm::mat4 rawPoseMatrix;
+    larkxrMatrix4x4f rawPoseMatrix;
     struct
     {
-        glm::vec3       viewPosition; // view position for openxr stereo view pose
-        glm::quat       viewRotation; // view rotation for openxr stereo view pose
-        glm::mat4		projectionMatrix;
-        glm::mat4		viewMatrix;
+        larkxrVec3f       viewPosition; // view position for openxr stereo view pose
+        larkxrQuatf       viewRotation; // view rotation for openxr stereo view pose
+        larkxrMatrix4x4f  projectionMatrix;
+        larkxrMatrix4x4f  viewMatrix;
     } eye[ LARKXR_EYE_COUNT ];
 #if defined(NOLO_6DOF)
-    glm::vec3 baseLineOffset; // 头部基准线偏移。nolo 使用
-        glm::vec3 noloPosition;   // nolo position.
-        glm::quat noloRotation;
+    larkxrVec3f baseLineOffset; // 头部基准线偏移。nolo 使用
+    larkxrVec3f noloPosition;   // nolo position.
+    larkxrQuatf noloRotation;
 #endif
     int battery; // battery 0 - 100;
 } larkxrTrackedPose;
@@ -289,7 +508,7 @@ typedef enum larkxrInput_ {
 //
 typedef struct larkxrControllerInputState_ {
     larkxrDeviceType deviceType;
-    bool isConnected;
+    BOOL isConnected;
     uint64_t buttons;
     /// d          ! y = 1
     /// d          |
@@ -298,7 +517,7 @@ typedef struct larkxrControllerInputState_ {
     /// d          |
     /// d          | -1
     /// d        openvr
-    glm::vec2 touchPadAxis;
+    larkxrVec2f touchPadAxis;
     float triggerValue; // trigger axis 0 - 1.0f
     float gripValue;
     uint8_t batteryPercentRemaining;
@@ -312,7 +531,7 @@ typedef struct larkxrControllerDeviceState_ {
     larkxrTrackedPose pose;
     larkxrControllerInputState inputState;
     float rotateDeg; // rotate the controller.
-    glm::vec3 rotateAxis;
+    larkxrVec3f rotateAxis;
 } larkxrControllerDeviceState;
 
 //
@@ -371,8 +590,8 @@ typedef struct larkxrTrackingFrame_ {
 typedef struct larkxrPlaySpace_
 {
     int             recenterCount;
-    glm::vec3       position;
-    glm::quat       rotation;
+    larkxrVec3f     position;
+    larkxrQuatf     rotation;
     float			area_width;
     float			area_height;
     uint32_t		perimeterPointsCount;						 //default  =  0

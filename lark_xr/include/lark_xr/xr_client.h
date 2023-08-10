@@ -9,15 +9,12 @@
 #include "lark_xr/types.h"
 #include "lark_xr/xr_tracking_frame.h"
 #include "lark_xr/lk_common_types.h"
+#include "lark_xr/request/get_enter_appliInfo.h"
 
 #ifdef __ANDROID__
 #include <jni.h>
-#include "request/get_enter_appliInfo.h"
-
 #elif WIN32
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#include <d3d11.h>
+//
 #endif
 
 
@@ -33,14 +30,14 @@ public:
 	 * @param code sdk 授权错误码。@see larkEventTypes
 	 * @param msg 授权失败具体错误信息
 	 */
-	virtual void OnSDKAuthorizationFailed(int code, const std::string& msg) = 0;
+	virtual void OnSDKAuthorizationFailed(int code, const char* msg) = 0;
 
 	/**
 	 * 当应用类型为 cloudxr 时，cloudxr 云端环境启动成功，可以开始连接该服务器
 	 * @param appServerIp 服务器上配置的本地ip
 	 * @param perferOutIp 服务器上配置的外网ip
 	 */
-	virtual void OnCloudXRReady(const std::string& appServerIp, const std::string& perferOutIp) = 0;
+	virtual void OnCloudXRReady(const char* appServerIp, const char* perferOutIp) = 0;
 
 	/**
 	 * 连接服务器成功时回调
@@ -64,13 +61,13 @@ public:
 	 * @param infoCode  事件码在@see larkEventTypes 枚举中
 	 * @param msg 信息说明,可能为空
 	 */
-	virtual void OnInfo(int infoCode, const std::string& msg) = 0;
+	virtual void OnInfo(int infoCode, const char* msg) = 0;
 	/**
 	 * 出现错误时回调。当出现错误时当前连接已不可用。连接将断开。
 	 * @param errCode 事件码在@see larkEventTypes 枚举中
 	 * @param msg 错误信息。
 	 */
-	virtual void OnError(int errCode, const std::string& msg) = 0;
+	virtual void OnError(int errCode, const char* msg) = 0;
 	/**
 	 * 当使用软解码视频解码成功时回调。
 	 * Android 平台固定使用硬件解码。不会回调该函数。
@@ -162,7 +159,7 @@ public:
 	/**
 	* 收到字符数据
 	*/
-	virtual void OnDataChannelData(const std::string& data) = 0;
+	virtual void OnDataChannelData(const char* data) = 0;
 
 public:
 	virtual ~XRClientObserver() = default;
@@ -173,14 +170,14 @@ public:
  */
 class XRClientObserverWrap: public XRClientObserver {
 public:
-	virtual void OnSDKAuthorizationFailed(int code, const std::string& msg) override {};
-    virtual void OnCloudXRReady(const std::string& appServerIp, const std::string& perferOutIp) override {};
+	virtual void OnSDKAuthorizationFailed(int code, const char* msg) override {};
+    virtual void OnCloudXRReady(const char* appServerIp, const char* perferOutIp) override {};
     virtual void OnConnected() override {};
 	virtual void OnClose(int code) override {};
 	virtual void OnStreamingDisconnect() override {};
 
-	virtual void OnInfo(int infoCode, const std::string& msg) override {};
-	virtual void OnError(int errCode, const std::string& msg) override {};
+	virtual void OnInfo(int infoCode, const char* msg) override {};
+	virtual void OnError(int errCode, const char* msg) override {};
 
 	virtual void OnMediaReady() override {};
 	virtual void OnMediaReady(int nativeTextrure) override {};
@@ -200,7 +197,7 @@ public:
 	virtual void OnDataChannelOpen() override {};
 	virtual void OnDataChannelClose() override {};
 	virtual void OnDataChannelData(const char* buffer, int length) override {};
-	virtual void OnDataChannelData(const std::string& data) override {};
+	virtual void OnDataChannelData(const char* data) override {};
 };
 
 class XRClientImp;
@@ -232,7 +229,7 @@ public:
 	 * 当前服务器地址
 	 * @return 服务器地址
 	 */
-    static std::string GetServerHost();
+    static const char* GetServerHost();
     /**
      * 当前服务器端口号
      * @return 服务器端口号
@@ -247,7 +244,7 @@ public:
      * @param appKey admin_key
      * @param appSecret admin_secret
      */
-    static void SetCertificate(const std::string& appKey, const std::string& appSecret);
+    static void SetCertificate(const char* appKey, const char* appSecret);
     /**
      * 头盔电量信息 百分比
      * @param level
@@ -287,12 +284,12 @@ public:
 	 * @param id 授权id
 	 * @return 成功 true 失败返回 false
 	 */
-	bool InitSdkAuthorization(const std::string& id);
+	bool InitSdkAuthorization(const char* id);
 
 	/**
 	 * @deprecated
 	 */
-	bool InitSdkAuthorization(const std::string& id, const std::string& sig, const std::string& timestamp);
+	bool InitSdkAuthorization(const char* id, const char* sig, const char* timestamp);
 #ifdef __ANDROID__
 	/**
 	 * 安卓平台初始化 sdk。
@@ -302,7 +299,7 @@ public:
 	 * 不会变化可以直接在 init 方法初始化。
 	 * @param language zh, zh-CN 中文 en 英文
 	 */
-	void Init(JavaVM* vm, bool init_share_context = true, const std::string& language = "");
+	void Init(JavaVM* vm, bool init_share_context = true, const char* language = "");
 	/**
 	 * 初始化opengl共享上下文
 	 * 必须在 opengl渲染线程中调用
@@ -316,11 +313,12 @@ public:
 	/**
 	 * 初始化sdk
 	 */
-	void Init(bool debug_mode = false, const std::string& debug_path = "");
+	void Init(bool debug_mode = false, const char* debug_path = "");
 	/*
 	* 初始化 d3d11 device，用于解码输出共享纹理
+	* @device ID3D11Device*
 	*/
-	void InitD3D11Device(ID3D11Device* device);
+	void InitD3D11Device(void* device);
 	/*
 	* 释放 d3d11 devices
 	*/
@@ -330,7 +328,7 @@ public:
 #endif
 	// 是否打印 debug 日志。
 	// 目前只在 win 平台上起作用
-	void EnableDebugMode(bool enable_debug_mode);
+	void EnableDebugMode(bool enable_debug_mode, const char* log_file = "");
 
 	/**
 	 * 释放资源
@@ -354,7 +352,7 @@ public:
 	 * @param ip 云雀服务器 ip
 	 * @param port 云雀服务器端口号
 	 */
-	void SetServerAddr(const std::string& ip, int port);
+	void SetServerAddr(const char* ip, int port);
 
 	/**
 	 * 注册回调函数
@@ -371,7 +369,7 @@ public:
 	 * 云端应用 id 从应用列表接口回调处获取。
 	 * @param appliId 云端应用id
 	 */
-	void EnterAppli(const std::string& appliId);
+	void EnterAppli(const char* appliId);
 
 	/**
 	 * 进入应用
@@ -402,7 +400,7 @@ public:
 	 * 1.2.2 进入应用接口
 	 * @param jsonStr 
 	 */
-	void EnterAppliWithJsonString(const std::string& jsonStr);
+	void EnterAppliWithJsonString(const char* jsonStr);
 	/**
 	 * 使用手动配置进入云端应用。一般情况下不需要手动调用该接口。
 	 * @param config 完整配置。
@@ -423,7 +421,7 @@ public:
 	 * @param rawViewPose
 	 * @param rotateY
 	 */
-    void SendArDevicePose(const glm::mat4& rawAnchorPose, const glm::mat4& rawViewPose, float rotateY = 0);
+    void SendArDevicePose(const larkxrMatrix4x4f& rawAnchorPose, const larkxrMatrix4x4f& rawViewPose, float rotateY = 0);
 	/**
 	 * 发送上一次缓存的姿态数据
 	 */
@@ -441,11 +439,10 @@ public:
 	 */
 	void SendData(const char* buffer, int length);
 	/**
-	 * 发送自定义数据给云端应用
-	 * @param buffer
-	 * @param length
+	 * 发送字符串到云端应用
+	 * @param str
 	 */
-	void SendData(const std::string& data);
+	void SendData(const char* str);
 	/**
 	 * 检测是否收到新的帧
 	 * @return
@@ -457,6 +454,11 @@ public:
 	 * @return 是否成功
 	 */
 	bool Render(larkxrTrackingFrame* trackingFrame);
+
+	/**
+	*
+	*/
+	bool WaitFroNewFrame(int milliseconds);
 
 	/**
 	 * 使用渲染队列渲染，要在 XRConfig::use_render_queue=true 开启，开启后通过 videoFrame 参数获取视频纹理 id

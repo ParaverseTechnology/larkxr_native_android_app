@@ -193,12 +193,12 @@ namespace ovr {
 
     inline ovrRigidBodyPosef fromLarkvrTrackedPose(const larkxrTrackedPose& larkvrPose) {
         ovrRigidBodyPosef pose = {};
-        pose.Pose.Position = fromGlm(larkvrPose.position);
-        pose.Pose.Orientation = fromGlm(larkvrPose.rotation);
-        pose.AngularVelocity = fromGlm(larkvrPose.angularVelocity);
-        pose.LinearVelocity = fromGlm(larkvrPose.velocity);
-        pose.AngularAcceleration = fromGlm(larkvrPose.angularAcceleration);
-        pose.LinearAcceleration = fromGlm(larkvrPose.acceleration);
+        pose.Pose.Position = fromGlm(larkvrPose.position.toGlm());
+        pose.Pose.Orientation = fromGlm(larkvrPose.rotation.toGlm());
+        pose.AngularVelocity = fromGlm(larkvrPose.angularVelocity.toGlm());
+        pose.LinearVelocity = fromGlm(larkvrPose.velocity.toGlm());
+        pose.AngularAcceleration = fromGlm(larkvrPose.angularAcceleration.toGlm());
+        pose.LinearAcceleration = fromGlm(larkvrPose.acceleration.toGlm());
         pose.TimeInSeconds = (double)larkvrPose.timestamp / (1000.0F * 1000.0F * 1000.0F);
         pose.PredictionInSeconds = (double)larkvrPose.predictedMilliSec / 1000.0F;
         return pose;
@@ -209,8 +209,8 @@ namespace ovr {
         tracking.HeadPose = fromLarkvrTrackedPose(larkvrPose);
         tracking.Status = (uint)larkvrPose.status;
         for (int i = 0; i < LARKXR_EYE_COUNT; i++) {
-            tracking.Eye[i].ViewMatrix = fromGlm(larkvrPose.eye[i].viewMatrix);
-            tracking.Eye[i].ProjectionMatrix = fromGlm(larkvrPose.eye[i].projectionMatrix);
+            tracking.Eye[i].ViewMatrix = fromGlm(larkvrPose.eye[i].viewMatrix.toGlm());
+            tracking.Eye[i].ProjectionMatrix = fromGlm(larkvrPose.eye[i].projectionMatrix.toGlm());
         }
         return tracking;
     }

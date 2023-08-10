@@ -9,16 +9,20 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.AssetManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+
 import java.io.File;
 
 public class MainActivity extends VRActivity {
     private static String TAG = "HTC_MainActivity";
+    private static String MODEL_VIVE_FLOW = "Vive Flow";
     static {
 //        // cloud xr sdk use JNI_OnLoad to get java vm;
 //        // muse load lib to trigger JNI_Onload
@@ -29,9 +33,11 @@ public class MainActivity extends VRActivity {
     }
     //
     private XrSystem xrSystem = null;
+
     public MainActivity() {
         super.setUsingRenderBaseActivity(true);
     }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
@@ -54,7 +60,8 @@ public class MainActivity extends VRActivity {
         xrSystem.init(this);
 
         Log.d(TAG, "onCreate");
-        nativeCreated();
+
+        nativeCreated(MODEL_VIVE_FLOW.equals(Build.MODEL));
     }
 
     @Override
@@ -88,7 +95,7 @@ public class MainActivity extends VRActivity {
 
     // Pass this acitivty instance to native
     public native void init(AssetManager am, String internalDataPath, String externalDataPath);
-    private native void nativeCreated();
+    private native void nativeCreated(boolean isViveFlow);
     private native void nativeResume();
     private native void nativePause();
     private native void nativeDestory();

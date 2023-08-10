@@ -66,6 +66,14 @@ struct EnterAppliParams {
 	std::string regionId;
 	//指定节点分配
 	std::string targetServerIp;
+	// 覆盖全局 appkey 设置
+	std::string appKey;
+	// 覆盖全局 appkey 设置时手动设置 timestamp
+	std::string timestamp;
+	// 覆盖全局 appkey 设置时手动设置 signature
+	std::string signature;
+	// 附加参数,可能为空
+	std::string backEndStartCmdSeqNo;
 };
 
 class GetEnterAppliInfoImp;

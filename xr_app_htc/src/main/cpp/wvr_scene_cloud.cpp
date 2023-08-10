@@ -10,6 +10,8 @@
 #include "wvr_scene_cloud.h"
 #include "wvr_utils.h"
 #include "utils.h"
+#include "wave_application.h"
+
 #define LOG_TAG "wvr_scene_cloud"
 
 
@@ -30,7 +32,7 @@ bool WvrSceneCloud::InitGL(void* left_eye_queue, void* right_eye_qeue,
     WvrScene::AddObject(rect_texture_);
 
     larkxrSystemInfo info = lark::XRClient::system_info();
-    lark::ControllerConfig controllerConfig = lark::CONTROLLER_HTC_FOCUS_PLUS;
+    lark::ControllerConfig controllerConfig = lark::CONTROLLER_HTC_FOCULS;
     if (info.platFromType == Larkxr_Platform_HTC_FOCUS_PLUS) {
         controllerConfig = lark::CONTROLLER_HTC_FOCUS_PLUS;
     } else if (info.platFromType == Larkxr_Platform_HTC_FOCUS) {
@@ -70,6 +72,12 @@ void WvrSceneCloud::UpdateAsync(larkxrTrackingDevicePairFrame *devicePairFrame) 
     devicePairFrame->displayTime = 0;
     devicePairFrame->frameIndex = frame_index_;
     devicePairFrame->fetchTime = utils::GetTimestampUs();
+
+    // 姿态预测头部 pose.
+//    WVR_PoseState_t poseState{};
+//    WVR_GetPoseState(WVR_DeviceType_HMD, WVR_PoseOriginModel_OriginOnGround, 0, &poseState);
+//    device_pair_.hmdPose = wvr::wToLarkHMDTrakedPose(poseState);
+
     devicePairFrame->devicePair = device_pair_;
 }
 
@@ -97,7 +105,7 @@ bool WvrSceneCloud::Render(const larkxrTrackingFrame &trackingFrame) {
     if (menu_view_->active()) {
         // update hmd;
         UpdateEyeToHeadMatrix(trackingFrame.tracking.is6Dof);
-        hmd_pose_ = glm::inverse<4, 4, float, glm::defaultp>(trackingFrame.tracking.rawPoseMatrix);
+        hmd_pose_ = glm::inverse<4, 4, float, glm::defaultp>(trackingFrame.tracking.rawPoseMatrix.toGlm());
     }
 
     // latency
@@ -146,8 +154,8 @@ bool WvrSceneCloud::Render(const larkxrTrackingFrame &trackingFrame) {
 
     // latency
     larkxrTrackedPose hmdPose = device_pair_.hmdPose;
-    glm::vec3 renderAng = glm::eulerAngles(trackingFrame.tracking.rotation);
-    glm::vec3 trackingAng = glm::eulerAngles(hmdPose.rotation);
+    glm::vec3 renderAng = glm::eulerAngles(trackingFrame.tracking.rotation.toGlm());
+    glm::vec3 trackingAng = glm::eulerAngles(hmdPose.rotation.toGlm());
     float degree = glm::degrees(renderAng.y - trackingAng.y);
     lark::XRLatencyCollector::Instance().Submit(trackingFrame.frameIndex, degree);
 
@@ -242,6 +250,12 @@ bool WvrSceneCloud::HandleInput() {
             controllerDeviceState->pose.acceleration = glm::vec3(0,0,0);
         }
 
+        // TODO check HTC FLOW
+        if (WaveApplication::s_is_vive_flow()) {
+            controllerDeviceState->rotateDeg = glm::half_pi<float>() / 3.0F;
+            controllerDeviceState->rotateAxis = glm::vec3(-1, 0, 0);
+        }
+
         int deviceIndex = isLeft ? Input::RayCast_left : Input::RayCast_Right;
         backButtonDownThisFrame[deviceIndex] = WVR_GetInputButtonState(posePair.type, WVR_InputId_Alias1_Menu);
         enterButtonDownThisFrame[deviceIndex] = WVR_GetInputButtonState(posePair.type, WVR_InputId_Alias1_Touchpad);
@@ -309,10 +323,17 @@ bool WvrSceneCloud::HandleInput() {
             } else {
                 controllerDeviceState->inputState.gripValue = 0.0;
             }
+            LOGV("is6DoFPose");
         } else {
+            if (WVR_GetInputButtonState(posePair.type, WVR_InputId_Alias1_Trigger)) {
+                controllerDeviceState->inputState.buttons |= LARKXR_BUTTON_FLAG(larkxr_Input_Trigger_Click);
+                controllerDeviceState->inputState.triggerValue = 1.0F;
+                LOGV("WVR_InputId_Alias1_Trigger");
+            }
             if (WVR_GetInputButtonState(posePair.type, WVR_InputId_Alias1_Digital_Trigger)) {
                 controllerDeviceState->inputState.buttons |= LARKXR_BUTTON_FLAG(larkxr_Input_Trigger_Click);
                 controllerDeviceState->inputState.triggerValue = 1.0F;
+                LOGV("WVR_InputId_Alias1_Digital_Trigger");
             }
         }
         if (enterButtonDownThisFrame[deviceIndex]) {
@@ -322,6 +343,12 @@ bool WvrSceneCloud::HandleInput() {
         if (WVR_GetInputTouchState(posePair.type, WVR_InputId_Alias1_Touchpad)) {
 //            controllerDeviceState->inputState.buttons |= LARKXR_BUTTON_FLAG(larkxr_Input_Trackpad_Touch);
             controllerDeviceState->inputState.buttons |= LARKXR_BUTTON_FLAG(larkxr_Input_Joystick_Touch);
+        }
+        if (WVR_GetInputTouchState(posePair.type, WVR_InputId_Alias1_A)) {
+            controllerDeviceState->inputState.buttons |= LARKXR_BUTTON_FLAG(larkxr_Input_A_Click);
+        }
+        if (WVR_GetInputTouchState(posePair.type, WVR_InputId_Alias1_B)) {
+            controllerDeviceState->inputState.buttons |= LARKXR_BUTTON_FLAG(larkxr_Input_B_Click);
         }
 
         // touchpad axis
@@ -402,8 +429,8 @@ void WvrSceneCloud::OnMenuViewSelect(bool submit) {
 
 void WvrSceneCloud::ShowMenu() {
     LOGV("show menu");
-    fake_hmd_->set_transform(lark::Transform(device_pair_.hmdPose.rotation,
-                                       device_pair_.hmdPose.position));
+    fake_hmd_->set_transform(lark::Transform(device_pair_.hmdPose.rotation.toGlm(),
+                                       device_pair_.hmdPose.position.toGlm()));
     menu_view_->set_active(true);
     controller_left_->set_active(true);
     controller_right_->set_active(true);

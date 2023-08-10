@@ -222,7 +222,7 @@ void SetupServerAddr::Enter() {
 
     getServerAddr();
 
-    if (lark::XRClient::GetServerHost().empty()) {
+    if (std::string(lark::XRClient::GetServerHost()).empty()) {
         status_messsage_->SetText(localization::Loader::getResource().ui_setup_serveraddr_request);
     }
     is_detecting_ = false;

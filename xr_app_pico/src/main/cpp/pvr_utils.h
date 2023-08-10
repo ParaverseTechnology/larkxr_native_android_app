@@ -5,10 +5,11 @@
 #ifndef CLOUDLARKXR_PVR_UTILS_H
 #define CLOUDLARKXR_PVR_UTILS_H
 
-#include <glm/detail/type_quat.hpp>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <lark_xr/types.h>
 #include <log.h>
-#include "glm/glm.hpp"
 #include "env_context.h"
 
 namespace pvr {
@@ -145,8 +146,8 @@ namespace pvr {
 
     inline PvrPose fromLarkTrackedPose(const larkxrTrackedPose& trackedPose) {
         PvrPose pose = {};
-        pose.position = trackedPose.position;
-        pose.rotation = trackedPose.rotation;
+        pose.position = trackedPose.position.toGlm();
+        pose.rotation = trackedPose.rotation.toGlm();
         pose.poseTimeStampNs = trackedPose.timestamp;
         pose.poseFetchTimeNs = trackedPose.poseFetchTime;
         pose.expectedDisplayTimeNs = trackedPose.expectedDisplayTime;

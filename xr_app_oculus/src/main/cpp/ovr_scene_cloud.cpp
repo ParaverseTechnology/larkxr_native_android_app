@@ -304,8 +304,8 @@ bool OvrSceneCloud::Render(ovrMobile *ovr, const larkxrTrackingFrame &trackingFr
 
     // render LatencyCollector.
     larkxrTrackedPose hmdPose = device_pair_frame_.devicePair.hmdPose;
-    glm::vec3 renderAng = glm::eulerAngles(trackingFrame.tracking.rotation);
-    glm::vec3 trackingAng = glm::eulerAngles(hmdPose.rotation);
+    glm::vec3 renderAng = glm::eulerAngles(trackingFrame.tracking.rotation.toGlm());
+    glm::vec3 trackingAng = glm::eulerAngles(hmdPose.rotation.toGlm());
     float degree = glm::degrees(renderAng.y - trackingAng.y);
     lark::XRLatencyCollector::Instance().Submit(trackingFrame.frameIndex, degree);
 
@@ -377,8 +377,8 @@ void OvrSceneCloud::OnMenuViewSelect(bool submit) {
 
 void OvrSceneCloud::ShowMenu() {
     LOGV("show menu");
-    fake_hmd_->set_transform(lark::Transform(device_pair_frame_.devicePair.hmdPose.rotation,
-                                       device_pair_frame_.devicePair.hmdPose.position));
+    fake_hmd_->set_transform(lark::Transform(device_pair_frame_.devicePair.hmdPose.rotation.toGlm(),
+                                       device_pair_frame_.devicePair.hmdPose.position.toGlm()));
     menu_view_->set_active(true);
     controller_left_->set_active(true);
     controller_right_->set_active(true);

@@ -33,12 +33,6 @@ public:
     void Update();
     void RenderFrame();
 
-    // 进入应用
-    virtual void EnterAppli(const std::string& appId) override;
-    // 可选区域id等参数进入应用
-    virtual void EnterAppliParams(const lark::EnterAppliParams& params) override;
-    virtual void CloseAppli() override;
-
     // call by ui
     // ui 设置帧率
     virtual void SetupFPS(int fps) override;
@@ -53,7 +47,7 @@ public:
     // xr client callback
     virtual void OnConnected() override;
     virtual void OnClose(int code) override;
-    virtual void OnError(int errCode, const std::string& msg) override;
+    virtual void OnError(int errCode, const char* msg) override;
     virtual void OnHapticsFeedback(bool isLeft, uint64_t startTime, float amplitude, float duration, float frequency) override;
     // hw decoder callback textrue.
     virtual void OnMediaReady(int nativeTextrure) override;
@@ -63,7 +57,7 @@ public:
     virtual void OnSyncPlayerSpace(larkxrPlaySpace* playSpace) override;
     virtual void OnDataChannelOpen() override;
 #ifdef ENABLE_CLOUDXR
-    virtual void OnCloudXRReady(const std::string& appServerIp, const std::string& preferOutIp) override;
+    virtual void OnCloudXRReady(const char* appServerIp, const char* preferOutIp) override;
 #endif
 
 #ifdef ENABLE_CLOUDXR

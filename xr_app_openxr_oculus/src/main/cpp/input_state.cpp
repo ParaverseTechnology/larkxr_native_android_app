@@ -4,6 +4,10 @@
 //
 
 #include <cassert>
+// GLM
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <lark_xr/xr_client.h>
 #include "oxr_utils.h"
 #include "input_state.h"
@@ -183,7 +187,7 @@ void InputState::InitializeActions(const XrInstance &instance, const XrSession &
                 bindings[currBinding++] = ActionSuggestedBinding(
                         instance, ThumbClickLeftAction, "/user/hand/left/input/thumbstick/click");
                 bindings[currBinding++] = ActionSuggestedBinding(
-                        instance, ThumbClickLeftAction, "/user/hand/right/input/thumbstick/click");
+                        instance, ThumbClickRightAction, "/user/hand/right/input/thumbstick/click");
                 //bindings[currBinding++] = ActionSuggestedBinding(instance, ThumbTouchAction, "/user/hand/right/input/thumbstick/touch");
                 //[currBinding++] = ActionSuggestedBinding(instance, ThumbTouchAction, "/user/hand/left/input/thumbstick/touch");
                 bindings[currBinding++] = ActionSuggestedBinding(
@@ -419,12 +423,6 @@ void InputState::UpDate(const XrSession& session, XrSpace const &space, const Xr
         OXR(xrGetActionStateBoolean(session, &getInfo, &AClick));
 //        LOGI("XValue %d AValue %d", XValue.currentState, AValue.currentState);
 //
-        getInfo.action = TriggerLeftClickAction;
-        OXR(xrGetActionStateBoolean(session, &getInfo, &TriggerClick[hand]));
-
-        getInfo.action = TriggerRightClickAction;
-        OXR(xrGetActionStateBoolean(session, &getInfo, &TriggerClick[hand]));
-
         // y touch
         getInfo.action = YTouchAction;
         OXR(xrGetActionStateBoolean(session, &getInfo, &YTouch));
@@ -440,6 +438,9 @@ void InputState::UpDate(const XrSession& session, XrSpace const &space, const Xr
         // a touch
         getInfo.action = ATouchAction;
         OXR(xrGetActionStateBoolean(session, &getInfo, &ATouch));
+
+        getInfo.action = isLeft ? TriggerLeftClickAction : TriggerRightClickAction;
+        OXR(xrGetActionStateBoolean(session, &getInfo, &TriggerClick[hand]));
 
         getInfo.action = isLeft ? TriggerLeftValueAction : TriggerRightValueAction;
         OXR(xrGetActionStateFloat(session, &getInfo, &TriggerValue[hand]));
@@ -603,6 +604,7 @@ larkxrControllerInputState InputState::toLarkXRInputState(int hand, const InputS
 
     if (inputState.TriggerClick[hand].currentState && inputState.TriggerClick[hand].isActive) {
         state.buttons |= LARKXR_BUTTON_FLAG(larkxrInput::larkxr_Input_Trigger_Click);
+        LOGV("input trigger click hand[%d]", hand);
     }
     if (inputState.Squeeze[hand].currentState != 0 && inputState.Squeeze[hand].isActive) {
         if (inputState.Squeeze[hand].currentState == 1) {

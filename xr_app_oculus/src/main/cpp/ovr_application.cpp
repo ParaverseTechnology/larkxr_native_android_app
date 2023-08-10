@@ -8,7 +8,6 @@
 #include <VrApi_Helpers.h>
 #include <EGL/egl.h>
 #include <unistd.h>
-#include <lark_xr/xr_config.h>
 #include <asset_files.h>
 #include "ovr_application.h"
 #include "log.h"
@@ -16,8 +15,8 @@
 #include "utils.h"
 #include "env_context.h"
 #include "utils.h"
-#include "lark_xr/types.h"
 #include "ovr_utils.h"
+#include <lark_xr/xr_config.h>
 
 #define LOG_TAG "ovr_native_application"
 
@@ -507,59 +506,6 @@ bool OvrApplication::OnUpdate() {
     return true;
 }
 
-void OvrApplication::EnterAppli(const std::string &appId) {
-    LOGENTRY();
-    if (xr_client_) {
-#if 1
-        xr_client_->EnterAppli(appId);
-#else
-        CommonConfig config;
-        config.width = lark::XRConfig::align32ed_scaled_render_width();
-        config.height = lark::XRConfig::align32ed_scaled_render_height();
-        config.bitrateKbps = lark::XRConfig::bitrate;
-        config.fps = lark::XRConfig::fps;
-        for(int i = 0; i < 2; i++) {
-            config.fovList[i] = {
-                    lark::XRConfig::fov[i].left,
-                    lark::XRConfig::fov[i].right,
-                    lark::XRConfig::fov[i].top,
-                    lark::XRConfig::fov[i].bottom,
-            };
-        }
-        config.roomHeight = lark::XRConfig::room_height;
-        config.ipd = lark::XRConfig::XRConfig::ipd;
-        config.useKcp = lark::XRConfig::XRConfig::use_kcp;
-        config.useH265 = lark::XRConfig::XRConfig::use_h265;
-        // oculus use touch controller.
-        config.hasTouchcontroller = true;
-        {
-            // test
-            config.appServer = "192.168.0.223";
-//            config.appServer = "192.168.0.35";
-            config.appPort = 10002;
-//            config.width = 1920;
-//            config.height = 1080;
-            config.taskId = "123456";
-            config.debugTask = true;
-            config.useProxy = false;
-            config.playerMode = PlayerModeType_Normal;
-            config.userType = UserType_Player;
-        }
-
-        config.headSetDesc = lark::XRConfig::headset_desc;
-        config.vrVideoDesc = lark::XRConfig::GetVideoDesc();
-        xr_client_->Connect(config);
-#endif
-    }
-}
-
-void OvrApplication::CloseAppli() {
-    LOGENTRY();
-    if (xr_client_) {
-        xr_client_->Close();
-    }
-}
-
 void OvrApplication::OnConnected() {
     LOGENTRY();
     Application::OnConnected();
@@ -608,9 +554,9 @@ void OvrApplication::OnClose(int code) {
     }
 }
 
-void OvrApplication::OnError(int errCode, const std::string &msg) {
+void OvrApplication::OnError(int errCode, const char* msg) {
     Application::OnError(errCode, msg);
-    LOGE("on xr client error %d; msg %s;", errCode, msg.c_str());
+    LOGE("on xr client error %d; msg %s;", errCode, msg);
 
 #ifdef ENABLE_CLOUDXR
     if (cloudxr_client_ && cloudxr_client_->IsConnectStarted()) {
@@ -874,7 +820,7 @@ void OvrApplication::GetTrackingState(cxrVRTrackingState *state) {
 }
 
 void
-OvrApplication::OnCloudXRReady(const std::string &appServerIp, const std::string &preferOutIp) {
+OvrApplication::OnCloudXRReady(const char* appServerIp, const char* preferOutIp) {
     Application::OnCloudXRReady(appServerIp, preferOutIp);
     prepare_public_ip_ = preferOutIp;
     cxrError error = cloudxr_client_->Connect(appServerIp);

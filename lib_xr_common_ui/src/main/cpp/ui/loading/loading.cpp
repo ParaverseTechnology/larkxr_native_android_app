@@ -5,6 +5,7 @@
 #include <log.h>
 #include <application.h>
 #include <ui/localization.h>
+#include <lark_xr/xr_config.h>
 #include "lark_xr/xr_client.h"
 #include "loading.h"
 #define LOG_TAG "ui_loading"
@@ -44,9 +45,7 @@ void Loading::Init() {
     larkxrSystemInfo systemInfo = lark::XRClient::system_info();
     std::wstring quit = L"";
     if (Application::instance()->ui_mode() == Application::ApplicationUIMode_Opengles_3D) {
-        if (systemInfo.platFromType == larkxrPlatFromType::Larkxr_Platform_Oculus_Quest ||
-            systemInfo.platFromType == larkxrPlatFromType::Larkxr_Platform_PICO_NEO_2 ||
-            systemInfo.platFromType == larkxrPlatFromType::Larkxr_Platform_PICO_NEO_3) {
+        if (!lark::XRConfig::headset_desc.type == larkHeadSetType_HTC) {
             // 按住手柄扳机键并短按B或Y键可退出云端应用返回列表
             quit = localization::Loader::getResource().ui_loading_tips_3d_quest;
         } else {

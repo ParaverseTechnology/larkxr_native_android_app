@@ -215,8 +215,13 @@ void OxrApplication::RenderFrame() {
     bool cloudmedia_ready = xr_client_->media_ready();
     lark::XRVideoFrame xrVideoFrame(0);
 
+    // LOGV("cloudmedia_ready %d", cloudmedia_ready);
+
     if (!has_new_frame_cloudxr && xr_client_->is_connected()) {
         has_new_frame_pxy_stream = xr_client_->Render(&trackingFrame, &xrVideoFrame);
+
+        // LOGV("cloudmedia_ready %d has_new_frame_pxy_stream %d", cloudmedia_ready, has_new_frame_pxy_stream);
+
         // wait for cloud frame
         if (cloudmedia_ready && !has_new_frame_pxy_stream) {
 //            LOGV("wait for new frame");
@@ -287,7 +292,7 @@ void OxrApplication::RenderFrame() {
                 context_->head_space(), GetSelectedXRSpace(), frameState.predictedDisplayTime, &loc));
 
         glm::vec3 trackingAng = glm::eulerAngles(toGlm(loc.pose.orientation));
-        glm::vec3 renderAng = glm::eulerAngles(trackingFrame.tracking.rotation);
+        glm::vec3 renderAng = glm::eulerAngles(trackingFrame.tracking.rotation.toGlm());
         float degree = glm::degrees(renderAng.y - trackingAng.y);
 
         lark::XRLatencyCollector::Instance().Submit(trackingFrame.frameIndex, degree);
@@ -395,8 +400,8 @@ bool OxrApplication::RenderLayer(XrTime predictedDisplayTime,
 
         if (hasNewFrame) {
 //            LOGV("CLOUDXR frame ready %ld", trackingFrame.frameIndex);
-            projectionLayerViews[eye].pose.position = fromGlm(trackingFrame.tracking.eye[eye].viewPosition);
-            projectionLayerViews[eye].pose.orientation = fromGlm(trackingFrame.tracking.eye[eye].viewRotation);
+            projectionLayerViews[eye].pose.position = fromGlm(trackingFrame.tracking.eye[eye].viewPosition.toGlm());
+            projectionLayerViews[eye].pose.orientation = fromGlm(trackingFrame.tracking.eye[eye].viewRotation.toGlm());
         } else {
             projectionLayerViews[eye].pose = XrPosef_Inverse(viewTransform[eye]);
         }
@@ -438,9 +443,9 @@ void OxrApplication::OnHapticsFeedback(bool isLeft, uint64_t startTime, float am
     Application::OnHapticsFeedback(isLeft, startTime, amplitude, duration, frequency);
 }
 
-void OxrApplication::OnError(int errCode, const std::string &msg) {
+void OxrApplication::OnError(int errCode, const char* msg) {
     Application::OnError(errCode, msg);
-    LOGE("on xr client error %d; msg %s;", errCode, msg.c_str());
+    LOGE("on xr client error %d; msg %s;", errCode, msg);
 
 #ifdef ENABLE_CLOUDXR
     if (cloudxr_client_ && cloudxr_client_->IsConnectStarted()) {
@@ -519,7 +524,7 @@ void OxrApplication::OnSyncPlayerSpace(larkxrPlaySpace *playSpace) {
 
 #ifdef ENABLE_CLOUDXR
 void
-OxrApplication::OnCloudXRReady(const std::string &appServerIp, const std::string &preferOutIp) {
+OxrApplication::OnCloudXRReady(const char* appServerIp, const char* preferOutIp) {
     Application::OnCloudXRReady(appServerIp, preferOutIp);
 
     prepare_public_ip_ = preferOutIp;
@@ -772,4 +777,18 @@ void OxrApplication::OnNetworkLost() {
         xr_client_->OnPause();
     }
 }
+
+#ifdef TEST_ENTER_APPLI
+void OxrApplication::EnterAppliParams(const lark::EnterAppliParams &params) {
+    Application::EnterAppliParams(params);
+    // cloudxr_client_->Connect("192.168.0.50");
+    // cloudxr_client_->Connect("222.128.6.137");
+}
+
+void OxrApplication::EnterAppli(const std::string &appId) {
+    Application::EnterAppli(appId);
+    // cloudxr_client_->Connect("192.168.0.50");
+    // cloudxr_client_->Connect("222.128.6.137");
+}
+#endif
 }

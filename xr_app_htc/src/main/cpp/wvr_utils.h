@@ -135,13 +135,13 @@ namespace wvr {
         pose.is6DoFPose = larkvrPose.is6Dof;
         pose.timestamp = larkvrPose.timestamp;
         pose.predictedMilliSec = larkvrPose.predictedMilliSec;
-        pose.poseMatrix = fromGlm(larkvrPose.rawPoseMatrix);
-        pose.angularVelocity = fromGlm(larkvrPose.angularVelocity);
-        pose.velocity = fromGlm(larkvrPose.velocity);
-        pose.angularVelocity = fromGlm(larkvrPose.angularAcceleration);
-        pose.acceleration = fromGlm(larkvrPose.acceleration);
-        pose.rawPose.position = fromGlm(larkvrPose.rawPosition);
-        pose.rawPose.rotation = fromGlm(larkvrPose.rawRotation);
+        pose.poseMatrix = fromGlm(larkvrPose.rawPoseMatrix.toGlm());
+        pose.angularVelocity = fromGlm(larkvrPose.angularVelocity.toGlm());
+        pose.velocity = fromGlm(larkvrPose.velocity.toGlm());
+        pose.angularVelocity = fromGlm(larkvrPose.angularAcceleration.toGlm());
+        pose.acceleration = fromGlm(larkvrPose.acceleration.toGlm());
+        pose.rawPose.position = fromGlm(larkvrPose.rawPosition.toGlm());
+        pose.rawPose.rotation = fromGlm(larkvrPose.rawRotation.toGlm());
         return pose;
     }
 

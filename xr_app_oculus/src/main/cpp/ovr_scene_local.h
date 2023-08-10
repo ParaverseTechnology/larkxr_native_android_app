@@ -13,8 +13,8 @@
 #include <ui/loading/loading.h>
 #include "ui/navigation.h"
 #include "rect_texture.h"
-#include "ovr_scene.h"
 #include "ui/menu_view.h"
+#include "ovr_scene.h"
 
 class OvrSceneLocal:public OvrScene {
 public:

@@ -104,7 +104,7 @@ namespace utils {
 
 
     inline std::string GetTimestampMillStr() {
-        uint64_t ms = GetTimestampUs() * 1000;
+        uint64_t ms = GetTimestampUs() / 1000;
         return std::to_string(ms);
     }
 

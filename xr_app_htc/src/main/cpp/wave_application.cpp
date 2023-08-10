@@ -16,16 +16,31 @@
 #include <asset_files.h>
 #include <unistd.h>
 #include <utils.h>
+#include <wvr/wvr_system.h>
 #include "math.h"
 #include "wvr_utils.h"
 
 #define LOG_TAG "wave_app"
 
-#define USE_RENDER_QUEUE = 1;
+#define USE_RENDER_QUEUE 1;
+
+#define DISABLE_ADAPTIVE_QUALITY 1
+
 
 static void printGLString(const char *name, GLenum s) {
     const char *v = (const char *) glGetString(s);
     LOGI("GL %s = %s\n", name, v);
+}
+
+bool WaveApplication::s_is_vive_flow_ = false;
+
+void WaveApplication::set_is_vive_flow(bool isFlow) {
+    LOGI("is_vive_flow %d", isFlow);
+    s_is_vive_flow_ = isFlow;
+}
+
+bool WaveApplication::s_is_vive_flow() {
+    return s_is_vive_flow_;
 }
 
 WaveApplication::WaveApplication() {
@@ -124,13 +139,22 @@ bool WaveApplication::InitVR() {
         render_height_ = 0;
         WVR_GetRenderTargetSize(&render_width_, &render_height_);
 
+        if (s_is_vive_flow_) {
+            render_width_ *= 0.7f;
+            render_height_ *= 0.7f;
+            lark::XRConfig::QuickConfigWithDefaulSetup(lark::QuickConfigLevel_Fast);
+        }
         LOGI("render size width %d height %d", render_width_ * 2, render_height_);
         // setup render size.
-        lark::XRConfig::render_width = render_width_ * 2;
-        lark::XRConfig::render_height = render_height_;
+         lark::XRConfig::render_width = render_width_ * 2;
+         lark::XRConfig::render_height = render_height_;
 
         // frame rate
         lark::XRConfig::fps = 75;
+
+        if (s_is_vive_flow_) {
+            lark::XRConfig::fps = 60;
+        }
 
         lark::XRConfig::headset_desc.type = larkHeadSetType_HTC;
 
@@ -185,7 +209,8 @@ bool WaveApplication::InitGL() {
 
     left_eye_q_ = WVR_ObtainTextureQueue(WVR_TextureTarget_2D, WVR_TextureFormat_RGBA, WVR_TextureType_UnsignedByte, render_width_, render_height_, 0);
     for (int i = 0; i < WVR_GetTextureQueueLength(left_eye_q_); i++) {
-        WvrFrameBuffer* fbo = new WvrFrameBuffer((int)(long)WVR_GetTexture(left_eye_q_, i).id, render_width_, render_height_, true);
+        WvrFrameBuffer* fbo = new WvrFrameBuffer((int)(long)WVR_GetTexture(left_eye_q_, i).id, render_width_, render_height_,
+                                                 true);
         if (fbo->has_error()) return false;
         left_eye_fbo_.push_back(fbo);
     }
@@ -212,6 +237,7 @@ bool WaveApplication::InitGL() {
     glCullFace(GL_BACK);
     glEnable(GL_CULL_FACE);
     glFrontFace(GL_CCW);
+
 
 #if defined(ENABLE_FOVEATED_RENDERING) && ENABLE_FOVEATED_RENDERING
     WVR_RenderFoveation(true);
@@ -251,7 +277,7 @@ void WaveApplication::InitJava() {
     }
 
     // 3dof controller system
-    if (lark::XRClient::system_info().platFromType != Larkxr_Platform_HTC_FOCUS_PLUS) {
+    if (s_is_vive_flow_) {
         WVR_SetArmModel(WVR_SimulationType_ForceOn);
         WVR_SetArmSticky(true);
     }
@@ -424,13 +450,6 @@ bool WaveApplication::OnUpdate() {
     return false;
 }
 
-void WaveApplication::EnterAppli(const std::string &appId) {
-    LOGI("==========EnterAppli %s", appId.c_str());
-    if (xr_client_) {
-        xr_client_->EnterAppli(appId);
-    }
-}
-
 void WaveApplication::EnterAppliParams(const lark::EnterAppliParams &params) {
     LOGV("on enter EnterAppliParams");
     if (xr_client_) {
@@ -451,9 +470,9 @@ void WaveApplication::OnConnected() {
     scene_cloud_->OnConnect();
 }
 
-void WaveApplication::OnError(int errCode, const std::string &msg) {
+void WaveApplication::OnError(int errCode, const char* msg) {
     Application::OnError(errCode, msg);
-    LOGE("on xr client error %d; msg %s;", errCode, msg.c_str());
+    LOGE("on xr client error %d; msg %s;", errCode, msg);
 
 #ifdef ENABLE_CLOUDXR
     if (cloudxr_client_ && cloudxr_client_->IsConnectStarted()) {
@@ -541,7 +560,7 @@ WaveApplication::OnHapticsFeedback(bool isLeft, uint64_t startTime, float amplit
 
 #ifdef ENABLE_CLOUDXR
 void
-WaveApplication::OnCloudXRReady(const std::string &appServerIp, const std::string &preferOutIp) {
+WaveApplication::OnCloudXRReady(const char* appServerIp, const char* preferOutIp) {
     Application::OnCloudXRReady(appServerIp, preferOutIp);
     prepare_public_ip_ = preferOutIp;
     cxrError error = cloudxr_client_->Connect(appServerIp);

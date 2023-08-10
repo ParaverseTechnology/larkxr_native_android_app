@@ -5,8 +5,9 @@
 #ifndef CLOUDLARKXR_PVR_APPLICATION_H
 #define CLOUDLARKXR_PVR_APPLICATION_H
 
-#include <glm/detail/type_quat.hpp>
-#include "glm/glm.hpp"
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <application.h>
 #include "pvr_scene_local.h"
 #include "pvr_scene_cloud.h"
@@ -32,9 +33,6 @@ public:
     //  callback from android native activity.
     virtual void HandleVrModeChange() override {};
     virtual bool OnUpdate() override { return false; };
-    // 进入应用
-    virtual void EnterAppli(const std::string& appId) override;
-    virtual void CloseAppli() override;
 
     void FrameBegin(const pvr::PvrPose& pose);
     void UpdateControler(const pvr::PvrControllerState& controllerState);
@@ -51,7 +49,7 @@ public:
     // xr client callback
     virtual void OnConnected() override;
     virtual void OnClose(int code) override;
-    virtual void OnError(int errCode, const std::string& msg) override;
+    virtual void OnError(int errCode, const char* msg) override;
     virtual void OnHapticsFeedback(bool isLeft, uint64_t startTime, float amplitude, float duration, float frequency) override;
     // hw decoder callback textrue.
     virtual void OnMediaReady(int nativeTextrure) override;

@@ -65,7 +65,7 @@ Navigation::Navigation(bool extAppSetup) :
     toast_->set_active(false);
     AddChild(toast_);
 
-    if (lark::XRClient::GetServerHost().empty()) {
+    if (std::string(lark::XRClient::GetServerHost()).empty()) {
         LOGV("server ip is empty.");
         SetRouter(Navigation::ROUTERS::SETUP_SERVERADDR);
         ShowToast(utils::WStringToString(localization::Loader::getResource().ui_setup_serveraddr_request));

@@ -18,6 +18,9 @@ class WaveApplication: public Application
 #endif
 {
 public:
+    static void set_is_vive_flow(bool isFlow);
+    static bool s_is_vive_flow();
+
     WaveApplication();
     ~WaveApplication();
 
@@ -37,8 +40,6 @@ public:
     //  callback from android native activity.
     virtual void HandleVrModeChange() override {};
     virtual bool OnUpdate() override;
-    // 进入应用
-    virtual void EnterAppli(const std::string& appId) override;
     // 可选区域id等参数进入应用
     virtual void EnterAppliParams(const lark::EnterAppliParams& params) override;
 
@@ -46,7 +47,7 @@ public:
     // xr client callback
     virtual void OnConnected() override;
     virtual void OnClose(int code) override;
-    virtual void OnError(int errCode, const std::string& msg) override;
+    virtual void OnError(int errCode, const char* msg) override;
     // soft decoder
     virtual void OnMediaReady() override;
     // hw decoder callback textrue.
@@ -60,7 +61,7 @@ public:
     virtual void OnHapticsFeedback(bool isLeft, uint64_t startTime, float amplitude, float duration, float frequency) override;
 
 #ifdef ENABLE_CLOUDXR
-    virtual void OnCloudXRReady(const std::string& appServerIp, const std::string& preferOutIp) override;
+    virtual void OnCloudXRReady(const char* appServerIp, const char* preferOutIp) override;
 #endif
 
 #ifdef ENABLE_CLOUDXR
@@ -95,5 +96,7 @@ private:
     bool need_reconnect_public_ip_ = false;
     bool need_recreat_cloudxr_client_ = false;
 #endif
+
+    static bool s_is_vive_flow_;
 };
 #endif //CLOUDLARKXR_WAVE_APPLICATION_H

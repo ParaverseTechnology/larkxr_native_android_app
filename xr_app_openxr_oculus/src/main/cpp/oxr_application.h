@@ -17,6 +17,8 @@
 #include "application.h"
 #include "openxr_context.h"
 
+#define TEST_ENTER_APPLI 1
+
 namespace oxr {
 class OxrApplication: public Application
 #ifdef ENABLE_CLOUDXR
@@ -36,6 +38,12 @@ public:
     void Update();
     void RenderFrame();
 
+#ifdef TEST_ENTER_APPLI
+    virtual void EnterAppli(const std::string& appId);
+    // 可选区域id等参数进入应用
+    virtual void EnterAppliParams(const lark::EnterAppliParams& params);
+#endif
+
     // call by ui
     // ui 设置帧率
     virtual void SetupFPS(int fps) override;
@@ -50,7 +58,7 @@ public:
     // xr client callback
     virtual void OnConnected() override;
     virtual void OnClose(int code) override;
-    virtual void OnError(int errCode, const std::string& msg) override;
+    virtual void OnError(int errCode, const char* msg) override;
     virtual void OnHapticsFeedback(bool isLeft, uint64_t startTime, float amplitude, float duration, float frequency) override;
     // hw decoder callback textrue.
     virtual void OnMediaReady(int nativeTextrure) override;
@@ -60,7 +68,7 @@ public:
     virtual void OnSyncPlayerSpace(larkxrPlaySpace* playSpace) override;
 
 #ifdef ENABLE_CLOUDXR
-    virtual void OnCloudXRReady(const std::string& appServerIp, const std::string& preferOutIp) override;
+    virtual void OnCloudXRReady(const char* appServerIp, const char* preferOutIp) override;
 
     // cloudxr callback
     virtual void UpdateClientState(cxrClientState state, cxrStateReason reason) override;

@@ -50,7 +50,7 @@ bool WvrSceneLocal::InitGL(void* left_eye_queue, void* right_eye_qeue,
     WvrScene::AddObject(sky_box_);
 
     larkxrSystemInfo info = lark::XRClient::system_info();
-    lark::ControllerConfig controllerConfig = lark::CONTROLLER_HTC_FOCUS_PLUS;
+    lark::ControllerConfig controllerConfig = lark::CONTROLLER_HTC_FOCULS;
     if (info.platFromType == Larkxr_Platform_HTC_FOCUS_PLUS) {
         controllerConfig = lark::CONTROLLER_HTC_FOCUS_PLUS;
     } else if (info.platFromType == Larkxr_Platform_HTC_FOCUS) {

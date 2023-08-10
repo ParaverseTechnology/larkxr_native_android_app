@@ -5,6 +5,18 @@
 #ifndef CLOUDLARKXR_COMMON_TYPES_H
 #define CLOUDLARKXR_COMMON_TYPES_H
 
+#include <stdint.h>
+
+#define LARK_XR_MAX_APPSERVER_SIZE          256
+#define LARK_XR_MAX_PREFERPUBOUTIP_SIZE     256
+#define LARK_XR_MAX_TASKID_SIZE             256
+#define LARK_XR_MAX_APPLIID_SIZE            256
+#define LARK_XR_MAX_NICKNAME_SIZE           512
+#define LARK_XR_MAX_ROOMCODE_SIZE           256
+
+// GLOBAL
+typedef int						        BOOL;
+
 // sdk version.
 const int LARK_NATIVE_CLIENT_SDK_VERSION_MARJOR = 3;
 const int LARK_NATIVE_CLIENT_SDK_VERSION_MINOR  = 2;
@@ -23,8 +35,8 @@ typedef enum larkHeadSetType_ {
 
 typedef struct larkHeadSetControllerDesc_ {
     larkHeadSetType     type = larkHeadSetType_OCULUS;
-    bool                forece3dof = false; //强制3dof 如oculus go
-    float               controllerposeTimeOffset = 0.01;//正常:0.01 中速:-0.03 快速:-1 控制器追踪速度"像需要快速运动的游戏比如《光剑》，选择中速或快速。 运动比较慢的游戏比如《Skyrim》，使用正常即可。",
+    BOOL                forece3dof = false; //强制3dof 如oculus go
+    float               controllerposeTimeOffset = 0.01f;//正常:0.01 中速:-0.03 快速:-1 控制器追踪速度"像需要快速运动的游戏比如《光剑》，选择中速或快速。 运动比较慢的游戏比如《Skyrim》，使用正常即可。",
     float               hapticsIntensity = 3;//控制器触动反馈0-5
 } larkHeadSetControllerDesc;
 
@@ -35,7 +47,7 @@ FFR会在视图的边缘造成一些视觉伪像,这些伪像或多或少会根�
 */
 typedef struct larkFoveatedRendering_
 {
-    bool                    enableFoveateRendering = true;      //true的时候 其他参数启用(默认为true)
+    BOOL                    enableFoveateRendering = true;      //true的时候 其他参数启用(默认为true)
     float                   foveationStrength = 2;      //渲染强度          [0.5-10.0]          默认 2 值越高,意味着朝向帧边缘的细节越少,伪像越多
     float                   foveationShape = 1.5;      //渲染形状          [0.2-2.0]           默认 1.5  集中渲染的形状
     float                   foveationVerticalOffset = 0;      //渲染垂直偏移      [-0.05-0.05]        默认 0  较高的值表示高质量的帧区域进一步向下移动
@@ -44,7 +56,7 @@ typedef struct larkFoveatedRendering_
 //色彩校正
 typedef struct larkColorCorrention_
 {
-    bool                    enableColorCorrection = true;      //true的时候 其他参数启用(默认为false)
+    BOOL                    enableColorCorrection = true;      //true的时候 其他参数启用(默认为false)
     float                   brightness = 0;      //亮度:范围[-1; 1],默认值为0。-1完全为黑色,1完全为白色
     float                   contrast = 0;      //对比度:范围[-1; 1],默认值为0。-1完全是灰色的
     float                   saturation = 0;      //饱和度:范围[-1; 1],默认值为0。-1为黑白
@@ -70,8 +82,8 @@ typedef struct larkVRVideoDesc_
     uint32_t                  codec = 0;      //0 h264 1 h265
     uint32_t                  target_eye_resolution_width = 1440; // half eye
     uint32_t                  target_eye_resolution_height = 1440;
-    float                   seconds_from_vsync_to_photons = 0.005;      //0.005
-    bool                    use10bitEncoder = false;      //false
+    float                   seconds_from_vsync_to_photons = 0.005f;      //0.005
+    BOOL                    use10bitEncoder = false;      //false
     //-------集中渲染相关
     larkFoveatedRendering       foveatedRendering;
     //-------色彩校正相关
@@ -130,14 +142,14 @@ typedef enum larkAppliType_ {
 
 // config
 typedef struct larkCommonConfig_ {
-    bool debugTask;
-    bool useProxy;
-    std::string appServer;
+    BOOL debugTask;
+    BOOL useProxy;
+    char appServer[LARK_XR_MAX_APPSERVER_SIZE];
     int appPort;
-    std::string preferPubOutIp;
+    char preferPubOutIp[LARK_XR_MAX_PREFERPUBOUTIP_SIZE];
     // common config
-    std::string taskId;
-    std::string appliId;
+    char taskId[LARK_XR_MAX_TASKID_SIZE];
+    char appliId[LARK_XR_MAX_APPLIID_SIZE];
     larkAppliType appliType;
     int noOperationTimeout;
     int fps;
@@ -148,14 +160,14 @@ typedef struct larkCommonConfig_ {
     float ipd;
     float roomHeight;
     // oculus controller.
-    bool hasTouchcontroller;
+    BOOL hasTouchcontroller;
     larkRenderFov fovList[2];
-    bool useKcp;
-    bool useH265;
+    BOOL useKcp;
+    BOOL useH265;
     larkPlayerModeType playerMode;
     larkUserType userType;
-    std::string nickName;
-    std::string roomCode;
+    char nickName[LARK_XR_MAX_NICKNAME_SIZE];
+    char roomCode[LARK_XR_MAX_ROOMCODE_SIZE];
     larkHeadSetControllerDesc headSetDesc;
     larkVRVideoDesc vrVideoDesc;
 } larkCommonConfig;

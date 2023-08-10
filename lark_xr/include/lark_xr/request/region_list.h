@@ -7,6 +7,7 @@
 #define CLOUDLARKXR_REGION_LIST_H
 
 #include <iostream>
+#include <vector>
 #include "../common.h"
 
 namespace lark {

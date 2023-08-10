@@ -218,9 +218,7 @@ void CoverItem::HandleInput(glm::vec2 *point, int pointCount) {
         }
     }
     if (picked_ && (intpuState.triggerShortPressed || intpuState.backButtonDown) && !app_id_.empty()) {
-        larkxrSystemInfo systemInfo = lark::XRClient::system_info();
-        if (systemInfo.platFromType == larkxrPlatFromType::Larkxr_Platform_PICO_NEO_2 ||
-            systemInfo.platFromType == larkxrPlatFromType::Larkxr_Platform_Oculus_Quest) {
+        if (!lark::XRConfig::headset_desc.type == larkHeadSetType_HTC) {
             Navigation::ShowToast(utils::WStringToString(localization::Loader::getResource().ui_home_trigger_hit_ax));
         } else {
             Navigation::ShowToast(utils::WStringToString(localization::Loader::getResource().ui_home_trigger_hit));

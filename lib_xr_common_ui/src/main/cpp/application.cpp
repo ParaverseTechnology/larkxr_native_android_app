@@ -44,7 +44,7 @@ Application::~Application() {
 void Application::EnterAppli(const std::string &appId) {
     LOGV("enterappli with appid %s", appId.c_str());
     if (xr_client_) {
-        xr_client_->EnterAppli(appId);
+        xr_client_->EnterAppli(appId.c_str());
     }
 }
 
@@ -64,7 +64,7 @@ void Application::CloseAppli() {
 void Application::SetServerAddr(const std::string &ip, uint16_t port) {
     if (xr_client_) {
         xr_client_->OnPause();
-        xr_client_->SetServerAddr(ip, port);
+        xr_client_->SetServerAddr(ip.c_str(), port);
         xr_client_->OnResume();
     }
 }
@@ -73,7 +73,7 @@ void Application::OnClientId(const std::string& clientId) {
     Home::SetClientId(clientId);
 }
 
-void Application::OnInfo(int infoCode, const std::string &msg) {
+void Application::OnInfo(int infoCode, const char* msg) {
     Navigation::ShowToast(msg);
 }
 
@@ -106,7 +106,7 @@ void Application::InitCertificate() {
     int appSecretLen = utils::ReadFile(appSecretPath.c_str(), appSecret, 1024);
 
     LOGV("appkey %s appSecret %s", appkey, appSecret);
-    lark::XRClient::SetCertificate(std::string(appkey, appKeyLen), std::string(appSecret, appSecretLen));
+    lark::XRClient::SetCertificate(appkey, appSecret);
 }
 
 void Application::RequestAudioInput() {
@@ -185,7 +185,7 @@ void Application::OnConnected() {
 //     RequestAudioInput();
 }
 
-void Application::OnError(int errCode, const std::string &msg) {
+void Application::OnError(int errCode, const char* msg) {
     XRClientObserverWrap::OnError(errCode, msg);
 
     if (recording_stream_) {

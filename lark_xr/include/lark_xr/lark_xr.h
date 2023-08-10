@@ -20,4 +20,7 @@
 #define LARK_XR_API
 #endif
 #endif
+
+#define DC_CALL __stdcall
+
 #endif //CLOUDLARKXR_CLOULARK_XR_H

@@ -22,20 +22,5 @@
 	#endif
 #endif
 
-//
-// Automatically link Common library.
-//
-#if defined(_MSC_VER)
-	#define LARK_LIB_SUFFIX ".lib"
-	
-	#if !defined(CLOUDLARK_COMMON_EXPORT)
-		#pragma comment(lib, "lark_common" LARK_LIB_SUFFIX)
-	#endif
-#endif
-#endif // COMMON_INCLUDE
 
-// Define to desired default thread stack size
-// Zero means OS default
-#ifndef POCO_THREAD_STACK_SIZE
-	#define POCO_THREAD_STACK_SIZE 0
-#endif
+#endif // COMMON_INCLUDE

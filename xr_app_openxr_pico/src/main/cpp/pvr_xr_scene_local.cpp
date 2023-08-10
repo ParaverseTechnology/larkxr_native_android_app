@@ -84,8 +84,7 @@ void PvrXRSceneLocal::HandleInput(const InputState& input_state, const XrSession
 
         // WARNING xrLocateSpace time must valid timestamp
         uint64_t now = utils::GetTimestampNs();
-        XrTime predictedDisplayTime = now + 1000 * 1000 * 40;
-        res = xrLocateSpace(input_state.handSpace[hand], space, predictedDisplayTime, &spaceLocation);
+        res = xrLocateSpace(input_state.handSpace[hand], space, now, &spaceLocation);
 
 //        LOGI("hand xrLocateSpace hand %d res %d locationflags %ld active %d px %f py %f pz %f rx %f ry %f rz %f rw %f",
 //             hand, res, spaceLocation.locationFlags, input_state.handActive[hand],

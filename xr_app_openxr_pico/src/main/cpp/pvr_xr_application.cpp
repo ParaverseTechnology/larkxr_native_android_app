@@ -157,7 +157,12 @@ bool PvrXrApplication::InitGL(OpenxrContext *context) {
     xr_client_->Init(Context::instance()->vm(), false);
     xr_client_->InitGLShareContext();
     xr_client_->RegisterObserver(this);
-    xr_client_->EnableDebugMode(true);
+    xr_client_->EnableDebugMode(false);
+
+    if (!xr_client_->InitSdkAuthorization(LARK_SDK_ID)) {
+        LOGV("init sdk auth faild %d %s", xr_client_->last_error_code(), xr_client_->last_error_message().c_str());
+        Navigation::ShowToast(xr_client_->last_error_message());
+    }
 
     LOGI("view cout %ld", context_->views().size());
 
@@ -229,68 +234,9 @@ void PvrXrApplication::ShutdownGL() {
     lark::AssetLoader::Release();
 }
 
-void PvrXrApplication::EnterAppli(const std::string &appId) {
-    LOGV("on enter appli");
-#if 1
-    xr_client_->EnterAppli(appId);
-#else
-    larkCommonConfig config;
-    config.width = lark::XRConfig::align32ed_scaled_render_width();
-    config.height = lark::XRConfig::align32ed_scaled_render_height();
-    config.bitrateKbps = lark::XRConfig::bitrate;
-    config.fps = lark::XRConfig::fps;
-    for(int i = 0; i < 2; i++) {
-        config.fovList[i] = {
-                lark::XRConfig::fov[i].left,
-                lark::XRConfig::fov[i].right,
-                lark::XRConfig::fov[i].top,
-                lark::XRConfig::fov[i].bottom,
-        };
-    }
-    config.roomHeight = lark::XRConfig::room_height;
-    config.ipd = lark::XRConfig::XRConfig::ipd;
-    config.useKcp = lark::XRConfig::XRConfig::use_kcp;
-    config.useH265 = lark::XRConfig::XRConfig::use_h265;
-    // oculus use touch controller.
-    config.hasTouchcontroller = true;
-    {
-        // test
-        config.appServer = "192.168.0.223";
-//            config.appServer = "192.168.0.35";
-        config.appPort = 10002;
-//            config.width = 1920;
-//            config.height = 1080;
-        config.taskId = "123456";
-        config.debugTask = true;
-        config.useProxy = false;
-        config.playerMode = PlayerModeType_Normal;
-        config.userType = UserType_Player;
-    }
-
-    config.headSetDesc = lark::XRConfig::headset_desc;
-    config.vrVideoDesc = lark::XRConfig::GetVideoDesc();
-    xr_client_->Connect(config);
-#endif
-}
-
-void PvrXrApplication::EnterAppliParams(const lark::EnterAppliParams &params) {
-    LOGV("on enter EnterAppliParams");
-    if (xr_client_) {
-        xr_client_->EnterAppli(params);
-//        xr_client_->EnterAppli("846813152229195776");
-    }
-}
-
-void PvrXrApplication::CloseAppli() {
-    LOGV("on close appli");
-    if (xr_client_) {
-        xr_client_->Close();
-    }
-}
-
 void PvrXrApplication::Update() {
     if (xr_client_->is_connected()) {
-        scene_cloud_->HandleInput(context_->input(), context_->session(), context_->app_space());
+        scene_cloud_->HandleInput(context_->input(), context_->session(),  GetSelectedXRSpace());
 // TEST datachannel
 //        {
 //            XrActionStateGetInfo getInfo{XR_TYPE_ACTION_STATE_GET_INFO};
@@ -316,7 +262,7 @@ void PvrXrApplication::Update() {
 //            }
 //        }
     } else {
-        scene_local_->HandleInput(context_->input(), context_->session(), context_->app_space());
+        scene_local_->HandleInput(context_->input(), context_->session(), context_->local_space());
     }
 }
 
@@ -402,6 +348,8 @@ void PvrXrApplication::RenderFrame() {
     xr_client_->Render(&trackingFrame);
 #endif
 
+    uint64_t now = utils::GetTimestampUs();
+
     auto session = context_->session();
     CHECK(session != XR_NULL_HANDLE);
 
@@ -450,7 +398,8 @@ void PvrXrApplication::RenderFrame() {
                 context_->head_space(), GetSelectedXRSpace(), frameState.predictedDisplayTime, &loc));
 
         glm::vec3 trackingAng = glm::eulerAngles(pvr::toGlm(loc.pose.orientation));
-        glm::vec3 renderAng = glm::eulerAngles(trackingFrame.tracking.rotation);
+        glm::vec3 renderAng = glm::eulerAngles(trackingFrame.tracking.rotation.toGlm());
+
         float degree = glm::degrees(renderAng.y - trackingAng.y);
 
         lark::XRLatencyCollector::Instance().Submit(trackingFrame.frameIndex, degree);
@@ -469,104 +418,121 @@ void PvrXrApplication::RenderFrame() {
 bool PvrXrApplication::RenderLayer(XrTime predictedDisplayTime,
                                    std::vector<XrCompositionLayerProjectionView> &projectionLayerViews,
                                    XrCompositionLayerProjection &layer, const larkxrTrackingFrame& trackingFrame, bool hasNewFrame) {
-    XrResult res;
+    XrSpace space = hasNewFrame ? GetSelectedXRSpace() : context_->local_space();
+    XrPosef xfStageFromHead = {};
+    XrPosef viewTransform[2];
 
-    auto views = context_->views();
-    auto input = context_->input();
-    auto app_space = context_->app_space();
-    auto session = context_->session();
-    auto config_views = context_->config_views();
-
-    XrViewState viewState{XR_TYPE_VIEW_STATE};
-    uint32_t viewCapacityInput = (uint32_t)views.size();
-    uint32_t viewCountOutput;
-
-    XrViewLocateInfo viewLocateInfo{XR_TYPE_VIEW_LOCATE_INFO};
-    viewLocateInfo.viewConfigurationType = context_->view_config_type();
-    viewLocateInfo.displayTime = predictedDisplayTime;
-    viewLocateInfo.space = app_space;
-
-    // PICO SDK 2.2.0
-    // XrViewStatePICOEXT  xrViewStatePICOEXT;
-    // viewState.next=(void *)&xrViewStatePICOEXT;
-
-    viewState.next = nullptr;
-
-    res = xrLocateViews(session, &viewLocateInfo, &viewState, viewCapacityInput, &viewCountOutput, views.data());
-
-//    LOGV("get pico pose pico %f %f %f; view[0] %f %f %f; view[1] %f %f %f",
-//            xrViewStatePICOEXT.headpose.position.x, xrViewStatePICOEXT.headpose.position.y, xrViewStatePICOEXT.headpose.position.z,
-//            views[0].pose.position.x, views[0].pose.position.y, views[0].pose.position.z,
-//            views[1].pose.position.x, views[1].pose.position.y, views[1].pose.position.y);
-//    LOGV("get pico pose pico %f %f %f %f ; view[0] %f %f %f %f; view[1] %f %f %f %f",
-//            xrViewStatePICOEXT.headpose.orientation.x, xrViewStatePICOEXT.headpose.orientation.y, xrViewStatePICOEXT.headpose.orientation.z, xrViewStatePICOEXT.headpose.orientation.w,
-//            views[0].pose.orientation.x, views[0].pose.orientation.y, views[0].pose.orientation.z, views[0].pose.orientation.w,
-//            views[1].pose.orientation.x, views[1].pose.orientation.y, views[1].pose.orientation.y, views[0].pose.orientation.w);
-
-//    for(auto view: views) {
-//        LOGI("fov left %f right %f up %f down %f", view.fov.angleLeft, view.fov.angleRight, view.fov.angleUp, view.fov.angleDown);
-//    }
-//
-      if (!config_inited_) {
-        if (views.size() == 2) {
-            glm::vec3 left(views[0].pose.position.x, views[0].pose.position.y, views[0].pose.position.z);
-            glm::vec3 right(views[1].pose.position.x, views[1].pose.position.y, views[1].pose.position.z);
-            LOGI("ipd %f", glm::distance(left, right));
-            lark::XRConfig::ipd = glm::distance(left, right);
-        }
-        config_inited_ = true;
-      }
-
-    CHECK_XRRESULT(res, "xrLocateViews");
-    if ((viewState.viewStateFlags & XR_VIEW_STATE_POSITION_VALID_BIT) == 0 ||
-        (viewState.viewStateFlags & XR_VIEW_STATE_ORIENTATION_VALID_BIT) == 0) {
-        return false;  // There is no valid tracking poses for the views.
+    if (!GetViewTransform(space, predictedDisplayTime, viewTransform, 2, &xfStageFromHead)) {
+        return false;
     }
 
-    CHECK(viewCountOutput == viewCapacityInput);
-    CHECK(viewCountOutput == config_views.size());
+    for (int eye = 0; eye < 2; eye++) {
+        viewTransform[eye] = XrPosef_Inverse(viewTransform[eye]);
+    }
 
-    projectionLayerViews.resize(viewCountOutput);
+    // TODO config eyes
+    // only support 2 eyes for now.
+    projectionLayerViews.resize(2);
 
-    // Render view to the appropriate part of the swapchain image.
-    for (uint32_t i = 0; i < viewCountOutput; i++) {
-        picoxr::FrameBuffer frameBuffer = context_->frame_buffer(i);
+    if (!config_inited_) {
+        glm::vec3 position[2] = {};
+        for (int eye = 0; eye < 2; eye++) {
+            position[eye] = pvr::toGlm(context_->views()[eye].pose.position);
 
-        // Each view has a separate swapchain which is acquired, rendered to, and released.
-        projectionLayerViews[i] = {XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW};
+            LOGI("fov[eye] left %f right %f top %f bottom %f",
+                 context_->views()[eye].fov.angleLeft,
+                 context_->views()[eye].fov.angleRight,
+                 context_->views()[eye].fov.angleUp,
+                 context_->views()[eye].fov.angleDown);
+            lark::XRConfig::fov[eye].left = glm::abs(glm::degrees(context_->views()[eye].fov.angleLeft));
+            lark::XRConfig::fov[eye].right = glm::abs(glm::degrees(context_->views()[eye].fov.angleRight));
+
+            // lark::XRConfig::fov[eye].top = glm::abs(glm::degrees(context_->views()[eye].fov.angleUp));
+            // lark::XRConfig::fov[eye].bottom = glm::abs(glm::degrees(context_->views()[eye].fov.angleDown));
+
+            // TODO setup angle down and up ?
+            // TODO top -> angleDown ? bottom -> angle up ?
+            lark::XRConfig::fov[eye].top = glm::abs(glm::degrees(context_->views()[eye].fov.angleDown));
+            lark::XRConfig::fov[eye].bottom = glm::abs(glm::degrees(context_->views()[eye].fov.angleUp));
+
+            LOGI("fov[eye] radius l %f r %f t %f b %f; degrees l %f r %f t %f b %f",
+                 context_->views()[eye].fov.angleLeft,
+                 context_->views()[eye].fov.angleRight,
+                 context_->views()[eye].fov.angleUp,
+                 context_->views()[eye].fov.angleDown,
+                 lark::XRConfig::fov[eye].left,
+                 lark::XRConfig::fov[eye].right,
+                 lark::XRConfig::fov[eye].top,
+                 lark::XRConfig::fov[eye].bottom);
+
+            LOGI("width %d height %d", context_->frame_buffer(eye).color_swapchain().Width,
+                 context_->frame_buffer(eye).color_swapchain().Height);
+        }
+
+        // TODO config render width
+//        lark::XRConfig::render_width = context_->frame_buffer(0).color_swapchain().Width * 2;
+//        lark::XRConfig::render_height = context_->frame_buffer(0).color_swapchain().Height;
+
+        lark::XRConfig::ipd = glm::distance(position[0], position[1]);
+        LOGI("ipd %f width %d height %d", lark::XRConfig::ipd, lark::XRConfig::render_width, lark::XRConfig::render_height);
+
+#ifdef ENABLE_CLOUDXR
+        // create cloudxr before scene cloud inited
+        cloudxr_client_->InitRenderParamsWithLarkXRConfig();
+        cloudxr_client_->Init();
+#endif
+        config_inited_ = true;
+    }
+
+    XrCompositionLayerProjection projection_layer = {};
+    projection_layer.type = XR_TYPE_COMPOSITION_LAYER_PROJECTION;
+    projection_layer.layerFlags = XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT;
+    projection_layer.layerFlags |= XR_COMPOSITION_LAYER_CORRECT_CHROMATIC_ABERRATION_BIT;
+    if (hasNewFrame) {
+        projection_layer.space = GetSelectedXRSpace();
+    } else {
+        projection_layer.space = context_->local_space();
+    }
+    projection_layer.viewCount = projectionLayerViews.size();
+    projection_layer.views = projectionLayerViews.data();
+
+    for (int eye = 0; eye < 2; eye++) {
+        picoxr::FrameBuffer frameBuffer = context_->frame_buffer(eye);
+
+        memset(
+                &projectionLayerViews[eye], 0, sizeof(XrCompositionLayerProjectionView));
+        projectionLayerViews[eye].type = XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW;
 
         if (hasNewFrame) {
 //            LOGV("CLOUDXR frame ready %ld", trackingFrame.frameIndex);
-            projectionLayerViews[i].pose.position = pvr::fromGlm(trackingFrame.tracking.eye[i].viewPosition);
-            projectionLayerViews[i].pose.orientation = pvr::fromGlm(trackingFrame.tracking.eye[i].viewRotation);
+            projectionLayerViews[eye].pose.position = pvr::fromGlm(trackingFrame.tracking.eye[eye].viewPosition.toGlm());
+            projectionLayerViews[eye].pose.orientation = pvr::fromGlm(trackingFrame.tracking.eye[eye].viewRotation.toGlm());
         } else {
-            projectionLayerViews[i].pose = views[i].pose;
+            projectionLayerViews[eye].pose = XrPosef_Inverse(viewTransform[eye]);
         }
 
-        projectionLayerViews[i].fov = views[i].fov;
+        projectionLayerViews[eye].fov = context_->views()[eye].fov;
 
-        projectionLayerViews[i].subImage.swapchain =
+        memset(&projectionLayerViews[eye].subImage, 0, sizeof(XrSwapchainSubImage));
+        projectionLayerViews[eye].subImage.swapchain =
                 frameBuffer.color_swapchain().Handle;
-        projectionLayerViews[i].subImage.imageRect.offset.x = 0;
-        projectionLayerViews[i].subImage.imageRect.offset.y = 0;
-        projectionLayerViews[i].subImage.imageRect.extent.width =
+        projectionLayerViews[eye].subImage.imageRect.offset.x = 0;
+        projectionLayerViews[eye].subImage.imageRect.offset.y = 0;
+        projectionLayerViews[eye].subImage.imageRect.extent.width =
                 frameBuffer.color_swapchain().Width;
-        projectionLayerViews[i].subImage.imageRect.extent.height =
+        projectionLayerViews[eye].subImage.imageRect.extent.height =
                 frameBuffer.color_swapchain().Height;
-        projectionLayerViews[i].subImage.imageArrayIndex = 0;
-
-//        LOGI("viewSwapchain w %d h %d", viewSwapchain.width, viewSwapchain.height);
+        projectionLayerViews[eye].subImage.imageArrayIndex = 0;
 
         if (xr_client_->is_connected()) {
-            scene_cloud_->RenderView(static_cast<lark::Object::Eye>(i),  projectionLayerViews[i], frameBuffer);
+            scene_cloud_->RenderView((lark::Object::Eye)eye, projectionLayerViews[eye], frameBuffer);
         } else {
-            scene_local_->RenderView(static_cast<lark::Object::Eye>(i), projectionLayerViews[i], frameBuffer);
+            scene_local_->RenderView((lark::Object::Eye)eye, projectionLayerViews[eye], frameBuffer);
         }
+
     }
 
-    layer.space = app_space;
-    layer.viewCount = (uint32_t)projectionLayerViews.size();
-    layer.views = projectionLayerViews.data();
+    layer = projection_layer;
     return true;
 }
 
@@ -619,9 +585,9 @@ void PvrXrApplication::OnConnected() {
     scene_cloud_->OnConnect();
 }
 
-void PvrXrApplication::OnError(int errCode, const std::string &msg) {
+void PvrXrApplication::OnError(int errCode, const char* msg) {
     Application::OnError(errCode, msg);
-    LOGE("on xr client error %d; msg %s;", errCode, msg.c_str());
+    LOGE("on xr client error %d; msg %s;", errCode, msg);
 
 #ifdef ENABLE_CLOUDXR
     if (cloudxr_client_ && cloudxr_client_->IsConnectStarted()) {
@@ -762,11 +728,12 @@ void PvrXrApplication::OnPause() {
 
 #ifdef ENABLE_CLOUDXR
 void
-PvrXrApplication::OnCloudXRReady(const std::string &appServerIp, const std::string &preferOutIp) {
+PvrXrApplication::OnCloudXRReady(const char* appServerIp, const char* preferOutIp) {
     Application::OnCloudXRReady(appServerIp, preferOutIp);
 
     prepare_public_ip_ = preferOutIp;
     cxrError error = cloudxr_client_->Connect(appServerIp);
+//    cxrError error = cloudxr_client_->Connect("222.128.6.137");
 //    cxrError error = cloudxr_client_->Connect("222.128.6.137");
     if (error != cxrError_Success) {
         const char* errorString = cxrErrorString(error);
