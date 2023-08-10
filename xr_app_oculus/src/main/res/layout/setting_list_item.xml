@@ -1,0 +1,324 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:background="@drawable/blue_shape_with_back"
+    android:padding="5dp"
+    android:orientation="vertical"
+    android:layout_gravity="center"
+    android:layout_marginLeft="30dp"
+    android:layout_marginRight="30dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:textColor="@color/grey"
+                android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+    <LinearLayout
+        android:gravity="right"
+        android:textColor="@color/grey"
+                android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/advancedSetting"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="高级设置"
+            android:textColor="@color/grey" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/simpleSet"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingTop="5dp"
+        android:paddingBottom="5dp"
+        android:textColor="@color/grey">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:textColor="@color/grey">
+
+            <TextView
+                android:layout_width="195dp"
+                android:layout_height="match_parent"
+                android:gravity="center|left"
+                android:text="@string/QuickConfigLevel"
+                android:textColor="@color/grey" />
+
+            <RadioGroup
+                android:id="@+id/QuickConfigLevel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:textColor="@color/grey">
+
+                <RadioButton
+                    android:id="@+id/QuickConfigLevel_Manual"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:text="手动"
+                    android:textColor="@color/grey" />
+
+                <RadioButton
+                    android:id="@+id/QuickConfigLevel_Fast"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:checked="true"
+                    android:text="流畅"
+                    android:textColor="@color/grey" />
+
+                <RadioButton
+                    android:id="@+id/QuickConfigLevel_Normal"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:text="标准"
+                    android:textColor="@color/grey" />
+
+                <RadioButton
+                    android:id="@+id/QuickConfigLevel_Extreme"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:text="超清"
+                    android:textColor="@color/grey" />
+            </RadioGroup>
+        </LinearLayout>
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/vibrator"
+            android:layout_width="250dp"
+            android:layout_height="wrap_content"
+            android:text="@string/vibrator"
+            android:textColor="@color/grey" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:textColor="@color/grey">
+
+            <TextView
+                android:layout_width="195dp"
+                android:layout_height="match_parent"
+                android:text="@string/device_2880x1584"
+                android:textColor="@color/grey" />
+
+            <SeekBar
+                android:id="@+id/resolutionScaleBar"
+                android:layout_width="150dp"
+                android:layout_height="wrap_content"
+                android:max="100"
+                android:min="0"
+                android:textColor="@color/grey" />
+
+            <TextView
+                android:id="@+id/resolutionScale"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:text="0"
+                android:textColor="@color/grey" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:textColor="@color/grey">
+
+            <TextView
+                android:layout_width="195dp"
+                android:layout_height="match_parent"
+                android:text="码率设置"
+                android:textColor="@color/grey" />
+
+            <SeekBar
+                android:id="@+id/coderateBar"
+                android:layout_width="150dp"
+                android:layout_height="wrap_content"
+                android:max="10"
+                android:min="1"
+                android:textColor="@color/grey" />
+
+            <TextView
+                android:id="@+id/coderate"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:text="10000"
+                android:textColor="@color/grey" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <View
+        android:id="@+id/advanceListDivi"
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:layout_marginTop="5dp"
+        android:layout_marginBottom="5dp"
+        android:background="#f0f0f0"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/advancedList"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingBottom="5dp"
+        android:textColor="@color/grey"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:textColor="@color/grey">
+
+            <TextView
+                android:layout_width="195dp"
+                android:layout_height="match_parent"
+                android:gravity="center|left"
+                android:text="传输类型"
+                android:textColor="@color/grey" />
+
+            <RadioGroup
+                android:id="@+id/StreamType"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:orientation="horizontal"
+                android:textColor="@color/grey">
+
+                <RadioButton
+                    android:id="@+id/larkStreamType_UDP"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:checked="true"
+                    android:text="UDP"
+                    android:textColor="@color/grey" />
+
+                <RadioButton
+                    android:id="@+id/larkStreamType_TCP"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:text="TCP"
+                    android:textColor="@color/grey" />
+
+                <RadioButton
+                    android:id="@+id/larkStreamType_KCP"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:text="增强UDP"
+                    android:textColor="@color/grey" />
+            </RadioGroup>
+        </LinearLayout>
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/UseH265"
+            android:layout_width="250dp"
+            android:layout_height="wrap_content"
+            android:text="@string/UserH265"
+            android:textColor="@color/grey" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/reportFecFailed"
+            android:layout_width="250dp"
+            android:layout_height="wrap_content"
+            android:text="@string/UseFec"
+            android:textColor="@color/grey" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/UseFovRending"
+            android:layout_width="250dp"
+            android:layout_height="wrap_content"
+            android:text="@string/ReportFecFailed"
+            android:textColor="@color/grey" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/Use10Bit"
+            android:layout_width="250dp"
+            android:layout_height="wrap_content"
+            android:text="@string/use_10bit"
+            android:textColor="@color/grey" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:layout_marginTop="5dp"
+        android:layout_marginBottom="5dp"
+        android:background="#f0f0f0" />
+
+    <androidx.appcompat.widget.SwitchCompat
+        android:id="@+id/list3D"
+        android:layout_width="250dp"
+        android:layout_height="wrap_content"
+        android:checked="false"
+        android:text="@string/list3D"
+        android:textColor="@color/grey" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingBottom="5dp"
+        android:textColor="@color/grey">
+
+        <TextView
+            android:layout_width="195dp"
+            android:layout_height="match_parent"
+            android:gravity="center|left"
+            android:text="列表展示"
+            android:textColor="@color/grey" />
+
+        <RadioGroup
+            android:id="@+id/list_show_type"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:textColor="@color/grey">
+
+            <RadioButton
+                android:id="@+id/type_list"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:checked="true"
+                android:text="列表"
+                android:textColor="@color/grey" />
+
+            <RadioButton
+                android:id="@+id/type_scroll"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:text="循环"
+                android:textColor="@color/grey" />
+        </RadioGroup>
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/clearServer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="清除服务器记录"
+        android:textSize="12sp" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:layout_marginTop="5dp"
+        android:layout_marginBottom="5dp"
+        android:background="#f0f0f0" />
+
+    <LinearLayout
+        android:gravity="right"
+        android:orientation="horizontal"
+        android:textColor="@color/grey"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <Button
+            android:focusable="true"
+            android:id="@+id/closeSetTab"
+            android:text="确定"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+    </LinearLayout>
+
+</LinearLayout>
