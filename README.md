@@ -24,6 +24,7 @@ doc-------------------------------
 lib_pxygl-------------------------Support VR render opengl api.
 lib_xr_common_ui------------------APP common ui for all three demo.
 xr_app_htc------------------------HTC focus headset.
+xr_app_huawei---------------------Huawei VR headset
 xr_app_oculus---------------------Meta Oculus Quest headset(Sys < 46.0, old meta native sdk)
 xr_app_openxr_oculus--------------Meta Oculus Quest headset(new meta openxr sdk)
 xr_app_openxr_pico----------------Pico4/Pico Neo3 headset
@@ -38,6 +39,7 @@ third_party-----------------------
 - [:heavy_check_mark:] [Nolo Sonic](https://www.nolovr.com/index)
 - [:heavy_check_mark:] [Qiyu](https://dev-qiyu.iqiyi.com/)
 - [:heavy_check_mark:] [Nreal](https://www.nreal.cn/nrealapp/)
+- [:heavy_check_mark:] [Huawei](https://developer.huawei.com/consumer/cn/vr/)
 
 ## code style
 

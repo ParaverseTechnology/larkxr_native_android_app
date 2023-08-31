@@ -16,6 +16,7 @@ doc-------------------------------文档
 lib_pxygl-------------------------适用于 VR 双目渲染的 opengl 的封装
 lib_xr_common_ui------------------APP 的通用原生 ui
 xr_app_htc------------------------HTC focus 系列头显适配
+xr_app_huawei---------------------Huawei VR 系列头显适配
 xr_app_oculus---------------------Meta Oculus Quest 系列头显适配(系统版本46以下)
 xr_app_openxr_oculus--------------Meta Oculus Quest 系列头显适配
 xr_app_openxr_pico----------------Pico4/Pico Neo3 系列头显的适配
@@ -30,6 +31,7 @@ third_party-----------------------第三方库
 - [:heavy_check_mark:] [Nolo Sonic](https://www.nolovr.com/index)
 - [:heavy_check_mark:] [奇遇](https://dev-qiyu.iqiyi.com/)
 - [:heavy_check_mark:] [Nreal](https://www.nreal.cn/nrealapp/)
+- [:heavy_check_mark:] [Huawei](https://developer.huawei.com/consumer/cn/vr/)
 
 ## code style
 
