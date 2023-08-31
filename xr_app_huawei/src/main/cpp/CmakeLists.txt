@@ -1,0 +1,157 @@
+# For more information about using CMake with Android Studio, read the
+# documentation: https://d.android.com/studio/projects/add-native-code.html
+
+# Sets the minimum version of CMake required to build the native library.
+
+cmake_minimum_required(VERSION 3.4.1)
+
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+
+set(project_base_dir ${CMAKE_CURRENT_SOURCE_DIR}/../../../../)
+
+# set thirdparty_base_dir before include.
+set(third_party_base_dir ${project_base_dir}/third_party)
+include(${project_base_dir}/cmake/android_third_party.cmake)
+
+add_definitions(-DXR_USE_GRAPHICS_API_OPENGL_ES)
+add_definitions(-DXR_USE_PLATFORM_ANDROID)
+
+# build native_app_glue as a static lib
+add_library(libxr_loader SHARED IMPORTED)
+set_target_properties(libxr_loader PROPERTIES IMPORTED_LOCATION
+        "${PROJECT_SOURCE_DIR}/../../../../third_party/huawei/lib/android/${CMAKE_ANDROID_ARCH_ABI}/libxr_loader.so")
+
+# Export ANativeActivity_onCreate(),
+# Refer to: https://github.com/android-ndk/ndk/issues/381.
+set(CMAKE_SHARED_LINKER_FLAGS
+        "${CMAKE_SHARED_LINKER_FLAGS} -u ANativeActivity_onCreate")
+
+if (ENABLE_CLOUDXR STREQUAL "1")
+    message(STATUS "=========start cloudxr ${CLOUDXR_LIBPATH}")
+    # Import CloudXR
+    add_library(cloudxr-lib SHARED IMPORTED)
+    set_target_properties(cloudxr-lib PROPERTIES IMPORTED_LOCATION
+            ${CLOUDXR_LIBPATH}/${ANDROID_ABI}/libCloudXRClient.so
+            )
+    include_directories(${CLOUDXR_INCLUDE})
+
+    add_definitions(-DENABLE_CLOUDXR)
+endif()
+
+# source dir
+set(src_dir ${CMAKE_CURRENT_SOURCE_DIR})
+
+# source files
+set(src_files
+        ${src_dir}/main.cpp
+       # ${src_dir}/xr_demo.cpp
+        #${src_dir}/egl_environment.cpp
+      #  ${src_dir}/gl_function_ext.cpp
+       # ${src_dir}/model.cpp
+        # ${src_dir}/xr_demo.cpp
+        #${src_dir}/texture.cpp
+        #
+        ${src_dir}/graphics_device_android.cpp
+        ${src_dir}/openxr_context.cpp
+        ${src_dir}/input_state.cpp
+        ${src_dir}/xr_scene.cpp
+        ${src_dir}/xr_scene_local.cpp
+        ${src_dir}/xr_scene_cloud.cpp
+        ${src_dir}/hxr_application.cpp
+        #
+        # render and base use.
+        ${common_files}
+        )
+
+# header files
+set(header_files
+        # ${src_dir}/xr_demo.h
+        # ${src_dir}/egl_environment.h
+        # ${src_dir}/gl_function_ext.h
+        ${src_dir}/openxr/openxr.h
+        ${src_dir}/openxr/openxr_platform.h
+        ${src_dir}/openxr/openxr_platform_defines.h
+#        ${src_dir}/xr_demo.h
+ #       ${src_dir}/texture.h
+
+        #
+        ${src_dir}/graphics_device_android.h
+        ${src_dir}/openxr_context.h
+        ${src_dir}/input_state.h
+        ${src_dir}/xr_scene.h
+        ${src_dir}/xr_scene_local.h
+        ${src_dir}/xr_scene_cloud.h
+        ${src_dir}/hxr_application.h
+
+        # ${src_dir}/shader.h
+        # ${src_dir}/model.h
+        ${src_dir}/logger.h
+
+        ${src_dir}/matrix_functions.h
+        ${src_dir}/hxr_utils.h
+        )
+
+add_definitions(-D_GLM_ENABLE_EXPERIMENTAL)
+
+add_library( # Sets the name of the library.
+        lark_xr_huawei
+        # Sets the library as a shared library.
+        SHARED
+        # Provides a relative path to your source file(s).
+        ${src_files}
+        ${header_files}
+        )
+
+# add include
+target_include_directories(lark_xr_huawei PRIVATE
+        ${src_dir}
+        ${common_dir}
+        ${ANDROID_NDK}/sources/android/native_app_glue
+        # pxy gl
+        ${project_base_dir}/lib_pxygl/src/main/cpp
+        # common ui
+        ${project_base_dir}/lib_xr_common_ui/src/main/cpp
+        # lib xr
+        ${project_base_dir}/lark_xr/include
+        ${third_party_base_dir}/freetype/include/
+        ${third_party_base_dir}/glm/include/
+        ${third_party_base_dir}/assimp/include/
+        ${third_party_base_dir}/oboe/include/
+        )
+
+find_library( # Sets the name of the path variable.
+        log-lib
+        log )
+
+target_link_libraries( # Specifies the target library.
+        lark_xr_huawei
+        android
+        jnigraphics
+        # native_app_glue
+        libxr_loader
+        log
+
+        # clang 注意顺序
+        EGL
+        GLESv3
+        # ndk media codec
+        mediandk
+        OpenMAXAL
+
+        # first party
+        lib_lark_common
+        lib_lark_pxygl
+        lib_lark_xr
+        lib_lark_xr_common_ui
+        # Links the target library to the log library
+        # included in the NDK.
+        lib_assimp_android_jniiosystem
+        )
+
+if (ENABLE_CLOUDXR STREQUAL "1")
+    target_link_libraries( # Specifies the target library.
+            lark_xr_huawei
+            cloudxr-lib
+            )
+endif()

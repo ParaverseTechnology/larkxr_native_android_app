@@ -1,0 +1,129 @@
+apply plugin: 'com.android.application'
+
+apply from:"$projectDir/../config.gradle"
+
+android {
+    compileSdkVersion 28
+    buildToolsVersion "28.0.3"
+    ndkVersion NDK_VERSION
+
+    defaultConfig {
+        applicationId "com.pxy.xr_app_huawei"
+        minSdkVersion MIN_SDK_VERSION_XR
+        targetSdkVersion 28
+        versionCode 1
+        versionName "3.2.3.1"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        externalNativeBuild {
+            cmake {
+                cppFlags "-frtti -fexceptions -std=c++1y -DANDROID_NDK_BUILD=1"
+                targets 'lark_xr_huawei'
+
+                if (BUILD_WITH_CLOUDXR_SUPPORT) {
+                    arguments "-DANDROID_STL=c++_shared",
+                            "-DCLOUDXR_LIBPATH=${project.rootDir}/third_party/cloudxr/CloudXR/jni",
+                            "-DCLOUDXR_INCLUDE=${project.rootDir}/third_party/cloudxr/CloudXR/include",
+                            "-DENABLE_CLOUDXR=1"
+                } else {
+                    arguments "-DANDROID_STL=c++_shared"
+                }
+            }
+            ndk {
+                abiFilters 'arm64-v8a'
+                // abiFilters 'armeabi-v7a'
+            }
+            ndkBuild {
+                abiFilters 'arm64-v8a'
+                // abiFilters 'armeabi-v7a'
+            }
+        }
+    }
+
+    buildTypes {
+        String ENABLE_CLOUDXR = BUILD_WITH_CLOUDXR_SUPPORT ? "true" : "false";
+        debug {
+            buildConfigField "boolean","ENABLE_CLOUDXR",ENABLE_CLOUDXR
+        }
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            buildConfigField "boolean","ENABLE_CLOUDXR",ENABLE_CLOUDXR
+        }
+    }
+    sourceSets {
+        main {
+            def base = "../"
+            def lib_prex = "lib/android/"
+            // let gradle pack the shared library into apk
+            jniLibs.srcDirs = [
+            ]
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path "src/main/cpp/CMakeLists.txt"
+            version "3.10.2"
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JAVA_VERSION
+        targetCompatibility JAVA_VERSION
+    }
+
+    repositories {
+        flatDir {
+            dirs 'libs', '../lark_xr'
+        }
+    }
+    packagingOptions {
+        jniLibs {
+            pickFirsts += ['lib/arm64-v8a/libglm.so', 'lib/armeabi-v7a/libglm.so', 'lib/arm64-v8a/libPocoFoundation.so', 'lib/armeabi-v7a/libPocoFoundation.so', 'lib/arm64-v8a/libglm.so', 'lib/armeabi-v7a/libglm.so', 'lib/arm64-v8a/libPocoFoundation.so', 'lib/armeabi-v7a/libPocoFoundation.so', 'lib/arm64-v8a/libprotobuf.so', 'lib/armeabi-v7a/libprotobuf.so', 'lib/arm64-v8a/libc++_shared.so', 'lib/armeabi-v7a/libc++_shared.so']
+        }
+    }
+    applicationVariants.all { variant ->
+        variant.outputs.all { output ->
+//            def date = new Date().format("mmss");
+            def build = 1
+            def abi = "all";
+            if (output.filters[0] != null) {
+                abi = output.filters[0].identifier
+            }
+            def type = "huawei";
+
+            outputFileName =  "lark-xr-" +
+                    defaultConfig.versionName + "-build-" +
+                    build + "-" + type + "-beta-" + abi + ".apk"
+        }
+    }
+    lint {
+        abortOnError false
+    }
+
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation 'androidx.appcompat:appcompat:1.3.0'
+    implementation 'androidx.annotation:annotation:1.2.0'
+    implementation 'com.squareup.okhttp3:okhttp:3.14.9'
+    implementation project(':lib_pxygl')
+    implementation project(':lib_xr_common_ui')
+    implementation(name: 'larkxr-kit-3.2.2.0-build-1', ext: 'aar')
+    implementation(name: 'lark-core-kit-3.2.0.0-build-1', ext: 'aar')
+
+    implementation 'androidx.recyclerview:recyclerview:1.2.0'
+    implementation 'com.github.bumptech.glide:glide:4.11.0'
+
+    implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
+    implementation 'com.alibaba:fastjson:1.2.48'
+
+    // WARNING
+    // enable cloudxr support must put your CloudXR.aar under larkar_android/libs dir
+    if (BUILD_WITH_CLOUDXR_SUPPORT) {
+        implementation files("${project.rootDir}/third_party/cloudxr/CloudXR.aar")
+    }
+}
