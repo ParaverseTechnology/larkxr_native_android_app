@@ -99,7 +99,7 @@ public:
     // id
     inline uint64_t id() { return id_; }
 
-    inline void set_active(bool active) { active_ = active; }
+    virtual inline void set_active(bool active) { active_ = active; }
     inline bool active() { return active_; }
 
     // update every frame

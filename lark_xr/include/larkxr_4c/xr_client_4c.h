@@ -390,6 +390,8 @@ LARK_XR_API void DC_CALL larkxr_SendAudioData(const char* buffer, int length);
 
 // render config
 LARK_XR_API void DC_CALL larkxr_SetUseRenderQueue(BOOL useRenderQueue);
+// set render queue size
+LARK_XR_API void DC_CALL larkxr_SetRenderQueueSize(int renderQueueSize);
 //--------------------------------------------------------------------------------------------------
 #if defined( __cplusplus )
 }    // extern "C"

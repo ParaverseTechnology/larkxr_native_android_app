@@ -260,7 +260,7 @@ void PvrXRSceneCloud::HandleInput(const InputState &input_state, XrSession const
 
         // save controller state;
         controller_state_[hand].deviceType = hand == Side::LEFT ? Larkxr_Controller_Left : Larkxr_Controller_Right;
-        controller_state_[hand].pose = {};
+        // controller_state_[hand].pose = {};
         controller_state_[hand].pose.device = hand == Side::LEFT ? Larkxr_Device_Type_Controller_Left : Larkxr_Device_Type_Controller_Right;
         controller_state_[hand].pose.isValidPose = true;
         controller_state_[hand].pose.isConnected = true;

@@ -85,15 +85,17 @@ void MenuView::Update() {
 
     if (btn_submit_->picked() && Input::IsInputEnter()) {
         LOGV("Menu view on submit");
-        if (callback_ != nullptr) {
+        if (callback_ != nullptr && !update_active_this_frame_) {
             callback_->OnMenuViewSelect(true);
         }
     }
 
     if (btn_cancle_->picked() && Input::IsInputEnter()) {
         LOGV("Menu view on cancle");
-        if (callback_ != nullptr) {
+        if (callback_ != nullptr && !update_active_this_frame_) {
             callback_->OnMenuViewSelect(false);
         }
     }
+
+    update_active_this_frame_ = false;
 }

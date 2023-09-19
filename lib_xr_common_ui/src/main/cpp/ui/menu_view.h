@@ -21,6 +21,10 @@ public:
     // update evey frame called by render thread.
     virtual void Update() override;
 
+    virtual inline void set_active(bool active) override {
+        active_ = active;
+        update_active_this_frame_ = true;
+    }
 protected:
     virtual void Init() override;
     // switch to current page.
@@ -34,6 +38,7 @@ private:
     std::shared_ptr<TextButton> btn_submit_;
     std::shared_ptr<ColorBox> bg_;
     Callback* callback_;
+    bool update_active_this_frame_ = false;
 };
 
 

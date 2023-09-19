@@ -38,6 +38,7 @@ const larkStreamType LK_CONFIG_DEFAULT_STREAM_TYPE = larkStreamType_KCP;
 const bool LK_CONFIG_DEFAULT_USE_RENDER_QUEUE = false;
 const bool LK_CONFIG_DEFAULT_REPORT_FEC_FAILED = false;
 const larkHeadSetType LK_CONFIG_DEFAULT_FORCE_HEADSET_TYPE = larkHeadSetType_NONE;
+const int LK_CONFIG_DEFAULT_RENDER_QUEUE_SIZE = 1;
 #ifdef WIN32
 const bool LK_CONFIG_DEFAULT_D3D11_TEXTURE_OUTPUT = true;
 #endif
@@ -146,6 +147,8 @@ public:
     static larkStreamType stream_type;
     // 是否使用渲染队列 (3.1.8.0新增)
     static bool use_render_queue;
+    // 渲染队列大小 默认为 1 (3.2.2.1 新增)
+    static int render_queue_size;
     // 当前采用那种快速配置组合
     static QuickConfigLevel quick_config_level;
     // 强制转换头盔类型 默认为空
@@ -179,6 +182,7 @@ public:
     static void set_foveated_rendering(const larkFoveatedRendering& foveatedRendering);
     static void set_color_corrention(const larkColorCorrention& colorCorrention);
     static void set_use_render_queue(bool use);
+    static void set_render_queue_size(int size);
     static void set_force_headset_type(larkHeadSetType type);
 
     static uint32_t align32(float value);

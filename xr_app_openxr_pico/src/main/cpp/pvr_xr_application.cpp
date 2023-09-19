@@ -136,6 +136,7 @@ bool PvrXrApplication::InitGL(OpenxrContext *context) {
 
 #ifdef USE_RENDER_QUEUE
     lark::XRConfig::use_render_queue = true;
+    lark::XRConfig::render_queue_size = 2;
 #else
     lark::XRConfig::use_render_queue = false;
 #endif
@@ -331,13 +332,20 @@ void PvrXrApplication::RenderFrame() {
     lark::XRVideoFrame xrVideoFrame(0);
 
     if (!has_new_frame_cloudxr && xr_client_->is_connected()) {
+        // block wait frame
+        xr_client_->WaitFroNewFrame(33);
+
         has_new_frame_pxy_stream = xr_client_->Render(&trackingFrame, &xrVideoFrame);
-        // wait for cloud frame
+
+        cloudmedia_ready = xr_client_->media_ready();
+
+        // skip rendering if no new frame
         if (cloudmedia_ready && !has_new_frame_pxy_stream) {
 //            LOGV("wait for new frame");
             usleep(1000);
             return;
         }
+
         if (has_new_frame_pxy_stream) {
             lark::XRLatencyCollector::Instance().Rendered2(trackingFrame.frameIndex);
             scene_cloud_->UpdateTexture(xrVideoFrame);
