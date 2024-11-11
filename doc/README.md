@@ -186,7 +186,7 @@ static void SetControlerBatteryLevel(int left, int right);
 */
 void RegisterObserver(XRClientObserver* observer);
 /**
-* 取消注册回调函数
+* 
 */
 void UnRegisterObserver();
 ```
@@ -201,7 +201,7 @@ void UnRegisterObserver();
 void EnterAppli(const std::string& appliId);
 /**
  * Connect cloud server with specific params.
- * @param config 完整配置。
+ * @param config
  */
 void Connect(const CommonConfig& config);
 /**
