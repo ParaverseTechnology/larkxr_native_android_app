@@ -247,8 +247,6 @@ bool Render(larkxrTrackingFrame* trackingFrame);
 
 * Error message:
 
-错误信息可通过 last error 的状态获取或通过回调函数 OnError 获取。
-
 ```c++
 /**
  *  error code in larkEventTypes enum
