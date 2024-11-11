@@ -1,30 +1,24 @@
-# 云雀 VR SDK
+# LarkXR Client SDK
 
-## 简介
+## Intro
 
-云雀 VR SDK 负责连接云雀服务器和连接云端渲染。主要支持 Android 平台的 VR 一体机。使用 Anroid OpenGL ES 渲染。提供原生 C++ 和 Java 接口以及与 VR 头盔SDK集成的 DEMO。
+LarkXR Client SDK is responsible for connecting to LarkXR server and cloud rendering. Mainly supports VR all-in-one machines on the Android platform. Rendered using Android OpenGL ES. Provides native C++ interfaces and DEMO integrated with VR headset SDK.
 
-由于不同品牌 VR 头盔一体机开发平台，使用逻辑，对外接口存在差异，只提供与 VR 头盔原生 SDK 集成的具体 DEMO, 能保证比较好的效果。目前提供 Oculus 平台 Demo(主要适配 Oculus Quest)，HTC 平台 Demo(主要适配 HTC Focus 系列，Pico 部分型号)，Pico 平台(主要适配 PicoNeo2)。
+Since different brands of XR headset all-in-one development platforms have different usage logic and external interfaces, only specific DEMOs integrated with the XR headset’s native SDK are provided to ensure better results.
 
-VR 一体机提供的其他开发平台如 Untiy3D 等，云雀虽然提供 C 接口的封装的调用，可不保证 VR 一体机SDK中有适合云渲染的接口或使用方法，不保证能实现同原生SDK同样的效果，不会提供相关集成 Demo, 除云雀 VR SDK 本身的问题外不提供其他平台的技术支持。
+LarkXR Client SDK includes:
 
-两部分主要业务：
+1. Conenct to LarkXR Admin server with restful API. Include applist, enter app, online/offline ext.
 
-1. 云雀后台服务器。
-云雀 VR SDK 中封装后台服务器的 Restful 接口。主要包括获取应用列表，进入应用，后台上下线等接口。
-后台服务器负责管理客户端和分配云雀应用服务器渲染节点。
-2. 云雀应用服务器。云雀渲应用服务器负责云端渲染和视频流推送。云雀VR SDK 中封装登录，连接，渲染，指令传递等操作。
+2. Connect to LarkXR Rendering server. Decode video stream and upload headset's pose.
 
-简单业务流程：
+With LarkXR Client SDK:
 
-1. 获取应用列表。
-2. 用户选择一个应用，调用进入接口，后台服务器分配渲染节点并返回相关连接参数。
-3. 使用连接参数登录渲染节点，登录认证成功后启动 VR 线程。
-4. 连接成功开始云端渲染。每帧提交姿态数据，渲染云端渲染帧。
-5. 关闭连接, 渲染本地。
-
-![云雀 VR SDK负责功能和软件结构](./images/struct.png)
-
+1. Get LarkXR applist.
+2. User chose one cloud app from applist. LarkXR Client SDK call enter app API. LarkXR Admin server allocates rendering nodes and returns relevant connection parameters.
+3. LarkXR Client SDK login to LarkXR Rendering server and start streaming threads.
+4. Connect to LarkXR Rendering server success. LarkXR Client SDK upload loacl headset pose and decode cloud stream.
+5. User close and release resources.
 
 ![CloudAPP INPUT VR SDK OUPUT](./images/cloudapp_vrsdk.gif)
 
@@ -34,56 +28,37 @@ VR 一体机提供的其他开发平台如 Untiy3D 等，云雀虽然提供 C �
 
 > Simulation of VR headset output
 
-## 目录结构
-
-本 SDK 目录结构如下:
+## Folder:
 
 ```path
--[cmake]---------------Demo中用到的辅助 cmake 脚本。
--[demo]----------------基于云雀SDK的原生Demo。
--[first_party]---------Demo中生成的库，主要为通用 ui 和 openg封装。
--[lark_xr]-------------云雀VR SDK，包括头文件，动态库文件，用于NDK编译。
--[third_party]---------第三方库目录。包括基础库如Poco，VR SDK 等。
+cmake-----------------------------cmake config
+doc-------------------------------
+lib_pxygl-------------------------Support VR render opengl api.
+lib_xr_common_ui------------------APP common ui for all three demo.
+xr_app_htc------------------------HTC focus headset.
+xr_app_huawei---------------------Huawei VR headset
+xr_app_oculus---------------------Meta Oculus Quest headset(Sys < 46.0, old meta native sdk)
+xr_app_openxr_oculus--------------Meta Oculus Quest headset(new meta openxr sdk)
+xr_app_openxr_pico----------------Pico4/Pico Neo3 headset
+third_party-----------------------
 ```
 
-### demo 项目结构
+### SDK Interface
 
-demo 项目分为以下几个子项目。Demo 使用的 Android Studio 版本为 4.0.1，gradle plugin 版本为 4.0.1，gradle 版本为 6.1.1，NDK 版本为 21.3.6528147。
-
-不同版本的开发环境可能会导致编译问题，请尽量选择与 Demo 中相同的开发环境，否证可能需要手动修改项目配置。
-
-* lib_pxygl 通用 opengl 相关调用的封装
-
-* lib_xr_common_ui 所有 demo app 的 UI 和通用组件
-
-* xr_demo_htc htc 平台的 demo
-
-* xr_demo_oculus oculus 平台的 demo
-
-* xr_demo_pico pico 平台的 demo
-
-### SDK 目录接口
-
-由于使用 NDK 开发，除了要在 gradle 中引用 larkxr-kit-3.1.0.0-build-1.aar 外，还要在 cmake 中配置 larkxr sdk 的头文件和动态库。
-
-* include 头文件目录，包含 c++ 和 c 两套头文件
-* lib 动态库文件目录，目前只包含 Android 平台
-* larkxr-kit-3.1.0.0-build-1.aar Android 库文件
-
-## Java 接口（只用于初始化和生命周期）
+## Java (Called in android activity for init andoird resource and folder)
 
 ### XrSystem
 
-XrSystem.java 是主要的 java 接口，用于初始化系统信息。应在 Android Activity 中使用。管理Android生命周期相关资源。
+XrSystem.java is main Java class.
 
-* init方法初始化系统信息。应在系统初始时调用。如 Activity 的 onCreate 函数中。
+* init. Should be called during ativity initialization, as Activity onCreate.
 
 ```java
 xrSystem = new XrSystem();
 xrSystem.init(this);
 ```
 
-* 生命周期函数，onResume，onPause，onDestroy，应在 Android 相应生命周期内调用。
+* life cycle functions: onResume，onPause，onDestro
 
 ```java
 @Override
@@ -107,127 +82,107 @@ protected void onDestroy() {
 }
 ```
 
-## c++ 接口（实际渲染相关）
+## c++ interface (for cloud rendering)
 
 ### xr_client.h
 
-#### 主要接口
+#### main interfaces
 
-XRClient 是 larkxr sdk 的核心类，大部分业务逻辑包括初始化，生命周期，进入应用，发送姿态数据，获取渲染纹理都是在 XRClient 类下进行的。 XRClient 主要接口如下.
+XRClient is larkxr sdk main class，include init sdk, sdk life cycle, enter cloud app, send device pose, get cloud textures.
 
-* 初始化
+* Init
 
-初始化
 
 ```c++
 /**
-* 安卓平台初始化 sdk。
-* @param vm java 虚拟机
-* @param init_share_context 是否立即初始化 opengl 上下文。如果调用 init 方法不在渲染线程或渲染环境
-* 可能会变动的情况下，init_share_context 传入 false，然后手动调用 InitGLShareContext。如果渲染线程
-* 不会变化可以直接在 init 方法初始化。
+* init LarkXR SDK
+* @param vm java vm
+* @param init_share_context init with opengl context。
+* If opengl context not ready when call init should be false and call InitGLShareContext when opengl context ready
 */
 void Init(JavaVM* vm, bool init_share_context = true);
 /**
-* 初始化opengl共享上下文
-* 必须在 opengl渲染线程中调用
+* Init openg gl conetxt for LarkXR SDK
+* Must called in opengl thread.
 */
 void InitGLShareContext();
 /**
-*
+* 
 */
 void ReleaseGLShareContext();
 ```
 
-验证 SDK 授权，授权 id 请联系商务开通。
+Setup LarkXR SDK ID
 
 ```c++
 /**
- * 初始化 larkxr SDK，应在larkxr 系统初始化完成之后调用。如果初始化失败将返回false。
- * 可通过 last_error_code 和 last_error_message 获取错误信息。
- * 授权 id 应从商务处获取正确的 id。
- * APP 首次启动将连接网络进行授权验证。授权成功之后在授权有效期内可不连接外网。
- * @param id 授权id
- * @return 成功 true 失败返回 false
+ * Setup LarkXR SDK ID
+ * @param id SDK ID
+ * @return
  */
 bool InitSdkAuthorization(const std::string& id);
 ```
 
-应在 java 接口初始化完成之后初始化 SDK，初始化成功之后 SDK 功能才能正常使用。调用示例：
+> c++ Init shoud after Activity call  xrSystem.init.
+
+
+* Android Life cycle call.
 
 ```c++
-// 初始化 lark sdk
-xr_client_.Init(java_.Vm);
-// 验证授权
-if (!xr_client_.InitSdkAuthorization(LARK_SDK_ID)) {
-    LOGV("init sdk auth faild %d %s", xr_client_.last_error_code(), xr_client_.last_error_message().c_str());
-    Navigation::ShowToast(xr_client_.last_error_message());
-}
-```
-
-* 系统生命周期相关函数
-
-```c++
-// 系统创建时调用。如果此时配置了云雀服务器地址，将在后台上线。
+// When system created. If already have admin server address will online in LarkXR Admin server.
 void OnCreated();
-// 系统从休眠中恢复时调用，如果此时配置了云雀服务器地址，将在后台下线。
+// When system resume. If already have admin server address will online in LarkXR Admin server.
 void OnResume();
-// 系统休眠时调用，如果此时配置了云雀服务器地址，将在后台下线。
+// When system pause. If already have admin server address will offline in LarkXR Admin server.
 void OnPause();
-// 系统销毁时调用。如果此时配置了云雀服务器地址，将在后台下线。
+// When system destory. If already have admin server address will offline in LarkXR Admin server.
 void OnDestory();
 ```
 
-* 设置云雀服务器地址
+* Setup LarkXR Admin server address
 
 ```c++
 /**
- * 设置云雀服务器地址
- * @param ip 云雀服务器 ip
- * @param port 云雀服务器端口号
+ *  Setup LarkXR Admin server address
+ * @param ip LarkXR Admind server ip
+ * @param port LarkXR Admind server port
  */
 void SetServerAddr(const std::string& ip, int port);
 ```
 
-* 设置客户端凭证
+* Set certificate
 
 ```c++
 /**
- * 设置客户端管理接入凭证; 云雀后台系统设定接入管理中设置
+ *  Setup client certificate. Get certificate in LarkXR Admin server when LarkXR Admin request certificate to get applist.
  * @param appKey admin_key
  * @param appSecret admin_secret
  */
 static void SetCertificate(const std::string& appKey, const std::string& appSecret);
 ```
 
-* 设置电量
+* Setup headset battery level. 0-100.
 
 ```c++
 /**
-* 头盔电量信息 百分比
+* Setup headset battery level. 0-100.
 * @param level
 */
 static void SetHmdBatteryLevel(int level);
 /**
-* 手柄电量信息 百分比
+* Setup headset controller battery level. 0-100.
 * @param left
 * @param right
 */
 static void SetControlerBatteryLevel(int left, int right);
-/**
-* 手柄电量
-* @param isLeft
-* @param level
-*/
-static void SetControlerBatteryLevel(bool isLeft, int level);
 ```
 
-* 注册/取消回调函数
+* Regeister callback
 
 ```c++
 /**
-* 注册回调函数
-* @param observer 回调函数指针
+* Regeister callback
+* @param observer
 */
 void RegisterObserver(XRClientObserver* observer);
 /**
@@ -236,375 +191,306 @@ void RegisterObserver(XRClientObserver* observer);
 void UnRegisterObserver();
 ```
 
-* 进入/关闭应用
-
-进入应用接口调用成功之后将开始连接云端服务器流程，过程中相关错误或事件通过回调函数返回。
+* Enter/Close cloud app.
 
 ```c++
 /**
- * 使用应用 id 进入云端应用。
- * 云端应用 id 从应用列表接口回调处获取。
- * @param appliId 云端应用id
+ * Enter cloud app with  cloud app id from applist.
+ * @param appliId cloud app id
  */
 void EnterAppli(const std::string& appliId);
 /**
- * 使用手动配置进入云端应用。一般情况下不需要手动调用该接口。
+ * Connect cloud server with specific params.
  * @param config 完整配置。
  */
 void Connect(const CommonConfig& config);
 /**
- * 主动关闭与云端的连接
+ * Close connection
  */
 void Close();
 ```
 
-* 姿态数据信息
+* Upload device pose.
 
-设备的姿态数据和输入状态（手柄按键等）通过`larkxrTrackingDevicePairFrame`结构体封装。
+Device pose incloude hmd pose and controller pose in `larkxrTrackingDevicePairFrame` struct.
 
-当连接成功时应以符合头盔刷新频率发送姿态数据。可在`RequestTrackingInfo`回调中发送，该回调函数将以固定频率调用，断开连接后将停止调用。
+Could be call `RequestTrackingInfo` in callback.
 
 ```c++
 /**
-* 立即发送设备的姿态数据信息并缓存下来。
-* @param devicePair 设备的姿态数据信息。
+* Immediately send device pose to cloud.
+* @param devicePair deivce pose info
 */
 void SendDevicePair(const larkxrTrackingDevicePairFrame& devicePair);
 /**
-* 发送上一次缓存的姿态数据
+* Send last device pose.
 */
 void SendDevicePair();
 ```
 
-* 渲染相关
-
-配合 `OnTrackingFrame`回调函数使用。
+* Cloud Rendering
 
 ```c++
 /**
- * 检测是否收到新的帧
+ * Check new frame come.
  * @return
  */
 bool HasNewFrame();
 /**
- * 渲染一个 tracking 帧，只有当当前有未渲染的新的 tracking 帧时才会返回成功。
- * @param trackingFrame trakcing 数据
- * @return 是否成功
+ * Get cloud tracking frame. Return success when new frame come.
+ * A tracking frame include texture for render and hmd pose for atw.
+ * @param trackingFrame trakcing info
+ * @return is success
  */
 bool Render(larkxrTrackingFrame* trackingFrame);
 ```
 
-* 错误信息
+* Error message:
 
 错误信息可通过 last error 的状态获取或通过回调函数 OnError 获取。
 
 ```c++
 /**
- * 事件码。完整的事件码参照枚举 larkEventTypes
- * 当有新事件发生时该值会被更新，否则将保留。
- * @return 事件码。
+ *  error code in larkEventTypes enum
+ * @return error code
  */
 int last_error_code();
 /**
- * 错误信息。跟 last_error_code 同步更新。
- * @return 错误信息。
+ * last error message
+ * @return error message
  */
 std::string last_error_message();
 /**
- * 清理事件信息。
+ * Clear error message.
  */
 void ClearError();
 ```
 
-* 数据通道
+* Data channel send data to cloud app. Cloud app should use LarkXR datachannel plugin.
 
 ```c++
 /**
-    * 发送自定义数据给云端应用
+    * Send binary to cloud app.
     * @param buffer
     * @param length
     */
 void SendData(const char* buffer, int length);
 /**
-    * 发送自定义数据给云端应用
+    * Send text to cloud app.
     * @param buffer
     * @param length
     */
 void SendData(const std::string& data);
 ```
 
-* 音频数据
+* Send audio data to cloud.
 
 ```c++
 /**
-* 发送音频数据给云端
+* Send audio data to cloud.
 * @param buffer
 * @param length
 */
 void SendAudioData(const char* buffer, int length);
 ```
 
-#### 回调函数
-
-XRClientObserver 类包含需要实现的纯虚函数。注册为 XRClient 的回调函数成功后将根据具体情况调用。 需要注意所有回调函数都不保证在 opengl 渲染线程下调用。需要注意需要在 opengl 渲染线程的操作。
-
-* 授权检测
+* Callbacks for connection:
 
 ```c++
 /**
- * lark xr sdk 授权检测失败时回调。
- * @param code sdk 授权错误码。@see larkEventTypes
- * @param msg 授权失败具体错误信息
- */
-virtual void OnSDKAuthorizationFailed(int code, const std::string& msg) = 0;
-```
-
-* 连接过程回调
-
-```c++
-/**
-* 连接服务器成功时回调
+* Login to render server success.
 */
 virtual void OnConnected() = 0;
 /**
-*  与服务器连接关闭时回调
-* @param code 关闭原因 枚举原因@see larkEventTypes。一般有：
-*             LK_XR_UDP_CHANNEL_USER_CANCEL 用户主动关闭
-*             LK_PROXY_SERVER_CLOSE 与代理服务器的连接关闭
-*             LK_RENDER_SERVER_CLOSE 与渲染服务器的连接关闭
-*             LK_XR_UDP_CHANNEL_CLOSED 媒体 udp 通道关闭
+* Connection closeed
+* @param code Reason @see larkEventTypes. 
+*             LK_XR_UDP_CHANNEL_USER_CANCEL 
+*             LK_PROXY_SERVER_CLOSE 
+*             LK_RENDER_SERVER_CLOSE
+*             LK_XR_UDP_CHANNEL_CLOSED
 */
 virtual void OnClose(int code) = 0;
 /**
-* 媒体 udp 通道关闭时回调。当vr头盔待机时，xrclient 将主动关闭媒体连接减少耗电和流量。
+* When streaming channel close. Streaming channel will be closed when headset paused and can be resume when headset light up.
 */
 virtual void OnStreamingDisconnect() = 0;
 ```
 
-* 一般信息
+* Callbacks for info:
 
 ```c++
 /**
-* 返回一般事件信息
-* @param infoCode  事件码在@see larkEventTypes 枚举中
-* @param msg 信息说明,可能为空
+* Info like login success.
+* @param infoCode  @see larkEventTypes
+* @param msg message maybe empty.
 */
 virtual void OnInfo(int infoCode, const std::string& msg) = 0;
 /**
-* 出现错误时回调。当出现错误时当前连接已不可用。连接将断开。
-* @param errCode 事件码在@see larkEventTypes 枚举中
-* @param msg 错误信息。
+* Error message callback
+* @param errCode @see larkEventTypes
+* @param msg message maybe empty.
 */
 virtual void OnError(int errCode, const std::string& msg) = 0;
 ```
 
-* 解码和渲染
+* Decode and rendering callback:
 
 ```c++
 /**
-* 当使用软解码视频解码成功时回调。
-* Android 平台固定使用硬件解码。不会回调该函数。
+* When soft decode success.
 */
 virtual void OnMediaReady() = 0;
 /**
-* 硬件解码成功时回调。
-* 返回 opengl GL_TEXTURE_2D 类型纹理。为云端渲染好的左右眼图像。
+* HW decode success.
+* Return opengl GL_TEXTURE_2D VR texture 
 * --------------
 * |  L   |  R  |
 * --------------
-* 图像如上图所示。该纹理在 larkxr sdk 更新。
-* 该回调每次连接成功之后回调一次。
-* 之后收到OnTrackingFrame回调时，将 tracking frame 用与 atw 渲染该纹理。
-* @param nativeTextrure opengl 纹理 id
+* Texture update by larkxr sdk.
+* Call once when first frame decoded.
+* Render this texture when have tracking frame for atw.
+* @param nativeTextrure opengl texture id
 */
 virtual void OnMediaReady(int nativeTextrure) = 0;
 /**
-* 收到软件解码好的一帧。
-* 包括 tracking 数据帧和视频帧。
-* 只会在使用软解码的系统回调。
-* @param frame tracking 数据帧和视频帧
+* When soft decode a new frame success.
+* Include tracking pose and video frame.
+* @param frame tracking
 */
 virtual void OnTrackingFrame(std::unique_ptr<XRTrackingFrame>&& frame) = 0;
 /**
-* 收到的云端渲染好的 tracking 数据帧，只在使用硬件解码器的系统回调。
-* 该 tracking 帧用于 vr 头盔进行 atw 渲染。在未收到 tracking 帧的情况下应跳过渲染循环。
-* 具体 tracking 数据的使用方法根据不同的 vr 头盔sdk 不同，应参考附带的demo中的使用方法。
-* 由于云渲染是完全异步的过程，该 tracking 数据是之前发送给云端的 tracking 数据而不是当前最新的，
-* 请不要直接使用从 vr 头盔 sdk 中获取的最新的 tracking 数据渲染云端纹理。
-* @param trackingFrame tracking 数据帧。
+* HW decode a new frame success.
+* Tracking data include device pose for cloud rendering. Use this pose for local headset atw render.
+* @param trackingFrame tracking
 */
 virtual void OnTrackingFrame(const larkxrTrackingFrame& trackingFrame) = 0;
 /**
-* xrclient 请求获取 tracking 数据。
-* xrclient 连接成功之后将已固定的频率请求 tracking 数据。
-* 在该回调中将从 vr 头盔中获取到的 tracking 数据发送给 xrclient。
+* LarkXR call RequestTrackingInfo with fixed frequency.
 */
 virtual void RequestTrackingInfo() = 0;
 ```
 
-* 后台客户端 Id
+* LarkXR Admin server client Id
 
 ```c++
 /**
-* 收到云雀后台分配的客户端 id。用于后台区分客户端和后台启动应用管理等操作。
-* @param clientId 客户端 id。
+* Receive LarkXR Admin server client id.
+* @param clientId
 */
 virtual void OnClientId(const std::string& clientId) = 0;
 ```
 
-* 手柄震动
+* Other callbacks
 
 ```c++
 /**
- * 收到手柄震动请求
- * 需要注意不同 vr 头盔手柄震动调用方式不同，需要区别对待。具体用法参考相关 demo
- * @param isLeft 是否是左手柄
- * @param startTime 开始时间
- * @param amplitude 震动强度
- * @param duration 震动持续时间
- * @param frequency 震动频率
+ * Receive Haptics Feedback from cloud app.
+ * @param isLeft is left controller
+ * @param startTime
+ * @param amplitude
+ * @param duration
+ * @param frequency
  */
 virtual void OnHapticsFeedback(bool isLeft, uint64_t startTime, float amplitude, float duration, float frequency) = 0;
 /**
-* 请求同步玩家区域数据
+* Cloud app request sync player space.
 */
 virtual void OnSyncPlayerSpace(larkxrPlaySpace* playSpace) = 0;
 /**
-* 数据通道开启
+* Data channel open. Can send data to cloud app when datachannel opened.
 */
 virtual void OnDataChannelOpen() = 0;
 /**
-* 数据通道关闭
+* Data channel close.
 */
 virtual void OnDataChannelClose() = 0;
 /**
-* 收到二进制数据
+* Receive binary data from cloud app.
 */
 virtual void OnDataChannelData(const char* buffer, int length) = 0;
 /**
-* 收到字符数据
+* Receive text data from cloud app.
 */
 virtual void OnDataChannelData(const std::string& data) = 0;
 ```
 
-### 其他
+### Other
 
-#### 获取应用列表和运行模式
+#### Get applist and runmode.
 
-AppListTask 类用于获取应用列表和运行模式。内部 task 将定时调用，并在回调函数中更新。
+c++ AppListTask class to get applist and runmode. Receive new data from callbacks.
 
-* 回调数据
+* Callback
 
 ```c++
-// 获取到应用列表
+// Applist info
 virtual void OnAppListInfo(const std::vector<AppliInfo>& appliInfo) = 0;
-// 带分页数据应用列表，与 OnAppListInfo 同时回调，可以只关注一个
+// Receive applist info with page info.
 virtual void OnAppListPageInfo(const AppliPageInfo& appliPageInfo) = 0;
-// 调用接口的错误信息
+// When request failed.
 virtual void OnFailed(const std::string& msg) = 0;
-// 运行模式
-// 当运行模式为教师集中控制时，应隐藏实际应用列表，从后台启动应用。
+// Runmode
+// When client run center controler mode, admin server want client without applist and wait for start app request.
 virtual void OnRunMode(GetVrClientRunMode::ClientRunMode runMode) = 0;
 ```
 
-#### 配置
+#### SDK Config
 
-XRConfig 包含一般配置的静态变量和默认值定义。
+XRConfig class include stream config.
 
 ```c++
-// 渲染的宽，为左右眼加在一起的宽度
+// Original render width with both eye.
 static int render_width;
-// 渲染的高度。
+// Original render height.
 static int render_height;
-// 分辨率缩放 0 - 2
-// 最终分辨率为 align32(render_width * resolution_scale); align32(render_height * resolution_scale)
+// Scale resolution 0 - 2
+// Final resolution align32(render_width * resolution_scale); align32(render_height * resolution_scale)
 static float resolution_scale;
-// 比特率。单位 kbps.
+// Bitrate kbps.
 static int bitrate;
-// 帧率
+// Frame rate.
 static int fps;
-// @Deprecated 已弃用.使用头盔姿态的 tracking origin 等功能和安全区域配合使用
-// steam vr 设置的初始房间高度
+// @Deprecated 
 static float room_height;
-// 瞳距
+// Interpupillary distance
 static float ipd;
-// 提交给云端 vr 渲染用的 fov。fov 应从 vr 头盔sdk中获取正确的值。以度数为单位。
-// 部分 vr 头盔的左右眼 fov 是非对称的。
+// For for both eyes in degree.
 static larkxrRenderFov fov[2];
-// @Deprecated 已弃用，使用 stream_type 替代
-// 是否使用增强协议连接媒体
+// @Deprecated 
 static bool use_kcp;
-// 是否使用 h265
+// use h265 encode/decode.
 static bool use_h265;
-// 是否启用手柄的震动反馈
+// use haptics feedback
 static bool use_haptics_feedback;
-// 是否将视频画面左右眼渲染到同一纹理上
+// callback both eye to one texture
 static bool use_multiview;
-// 是否将视频画面翻转渲染
-// 上下翻转
+// Flip draw cloud texture upsided down.
 static bool flip_draw;
-// 0.005 (3.1.8.0新增)
+// Default 0.005 (3.1.8.0 added)
 static float seconds_from_vsync_to_photons;
-// 是否启用 10 bit 编码 (3.1.8.0新增)
+// Endable 10bit encode (3.1.8.0 added)
 static bool use_10bit_encoder;
-// 是否上报 fec 失败，当当前 fec 实效时通知服务端加大冗余包 (3.1.8.0新增)
+// @Deprecated 
 static bool report_fec_failed;
-// 头盔类型设置，将根据具体头盔的类型选择steamvr中用的手柄和绑定文件 (3.1.8.0新增)
+// Headset type (3.1.8.0 added)
 static larkHeadSetControllerDesc headset_desc;
-// 集中渲染设置 (3.1.8.0新增)
+// Enable fov rendering  (3.1.8.0 add)
 static larkFoveatedRendering foveated_rendering;
-// 颜色校正设置 (3.1.8.0新增)
+// Enable color correction (3.1.8.0 add)
 static larkColorCorrention color_corrention;
-// 设置使用的传输通道类型，目前有 udp，tcp，增强udp可选 (3.1.8.0新增)
+// Stream type udp，tcp, kcp (3.1.8.0 add)
 static larkStreamType stream_type;
-// 是否使用渲染队列 (3.1.8.0新增)
+// Use render queue (3.1.8.0 add)
 static bool use_render_queue;
 static QuickConfigLevel quick_config_level;
 ```
 
-#### 延时收集
-
-XRLatencyCollector 负责延时收集，大部分延时手机在 sdk 内部完成。但最终提交和渲染应在应用实际渲染时调用。Rendered2 和 Submit 两个延时收集点应在应用中调用
+#### Latency data
 
 ```c++
-// opengl 渲染时调用，一般为渲染到 framebuffer 时。
+// Render specific frameIndex frome in opengl。
 void Rendered2(uint64_t frameIndex);
-// 提交给 vr 头盔sdk 时调用。
+// Submit specific frameIndex to headset SDK. blackDegree is difference cloud pose and device local pose in yaw.
 void Submit(uint64_t frameIndex, float blackDegree);
 ```
 
-## C 接口
-
-C 接口是对上面基本业务流程 c++ 接口的封装。主要包含如下使用流程：
-
-由于 VR 头盔 SDK 的差异，不提供具体集成 VR 头盔 SDK 的调用 C 接口的 DEMO，C 接口作为保留和测试使用。
-
-```c++
-/***
-* 云雀 VR SDK 主要调用如下.
-* larkxr_InitSdkAuthorization------------初始化SDK ID
-*  larkxr_InitContext--------------------初始化系统上下文
-*  larkxr_InitRenderInfo-----------------初始化渲染信息
-*          |
-*          |
-*  larkxr_IsConnected--------------------是否连接成功
-*          |
-*          |
-*    larkxr_IsFrameInited----------------渲染纹理是否初始
-*    larkxr_GetRenderTexurte-------------获取纹理并初始化渲染
-*          |
-*  larkxr_UpdateDevicePose---------------更新姿态
-*  larkxr_UpdateControllerInputState-----更新手柄状态
-*          |
-*          |-------| loop
-*          |       |
-*    larkxr_Render-| --------------------渲染。如果没有新的帧应跳过本次渲染
-*          |       |
-*          |-------|
-*          |
-*   larkxr_IsConnected------------------连接关闭结束渲染更新循环
-*          |
-*          |
-*   larkxr_ReleaseContext------------------清理系统上下文
-*/
-```

@@ -12,7 +12,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "lark_xr/xr_client.h"
 
-#define LARK_SDK_ID "28c2eb1d50e14105b005940dc80588d1"
+#define LARK_SDK_ID "Your SDKID"
 
 #ifndef LARK_SDK_ID
 #error "请配置SDK ID. 如果没有请联系商务获取. https://www.pingxingyun.com/index.html"

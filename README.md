@@ -31,6 +31,29 @@ xr_app_openxr_pico----------------Pico4/Pico Neo3 headset
 third_party-----------------------
 ```
 
+## Setup
+
+1. The total `larkxr_native_android_app` root folder is a android studio project need android sdk and ndk.
+
+![](./doc/images/open.png)
+
+2. Setup sdkid. Just change #define LARK_SDK_ID "your sdk id" in lib_xr_common_ui/src/main/cpp/application.h and build the project.
+
+![](./doc/images/sdkid.png)
+
+3. Connect your headset to android studio select and run with your headset type.
+
+![](./doc/images/run.png)
+
+[API DOC](./doc/README.md)
+
+[Update DOC](./doc/update.md)
+
+## With CloudXR
+
+1. Enable cloudxr support must put your CloudXR.aar under third_party/cloudxr dir and set BUILD_WITH_CLOUDXR_SUPPORT = true in config.gradle
+2. The project can be just a simple cloudxr client with simple opengl ui (libpxygl and lib_xr_common_ui). More details about cloudxr and openxr see xr_app_openxr_oculus source ( oxr_application.cpp cloudxr_client_ ) and just ignore lark::XRClient if you dont need it.
+
 ## Lark VR SDK
 
 - [:heavy_check_mark:] [Meta Qculus Quest(Include > 46.0)](https://www.oculus.com/quest-2/)
