@@ -14,9 +14,9 @@
 #ifdef __ANDROID__
 #include <jni.h>
 #elif WIN32
-//
-#endif
 
+#endif
+#include "lark_xr/xr_transport_proxy.h"
 
 namespace lark {
 /**
@@ -204,6 +204,14 @@ class XRClientImp;
 class LARK_XR_API XRClient
 {
 public:
+	enum XRClientMode {
+		XRClientMode_Client         = 0,
+		XRClientMode_USBProxyHost   = 1,
+		XRClientMode_USBProxyClient = 2,
+		XRClientMode_MuxProxyHost   = 3,
+	};
+
+
 	/**
 	 * 获取系统信息。系统信息在初始化成功后可用。
 	 * 包括系统类型，平台类型（vr头盔的类型），vrsdk类型（应使用的 vr 头盔sdk），sdk 版本号等信息
@@ -225,6 +233,11 @@ public:
 	 * @param deviceMemInfo
 	 */
 	static void set_device_mem_info(const larkxrDeviceMemInfo& deviceMemInfo);
+
+	/**
+	* 是否启用 SSL
+	*/
+	static void SetUseSecurityProtocol(bool useSecurityProtol);
 	/**
 	 * 当前服务器地址
 	 * @return 服务器地址
@@ -272,6 +285,16 @@ public:
 	 * @return
 	 */
 	static larkxrDeviceBatteryInfo battery_info();
+	/**
+	* read config from path
+	* {
+	*   "server": "",
+	*   "": "",
+	* }
+	* @param config_path config file path
+	* @return read file result
+	*/
+	static bool InitConfigFromFile(const char* config_path);
 
 	XRClient();
 	~XRClient();
@@ -299,7 +322,7 @@ public:
 	 * 不会变化可以直接在 init 方法初始化。
 	 * @param language zh, zh-CN 中文 en 英文
 	 */
-	void Init(JavaVM* vm, bool init_share_context = true, const char* language = "");
+	void Init(JavaVM* vm, bool init_share_context = true, const char* language = "", bool debug_mode = false, const char* debug_path = "");
 	/**
 	 * 初始化opengl共享上下文
 	 * 必须在 opengl渲染线程中调用
@@ -309,6 +332,11 @@ public:
 	 *
 	 */
 	void ReleaseGLShareContext();
+
+	/**
+	*
+	*/
+	void SetTransportProxy(XRTransportProxyUSBClient* usb);
 #elif WIN32
 	/**
 	 * 初始化sdk
@@ -323,9 +351,20 @@ public:
 	* 释放 d3d11 devices
 	*/
 	void ReleaseD3D11Device();
+
+	/**
+	*
+	*/
+	void SetTransportProxy(XRTransportProxyUSB* usb);
 #else
 #error "SDK 目前只支持 win平台和 android 平台"
 #endif
+
+	/**
+	*
+	*/
+	void SetMode(XRClient::XRClientMode mode);
+
 	// 是否打印 debug 日志。
 	// 目前只在 win 平台上起作用
 	void EnableDebugMode(bool enable_debug_mode, const char* log_file = "");
@@ -484,6 +523,10 @@ public:
 	 *            LARKAR_EYE 渲染 ar 纹理，可不用手动设置，当前应用类型为 ar 时自动按照 ar 方式渲染
 	 */
 	bool Draw(larkxrEye eye = LARKXR_EYE_LEFT);
+
+#ifdef __ANDROID__
+	bool Blit(int frameBuffer,  larkxrEye eye, larkxrHwRenderTexture* hwRenderTexture);
+#endif
 
 	/**
 	 * 检测当前是否是暂停状态

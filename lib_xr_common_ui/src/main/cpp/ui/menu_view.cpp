@@ -83,19 +83,25 @@ void MenuView::Leave() {
 void MenuView::Update() {
     Object::Update();
 
+    if (update_active_this_frame_) {
+        // LOGV("Menu view update update_active_this_frame %d %d",Input::GetCurrentInputState().triggerShortPressed, Input::IsInputEnter());
+        if (Input::GetCurrentInputState().triggerShortPressed) {
+            update_active_this_frame_ = false;
+        }
+        return;
+    }
+
     if (btn_submit_->picked() && Input::IsInputEnter()) {
         LOGV("Menu view on submit");
-        if (callback_ != nullptr && !update_active_this_frame_) {
+        if (callback_ != nullptr) {
             callback_->OnMenuViewSelect(true);
         }
     }
 
     if (btn_cancle_->picked() && Input::IsInputEnter()) {
         LOGV("Menu view on cancle");
-        if (callback_ != nullptr && !update_active_this_frame_) {
+        if (callback_ != nullptr) {
             callback_->OnMenuViewSelect(false);
         }
     }
-
-    update_active_this_frame_ = false;
 }

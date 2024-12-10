@@ -19,8 +19,8 @@ typedef int						        BOOL;
 
 // sdk version.
 const int LARK_NATIVE_CLIENT_SDK_VERSION_MARJOR = 3;
-const int LARK_NATIVE_CLIENT_SDK_VERSION_MINOR  = 2;
-const int LARK_NATIVE_CLIENT_SDK_VERSION_REVISE = 2;
+const int LARK_NATIVE_CLIENT_SDK_VERSION_MINOR  = 3;
+const int LARK_NATIVE_CLIENT_SDK_VERSION_REVISE = 0;
 const int LARK_NATIVE_CLIENT_SDK_VERSION_BUILD  = 0;
 
 /// vr setup
@@ -140,6 +140,15 @@ typedef enum larkAppliType_ {
     AppliType_NV_AR = 11,
 } larkAppliType;
 
+typedef struct larkNetworkControl_ {
+    uint8_t onepacket_fec;
+    uint8_t dynamic_bitrate;
+    uint8_t resend;
+    uint8_t continue_decode_when_frame_lost;
+    uint8_t fix_wait_frame_timeout;
+    uint8_t resend_nack_packet;
+} larkNetworkControl;
+
 // config
 typedef struct larkCommonConfig_ {
     BOOL debugTask;
@@ -170,6 +179,7 @@ typedef struct larkCommonConfig_ {
     char roomCode[LARK_XR_MAX_ROOMCODE_SIZE];
     larkHeadSetControllerDesc headSetDesc;
     larkVRVideoDesc vrVideoDesc;
+    larkNetworkControl networkControl;
 } larkCommonConfig;
 
 typedef enum larkEventTypes_ {

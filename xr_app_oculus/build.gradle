@@ -11,12 +11,12 @@ android {
         minSdkVersion MIN_SDK_VERSION_XR
         targetSdkVersion TARGET_SDK_VERSION
         versionCode 1
-        versionName "3.2.2.1"
+        versionName "3.3.0.2"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         externalNativeBuild {
             cmake {
-                cppFlags "-frtti -fexceptions -std=c++1y -DANDROID_NDK_BUILD=1"
+                cppFlags "-frtti -fexceptions -std=c++17 -DANDROID_NDK_BUILD=1"
                 targets 'lark_xr_oculus'
 
                 if (BUILD_WITH_CLOUDXR_SUPPORT) {
@@ -119,7 +119,7 @@ dependencies {
     implementation 'com.squareup.okhttp3:okhttp:3.12.+'
     implementation project(':lib_pxygl')
     implementation project(':lib_xr_common_ui')
-    implementation(name: 'larkxr-kit-3.2.2.0-build-1', ext: 'aar')
+    implementation(name: 'larkxr-kit-3.3.0.1-build-1', ext: 'aar')
 
     implementation 'androidx.recyclerview:recyclerview:1.1.0'
     implementation 'com.github.bumptech.glide:glide:4.11.0'

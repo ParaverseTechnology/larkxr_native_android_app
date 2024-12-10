@@ -8,13 +8,13 @@ cmake_minimum_required(VERSION 3.4.1)
 set(LIBNAME lib_pxygl)
 set(LARK_LIBNAME "lark_pxygl")
 
-set (CMAKE_CXX_STANDARD 11)
+set (CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_VERBOSE_MAKEFILE on)
 
 set(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -g")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -frtti -fexceptions -std=c++11")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -frtti -fexceptions")
 
 set(project_base_dir ${CMAKE_CURRENT_SOURCE_DIR}/../../../../)
 # set thirdparty_base_dir before include.
@@ -139,7 +139,7 @@ set(EXT_LIBS
     jnigraphics
     log
     # glm
-    lib_glm
+    # lib_glm
 )
 
 if (ENABLE_ASSIMP)

@@ -55,6 +55,7 @@ public:
 #endif
 
     void SetSkyBox(int index);
+    void SetupSapce(bool isLocal);
 private:
     void ShowMenu();
     void HideMenu();
@@ -81,6 +82,8 @@ private:
 
     larkxrControllerDeviceState controller_state_[LARKVR_TOTAL_CONTROLLER_COUNT];
 
+    bool media_ready_ = false;
+    bool is_local_sapce_ = true;
 #ifdef ENABLE_CLOUDXR
     std::shared_ptr<CloudXRClient> cloudxr_client_ = {};
 #endif

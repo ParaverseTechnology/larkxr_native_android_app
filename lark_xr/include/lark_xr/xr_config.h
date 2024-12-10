@@ -17,6 +17,7 @@ const int LK_CONFIG_DEFAULT_RENDER_WIDTH = 2880;
 const int LK_CONFIG_DEFAULT_RENDER_HEIGHT = 1440;
 const float LK_CONFIG_DEFAULT_RESOLUTION_SCALE = 1.0f;
 const int LK_CONFIG_DEFAULT_BITRATE = 40 * 1000;
+const int LK_CONFIG_DEFAULT_BITRATE_MAX = 100 * 1000;
 const int LK_CONFIG_DEFAULT_FPS = 72;
 const int LK_CONFIG_DEFAULT_REQUEST_POSE_FPS = 72 * 2;
 const float LK_CONFIG_DEFAULT_ROOM_HEIGHT = 0.0f;
@@ -39,6 +40,14 @@ const bool LK_CONFIG_DEFAULT_USE_RENDER_QUEUE = false;
 const bool LK_CONFIG_DEFAULT_REPORT_FEC_FAILED = false;
 const larkHeadSetType LK_CONFIG_DEFAULT_FORCE_HEADSET_TYPE = larkHeadSetType_NONE;
 const int LK_CONFIG_DEFAULT_RENDER_QUEUE_SIZE = 1;
+const larkNetworkControl LK_CONFIG_DEFAULT_NETWORK_CONTROL = {
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+};
 #ifdef WIN32
 const bool LK_CONFIG_DEFAULT_D3D11_TEXTURE_OUTPUT = true;
 #endif
@@ -100,11 +109,15 @@ public:
     static int render_width;
     // 渲染的高度。
     static int render_height;
-    // 分辨率缩放 0 - 2
+    // 分辨率缩放
     // 最终分辨率为 align32(render_width * resolution_scale); align32(render_height * resolution_scale)
     static float resolution_scale;
+    // 分辨率缩放最大值
+    static float resolution_scale_max;
     // 比特率。单位 kbps.
     static int bitrate;
+    // UI
+    static int bitrate_kbps_ui_max;
     // 帧率
     static int fps;
     // 请求姿态的帧率. 推荐设置为 fps 的 2 倍
@@ -157,6 +170,10 @@ public:
     // 实际输入的头盔和手柄的值还是 headset_desc 中的保持不变，SDK 内部进行转换
     // 在进入应用之前设置有效
     static larkHeadSetType force_headset_type;
+    static larkNetworkControl network_control;
+    // UI
+    static bool show_server_ui;
+    static bool show_setup_ui;
 #ifdef WIN32
     static bool d3d11_texture_output;
 #endif // WIN32

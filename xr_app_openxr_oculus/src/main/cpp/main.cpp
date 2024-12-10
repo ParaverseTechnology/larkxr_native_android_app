@@ -192,8 +192,10 @@ void android_main(struct android_app* app) {
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_pxy_larkxr_1openxr_1oculus_MainActivity_nativeInit(JNIEnv *env, jobject thiz) {
+Java_com_pxy_larkxr_1openxr_1oculus_MainActivity_nativeInit(JNIEnv *env, jobject thiz,
+                                                            jboolean is_en) {
     BuildConfig::init(env, "com/pxy/larkxr_openxr_oculus/BuildConfig");
+    BuildConfig::is_en = is_en;
 }
 extern "C"
 JNIEXPORT void JNICALL

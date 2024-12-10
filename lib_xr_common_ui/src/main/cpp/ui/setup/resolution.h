@@ -14,7 +14,6 @@ class Resolution: public ItemBase, Slider::Callback {
 public:
     // scale range 0.25 - 1 m
     static constexpr float MIN = 0.25f;
-    static constexpr float RANGE = 0.75f;
 
     Resolution(int groupid, QuickConfigSetup* setup);
     ~Resolution();
@@ -35,6 +34,8 @@ private:
     void OnChangeResolution(int index);
     void SetResolution(int index);
     void SetValueStr();
+
+    float RANGE = 0.75f;
 
     std::shared_ptr<Slider> slider_;
     std::shared_ptr<Text> resolution_ = nullptr;

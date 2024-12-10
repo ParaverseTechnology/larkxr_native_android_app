@@ -22,7 +22,6 @@ namespace lark {
 uint64_t Texture::objcet_count_ = 0;
 Texture::Texture(const std::string& path) :
         texture_(0),
-        bitmap_(nullptr),
         width_(0),
         height_(0),
         stride_(0),
@@ -32,11 +31,9 @@ Texture::Texture(const std::string& path) :
         format_(),
         id_(++objcet_count_),
         path_(path) {
-//    LOGV_F("create texture id %?d texture %?d %s", id_, texture_, path_);
 }
 
 Texture::~Texture() {
-//    LOGV_F("release texture id %?d texture %?d %s", id_, texture_, path_);
     Clear();
 }
 
@@ -55,9 +52,7 @@ void Texture::set_texture(int texture) {
 
 void Texture::CleanBitmap()
 {
-    if (bitmap_ != NULL)
-        stbi_image_free(bitmap_);
-    bitmap_ = NULL;
+    bitmap_ = "";
 }
 
 Texture * Texture::GenTexture(const std::string& path) {
@@ -124,9 +119,11 @@ Texture::LoadTexture(AAssetManager* assetManager, BitmapFactory* bitmapFactory, 
     } else {
         texture = GenTexture(assetFile);
     }
-    texture->bitmap_ = bmp;
     SetTextureInfo(texture, info);
 
+    texture->bitmap_ = std::string((char*)bmp, texture->size_);
+
+    delete bmp;
     delete textureFile;
     return texture;
 }
@@ -134,8 +131,10 @@ Texture::LoadTexture(AAssetManager* assetManager, BitmapFactory* bitmapFactory, 
 Texture *
 Texture::LoadTexture(BitmapFactory *bitmapFactory, JNIEnv *env, const char *buffer, int bufferLen, GLuint textureId) {
     LOGV("LoadTexture1 %d", bufferLen);
+    char* buff = (char*)malloc(bufferLen);
+    memcpy(buff, buffer, bufferLen);
     AndroidBitmapInfo info;
-    uint8_t * bmp = bitmapFactory->DecodeByteArray(env, buffer, bufferLen, info);
+    uint8_t * bmp = bitmapFactory->DecodeByteArray(env, buff, bufferLen, info);
     if (bmp == nullptr)
         return nullptr;
     LOGV("LoadTexture2 %d", bufferLen);
@@ -146,9 +145,11 @@ Texture::LoadTexture(BitmapFactory *bitmapFactory, JNIEnv *env, const char *buff
     } else {
         texture = GenTexture("");
     }
-    texture->bitmap_ = bmp;
     SetTextureInfo(texture, info);
+    texture->bitmap_ = std::string((char*)bmp, texture->size_);
     LOGV("LoadTexture3 %d", bufferLen);
+    delete bmp;
+    free(buff);
     return texture;
 }
 #endif // __ANDROID__
@@ -203,7 +204,9 @@ Texture* Texture::LoadTexture(const char *assetFile, GLuint textureId) {
         return nullptr;
     }
     LOGV("stb load texture success. %s", assetFile);
-    return SetupImageData(data, width, height, channels, textureId);
+    Texture* res = SetupImageData(data, width, height, channels, textureId);
+    stbi_image_free(data);
+    return res;
 }
 
 Texture* Texture::SetupImageData(unsigned char* data, int width, int height, int channels, GLuint textureId)
@@ -216,11 +219,12 @@ Texture* Texture::SetupImageData(unsigned char* data, int width, int height, int
     else {
         texture = GenTexture("");
     }
-    texture->bitmap_ = data;
     texture->width_ = width;
     texture->height_ = height;
     // strie = WIDTH X CHANNEL
     texture->stride_ = width * channels;
+    texture->size_ = width * channels * height;
+    texture->bitmap_ = std::string((char*)data, texture->size_);
     // TODO channel 1 2
     // 1 ： 灰度图
     // 2 ： 灰度图加透明度
@@ -352,7 +356,7 @@ Texture *Texture::SetupSkyboxTexture(Texture *texture) {
     for (int i = 0; i < 6; i++) {
         int x = stride * (index[i] % 4);
         int y = height * (index[i] / 4);
-        uint8_t * bitmap = CropBitmap(texture->bitmap_, texture->stride_, texture->height_, x, y, stride, height);
+        uint8_t * bitmap = CropBitmap((uint8_t*)texture->bitmap_.c_str(), texture->stride_, texture->height_, x, y, stride, height);
 
         // Always output as GL_RGB5_A1 because the skybox don't need quality
         glTexImage2D(faces[i], 0, GL_RGB5_A1, width, height, 0, texture->format_, texture->type_, bitmap);

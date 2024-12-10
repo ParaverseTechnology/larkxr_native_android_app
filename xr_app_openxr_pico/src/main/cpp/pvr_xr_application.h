@@ -67,14 +67,9 @@ public:
     virtual void GetTrackingState(cxrVRTrackingState *state) override;
 #endif
 private:
-    bool RenderLayer(XrTime predictedDisplayTime, std::vector<XrCompositionLayerProjectionView>& projectionLayerViews,
-                     XrCompositionLayerProjection& layer, const larkxrTrackingFrame& trackingFrame, bool hasNewFrame);
-
-    bool GetViewTransform(const XrSpace& space,
-                          const XrTime& predictedDisplayTime,
-                          XrPosef *viewTransform,
-                          int viewTransformCount,
-                          XrPosef* xfStageFromHead);
+    bool RenderLayer(XrTime predictedDisplayTime,
+                     std::vector<XrCompositionLayerProjectionView>& projectionLayerViews,
+                     XrCompositionLayerProjection& layer);
 
     inline XrSpace GetSelectedXRSpace() { return current_cloud_space_ == Space_Local ? context_->local_space() : context_->app_space(); }
 

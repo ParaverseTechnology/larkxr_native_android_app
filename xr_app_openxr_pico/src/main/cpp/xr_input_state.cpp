@@ -8,12 +8,14 @@
 #include "common.h"
 #include "vector"
 #include "array"
+#include "logger.h"
+#include "log.h"
 
 #if !defined(XR_USE_PLATFORM_WIN32)
 #define strcpy_s(dest, source) strncpy((dest), (source), sizeof(dest))
 #endif
 
-void InputState::InitializeActions(const XrInstance& instance, const XrSession& session) {
+void InputState::InitializeActions(const XrInstance& instance, const XrSession& session, DeviceType deviceType, uint32_t device_rom) {
     // Create an action set.
     {
         XrActionSetCreateInfo actionSetInfo{XR_TYPE_ACTION_SET_CREATE_INFO};
@@ -94,12 +96,12 @@ void InputState::InitializeActions(const XrInstance& instance, const XrSession& 
         actionInfo.subactionPaths = handSubactionPath.data();
         CHECK_XRCMD(xrCreateAction(actionSet, &actionInfo, &BYAction));
 
-        actionInfo.actionType = XR_ACTION_TYPE_BOOLEAN_INPUT;
-        strcpy_s(actionInfo.actionName, "backkey");
-        strcpy_s(actionInfo.localizedActionName, "Backkey");
-        actionInfo.countSubactionPaths = uint32_t(handSubactionPath.size());
-        actionInfo.subactionPaths = handSubactionPath.data();
-        CHECK_XRCMD(xrCreateAction(actionSet, &actionInfo, &backAction));
+//        actionInfo.actionType = XR_ACTION_TYPE_BOOLEAN_INPUT;
+//        strcpy_s(actionInfo.actionName, "backkey");
+//        strcpy_s(actionInfo.localizedActionName, "Backkey");
+//        actionInfo.countSubactionPaths = uint32_t(handSubactionPath.size());
+//        actionInfo.subactionPaths = handSubactionPath.data();
+//        CHECK_XRCMD(xrCreateAction(actionSet, &actionInfo, &backAction));
 
         actionInfo.actionType = XR_ACTION_TYPE_FLOAT_INPUT;
         strcpy_s(actionInfo.actionName, "trigger");
@@ -328,7 +330,7 @@ void InputState::InitializeActions(const XrInstance& instance, const XrSession& 
     std::array<XrPath, Side::COUNT> AXValuePath;
     std::array<XrPath, Side::COUNT> homeClickPath;
     std::array<XrPath, Side::COUNT> BYValuePath;
-    std::array<XrPath, Side::COUNT> backPath;
+    // std::array<XrPath, Side::COUNT> backPath;
     std::array<XrPath, Side::COUNT> sideClickPath;
     std::array<XrPath, Side::COUNT> triggerPath;
     std::array<XrPath, Side::COUNT> joystickPath;
@@ -378,8 +380,8 @@ void InputState::InitializeActions(const XrInstance& instance, const XrSession& 
     CHECK_XRCMD(xrStringToPath(instance, "/user/hand/right/input/thumbrest/touch", &thumbrestPath[Side::RIGHT]));
 
     /**************************pico************************************/
-    CHECK_XRCMD(xrStringToPath(instance, "/user/hand/left/input/back/click", &backPath[Side::LEFT]));
-    CHECK_XRCMD(xrStringToPath(instance, "/user/hand/right/input/back/click", &backPath[Side::RIGHT]));
+    // CHECK_XRCMD(xrStringToPath(instance, "/user/hand/left/input/back/click", &backPath[Side::LEFT]));
+    // CHECK_XRCMD(xrStringToPath(instance, "/user/hand/right/input/back/click", &backPath[Side::RIGHT]));
     CHECK_XRCMD(xrStringToPath(instance, "/user/hand/left/input/battery/value", &batteryPath[Side::LEFT]));
     CHECK_XRCMD(xrStringToPath(instance, "/user/hand/right/input/battery/value", &batteryPath[Side::RIGHT]));
 
@@ -481,8 +483,23 @@ void InputState::InitializeActions(const XrInstance& instance, const XrSession& 
     // Suggest bindings for the Microsoft Mixed Reality Motion Controller.
     {
         XrPath picoMixedRealityInteractionProfilePath;
-        CHECK_XRCMD(xrStringToPath(instance, "/interaction_profiles/pico/neo3_controller",
+
+        //see https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_BD_controller_interaction
+        const char* interactionProfilePath = nullptr;
+        if (deviceType == DeviceTypeNeo3 || deviceType == DeviceTypeNeo3Pro || deviceType == DeviceTypeNeo3ProEye) {
+            interactionProfilePath = "/interaction_profiles/bytedance/pico_neo3_controller";
+        } else {
+            interactionProfilePath = "/interaction_profiles/bytedance/pico4_controller";
+        }
+        if (device_rom < 0x540) {
+            interactionProfilePath = "/interaction_profiles/pico/neo3_controller";
+        }
+
+        LOGV("init input %d %d %s", deviceType, device_rom, interactionProfilePath);
+
+        CHECK_XRCMD(xrStringToPath(instance, interactionProfilePath,
                                    &picoMixedRealityInteractionProfilePath));
+
         std::vector<XrActionSuggestedBinding> bindings{{
 
                                                                {JoystickClickLeftAction, thumbstickClickPath[Side::LEFT]},
@@ -508,8 +525,8 @@ void InputState::InitializeActions(const XrInstance& instance, const XrSession& 
 
                                                                {homeAction, systemPath[Side::LEFT]},
                                                                {homeAction, systemPath[Side::RIGHT]},
-                                                               {backAction, backPath[Side::LEFT]},
-                                                               {backAction, backPath[Side::RIGHT]},
+                                                               // {backAction, backPath[Side::LEFT]},
+                                                               // {backAction, backPath[Side::RIGHT]},
                                                                {batteryAction, batteryPath[Side::LEFT]},
                                                                {batteryAction, batteryPath[Side::RIGHT]},
 

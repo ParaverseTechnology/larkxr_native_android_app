@@ -463,7 +463,7 @@ void InputState::UpDate(const XrSession& session, XrSpace const &space, const Xr
 
         // update larkxr state
         ControllerState[hand].deviceType = hand == 0 ? Larkxr_Controller_Left : Larkxr_Controller_Right;
-        ControllerState[hand].pose = {};
+        // ControllerState[hand].pose = {};
         ControllerState[hand].pose.isValidPose = true;
         ControllerState[hand].pose.isConnected = true;
         ControllerState[hand].pose.is6Dof = true;

@@ -50,7 +50,7 @@ public class MainActivity extends VRActivity {
             s2 = externalFile.getAbsolutePath();
         }
 
-        init(getResources().getAssets(), s1, s2);
+        init(getResources().getAssets(), s1, s2, PermissionHelper.isEn());
 
         super.onCreate(savedInstanceState);
 
@@ -94,7 +94,7 @@ public class MainActivity extends VRActivity {
     }
 
     // Pass this acitivty instance to native
-    public native void init(AssetManager am, String internalDataPath, String externalDataPath);
+    public native void init(AssetManager am, String internalDataPath, String externalDataPath, boolean is_en);
     private native void nativeCreated(boolean isViveFlow);
     private native void nativeResume();
     private native void nativePause();

@@ -143,6 +143,13 @@ LARK_XR_API BOOL DC_CALL larkxr_Render2(uint64_t *frameIndex, uint64_t *fetchTim
                     float *px, float *py, float *pz,
                     float *rx, float *ry, float *rz, float *rw);
 
+#ifdef __ANDROID__
+LARK_XR_API void larkxr_PrepaireBlitNative(int frameBuffer, larkxrEye eye, larkxrHwRenderTexture* hwRenderTexture);
+LARK_XR_API void larkxr_DrawoutPrepaireBlitNative();
+LARK_XR_API void larkxr_ClearPrepaireBlitNative();
+LARK_XR_API BOOL larkxr_BlitNative(int frameBuffer, larkxrEye eye, larkxrHwRenderTexture* hwRenderTexture);
+#endif
+
 LARK_XR_API BOOL DC_CALL larkxr_RenderQueue(larkxrHwRenderTexture* nativeTexture, uint64_t *frameIndex, uint64_t *fetchTime, double *displayTime,
                                         float *px, float *py, float *pz,
                                         float *rx, float *ry, float *rz, float *rw);

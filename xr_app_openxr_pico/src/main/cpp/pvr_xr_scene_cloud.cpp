@@ -15,6 +15,8 @@
 #include "check.h"
 #include "pvr_xr_utils.h"
 
+#define LOG_TAG "PvrXRSceneCloud"
+
 PvrXRSceneCloud::PvrXRSceneCloud() {
 
 }
@@ -28,7 +30,7 @@ void PvrXRSceneCloud::OnConnect() {
     if (loading_) {
         loading_->Enter();
     }
-//    HideMenu();
+    HideMenu();
 }
 
 void PvrXRSceneCloud::OnMediaReady(int nativeTexture) {
@@ -36,6 +38,12 @@ void PvrXRSceneCloud::OnMediaReady(int nativeTexture) {
     controller_left_->set_active(false);
     controller_right_->set_active(false);
     rect_texture_->SetMutiviewModeTexture(nativeTexture);
+    loading_->set_active(false);
+    sky_box_->set_active(false);
+    media_ready_ = true;
+#ifdef ENABLE_CLOUDXR
+    cloudxr_client_->set_active(false);
+#endif
 }
 
 void PvrXRSceneCloud::OnMediaReady(int nativeTextrueLeft, int nativeTextureRight) {
@@ -43,16 +51,29 @@ void PvrXRSceneCloud::OnMediaReady(int nativeTextrueLeft, int nativeTextureRight
     controller_left_->set_active(false);
     controller_right_->set_active(false);
     rect_texture_->SetStereoTexture(nativeTextrueLeft, nativeTextureRight);
+    loading_->set_active(false);
+    sky_box_->set_active(false);
+    media_ready_ = true;
+#ifdef ENABLE_CLOUDXR
+    cloudxr_client_->set_active(false);
+#endif
 }
 
 void PvrXRSceneCloud::OnMediaReady() {
     LOGV("================OnMediaReady");
     controller_left_->set_active(false);
     controller_right_->set_active(false);
+    loading_->set_active(false);
+    sky_box_->set_active(false);
+    media_ready_ = true;
+#ifdef ENABLE_CLOUDXR
+    cloudxr_client_->set_active(false);
+#endif
 }
 
 void PvrXRSceneCloud::OnClose() {
     LOGV("================OnClose");
+    media_ready_ = false;
     loading_->set_active(true);
     menu_view_->set_active(false);
     controller_left_->set_active(true);
@@ -67,10 +88,12 @@ void PvrXRSceneCloud::OnClose() {
 void PvrXRSceneCloud::InitGL(GraphicsDeviceAndroid *device) {
     PvrXRScene::InitGL(device);
     sky_box_ = std::make_shared<lark::SkyBox>("textures/skybox_8_2k.jpg");
+    // sky_box_->set_active(false);
     PvrXRScene::AddObject(sky_box_);
 
     loading_ = std::make_shared<Loading>(nullptr);
     loading_->Move(View::VIEW_POSITION_Y, View::VIEW_POSITION_X, View::VIEW_POSITION_Z);
+    // loading_->set_active(false);
     PvrXRScene::AddObject(loading_);
 
     rect_texture_ = std::make_shared<RectTexture>();
@@ -81,11 +104,13 @@ void PvrXRSceneCloud::InitGL(GraphicsDeviceAndroid *device) {
     // controllers
     controller_left_ = std::make_shared<lark::Controller>(true, controllerConfig);
     controller_left_->Move(-0.3, 0, -0.3);
+    // controller_left_->set_active(false);
     // add to pvr_xr_scene;
     PvrXRScene::AddObject(controller_left_);
 
     controller_right_ = std::make_shared<lark::Controller>(false, controllerConfig);
     controller_right_->Move(0.3, 0, -0.3);
+    // controller_right_->set_active(false);
     // add to pvr_xr_scene;
     PvrXRScene::AddObject(controller_right_);
 
@@ -95,8 +120,11 @@ void PvrXRSceneCloud::InitGL(GraphicsDeviceAndroid *device) {
     menu_view_ = std::make_shared<MenuView>(this);
     menu_view_->Move(-0.75, -0.75, -1.8);
     menu_view_->set_active(false);
-    PvrXRScene::AddObject(menu_view_);
+    // PvrXRScene::AddObject(menu_view_);
     fake_hmd_->AddChild(menu_view_);
+
+    // OnMediaReady();
+    // ShowMenu();
 }
 
 void PvrXRSceneCloud::HandleInput(const InputState &input_state, XrSession const &session,
@@ -153,6 +181,11 @@ void PvrXRSceneCloud::HandleInput(const InputState &input_state, XrSession const
         if ((spaceLocation.locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT) != 0 &&
             (spaceLocation.locationFlags & XR_SPACE_LOCATION_ORIENTATION_VALID_BIT) != 0) {
 
+            if (media_ready_ && is_local_sapce_) {
+                // TODO config room height;
+                spaceLocation.pose.position.y += 1.5f;
+            }
+
             lark::Transform transform(pvr::toGlm(spaceLocation.pose.orientation), pvr::toGlm(spaceLocation.pose.position));
             transform.Rotate(glm::pi<float>() / 5, glm::vec3(-1, 0, 0));
 
@@ -169,7 +202,7 @@ void PvrXRSceneCloud::HandleInput(const InputState &input_state, XrSession const
             ray->ori = transform.GetPosition();
             ray->dir = transform.Forward();
         } else {
-            LOGV("pose not valid");
+            // LOGV("pose not valid");
             continue;
         }
 
@@ -245,7 +278,7 @@ void PvrXRSceneCloud::HandleInput(const InputState &input_state, XrSession const
         //             call after pressup.
         if (inputState[rayCastType].triggerButtonDown && inputState[rayCastType].backShortPressed)
         {
-            LOGV("close app." );
+            LOGV("ShowMenu." );
             if (lark::AppListTask::run_mode() == lark::GetVrClientRunMode::ClientRunMode::CLIENT_RUNMODE_SELF) {
                 // 显示退出菜单
                 ShowMenu();
@@ -290,7 +323,7 @@ void PvrXRSceneCloud::HandleInput(const InputState &input_state, XrSession const
 
     if (menu_view_->active()) {
         // update input state.
-        menu_view_->Update();
+        // menu_view_->Update();
         menu_view_->HandleInput(rays, 2);
     }
 
@@ -307,7 +340,7 @@ void PvrXRSceneCloud::OnCloseApp() {
 }
 
 void PvrXRSceneCloud::SetVideoFrame(const lark::XRVideoFrame &videoFrame) {
-    LOGV("================SetVideoFrame");
+    // LOGV("================SetVideoFrame");
     if (videoFrame.frame_type() == lark::XRVideoFrame::FrameType::kNative_Multiview) {
         rect_texture_->SetMutiviewModeTexture(videoFrame.texture());
     } else if (videoFrame.frame_type() == lark::XRVideoFrame::FrameType::kNative_Stereo) {
@@ -375,10 +408,22 @@ void PvrXRSceneCloud::OnCloudXRConnected() {
     controller_right_->set_active(false);
     sky_box_->set_active(false);
     cloudxr_client_->set_active(true);
+    media_ready_ = true;
 }
 #endif
 
 void PvrXRSceneCloud::SetSkyBox(int index) {
     const char *path = index == 0 ? "textures/skybox_8_2k.jpg" : "textures/skybox_9.jpg";
     sky_box_->SetTexture(path);
+}
+
+void PvrXRSceneCloud::SetupSapce(bool isLocal) {
+    if (isLocal) {
+        lark::Transform transform(glm::quat(1, 0, 0, 0), glm::vec3(View::VIEW_POSITION_X, View::VIEW_POSITION_Y, View::VIEW_POSITION_Z));
+        loading_->set_transform(transform);
+    } else {
+        lark::Transform transform(glm::quat(1, 0, 0, 0), glm::vec3(View::VIEW_POSITION_X, View::VIEW_POSITION_Y + 1.5f, View::VIEW_POSITION_Z));
+        loading_->set_transform(transform);
+    }
+    is_local_sapce_ = isLocal;
 }

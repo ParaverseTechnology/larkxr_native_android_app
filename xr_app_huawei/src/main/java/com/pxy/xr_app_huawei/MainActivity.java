@@ -160,7 +160,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             s2 = externalFile.getAbsolutePath();
         }
 
-        nativeInit(width, height, 0, mContext, holder.getSurface(), getResources().getAssets(), s1, s2);
+        nativeInit(width, height, 0, mContext, holder.getSurface(), getResources().getAssets(), s1, s2, PermissionHelper.isEn());
     }
 
     @Override
@@ -169,7 +169,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         uninit();
     }
 
-    public static native void nativeInit(int width, int height, int tex, Context act, Surface sf, AssetManager am, String internalDataPath, String externalDataPath);
+    public static native void nativeInit(int width, int height, int tex, Context act, Surface sf, AssetManager am, String internalDataPath, String externalDataPath, boolean is_en);
     public static native void uninit();
     public static native void nativeDestroy();
 }

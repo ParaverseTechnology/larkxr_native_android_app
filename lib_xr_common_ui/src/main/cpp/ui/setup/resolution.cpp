@@ -33,6 +33,10 @@ namespace {
 Resolution::Resolution(int groupid, QuickConfigSetup* setup):ItemBase(groupid), quick_config_setup_(setup) {
     setTitle(localization::Loader::getResource().ui_setup_resolution_title);
 
+    RANGE = lark::XRConfig::resolution_scale_max - MIN;
+
+    LOGV("Resolution xr_options max=%f range=%d", lark::XRConfig::resolution_scale_max, RANGE);
+
     {
         slider_ = std::make_shared<Slider>((Slider::Callback *)this);
         slider_->setValue(((scale_ - MIN) / RANGE));

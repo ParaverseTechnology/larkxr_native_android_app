@@ -33,8 +33,7 @@ FrameBuffer::~FrameBuffer() {
 
 }
 
-bool FrameBuffer::Create(XrSession session, const GLenum colorFormat, const int width,
-                         const int height, const int multisamples) {
+bool FrameBuffer::Create(XrSession session, const GLenum colorFormat, const XrViewConfigurationView &vp, const int multisamples) {
     PFNGLRENDERBUFFERSTORAGEMULTISAMPLEEXTPROC glRenderbufferStorageMultisampleEXT =
             (PFNGLRENDERBUFFERSTORAGEMULTISAMPLEEXTPROC)eglGetProcAddress(
                     "glRenderbufferStorageMultisampleEXT");
@@ -42,8 +41,8 @@ bool FrameBuffer::Create(XrSession session, const GLenum colorFormat, const int 
             (PFNGLFRAMEBUFFERTEXTURE2DMULTISAMPLEEXTPROC)eglGetProcAddress(
                     "glFramebufferTexture2DMultisampleEXT");
 
-    width_ = width;
-    height_ = height;
+    width_ = vp.recommendedImageRectWidth;
+    height_ = vp.recommendedImageRectHeight;
     multi_samples_ = multisamples;
 
     GLenum requestedGLFormat = colorFormat;
@@ -84,9 +83,9 @@ bool FrameBuffer::Create(XrSession session, const GLenum colorFormat, const int 
     swapChainCreateInfo.usageFlags =
             XR_SWAPCHAIN_USAGE_SAMPLED_BIT | XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT;
     swapChainCreateInfo.format = selectedFormat;
-    swapChainCreateInfo.sampleCount = 1;
-    swapChainCreateInfo.width = width;
-    swapChainCreateInfo.height = height;
+    swapChainCreateInfo.sampleCount = vp.recommendedSwapchainSampleCount;
+    swapChainCreateInfo.width = width_;
+    swapChainCreateInfo.height = height_;
     swapChainCreateInfo.faceCount = 1;
     swapChainCreateInfo.arraySize = 1;
     swapChainCreateInfo.mipCount = 1;
@@ -144,7 +143,7 @@ bool FrameBuffer::Create(XrSession session, const GLenum colorFormat, const int 
             GL(glGenRenderbuffers(1, &depth_buffers_[i]));
             GL(glBindRenderbuffer(GL_RENDERBUFFER, depth_buffers_[i]));
             GL(glRenderbufferStorageMultisampleEXT(
-                    GL_RENDERBUFFER, multisamples, GL_DEPTH_COMPONENT24, width, height));
+                    GL_RENDERBUFFER, multisamples, GL_DEPTH_COMPONENT24, width_, height_));
             GL(glBindRenderbuffer(GL_RENDERBUFFER, 0));
 
             // Create the frame buffer.
@@ -175,7 +174,7 @@ bool FrameBuffer::Create(XrSession session, const GLenum colorFormat, const int 
             // Create depth buffer.
             GL(glGenRenderbuffers(1, &depth_buffers_[i]));
             GL(glBindRenderbuffer(GL_RENDERBUFFER, depth_buffers_[i]));
-            GL(glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height));
+            GL(glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width_, height_));
             GL(glBindRenderbuffer(GL_RENDERBUFFER, 0));
 
             // Create the frame buffer.
@@ -201,7 +200,7 @@ bool FrameBuffer::Create(XrSession session, const GLenum colorFormat, const int 
 
     // hack color space
     // https://forums.oculusvr.com/t5/OpenXR-Development/sRGB-RGB-giving-washed-out-bright-image/m-p/957475
-    GL(glDisable(GL_FRAMEBUFFER_SRGB_EXT));
+    // GL(glDisable(GL_FRAMEBUFFER_SRGB_EXT));
 
     return true;
 }
@@ -232,7 +231,7 @@ void FrameBuffer::Acquire() {
     XrSwapchainImageWaitInfo waitInfo;
     waitInfo.type = XR_TYPE_SWAPCHAIN_IMAGE_WAIT_INFO;
     waitInfo.next = NULL;
-    waitInfo.timeout = 1000000000; /* timeout in nanoseconds */
+    waitInfo.timeout = XR_INFINITE_DURATION; /* timeout in nanoseconds */
     XrResult res = xrWaitSwapchainImage(color_swapchain_.Handle, &waitInfo);
     int i = 0;
     while (res == XR_TIMEOUT_EXPIRED) {

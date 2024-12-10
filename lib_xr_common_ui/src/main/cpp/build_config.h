@@ -50,6 +50,8 @@ public:
     inline static const std::string& build_type() { return build_type_; }
     inline static int version_code() { return version_code_; }
     inline static const std::string& version_name() { return version_name_; }
+
+    static bool is_en;
 private:
     static bool is_inited_;
     static bool debug_;

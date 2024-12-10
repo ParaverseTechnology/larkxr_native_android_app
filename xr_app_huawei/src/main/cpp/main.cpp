@@ -113,7 +113,8 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_com_pxy_xr_1app_1huawei_MainActivity_nativeInit(JNIEnv *env, jclass clazz, jint width,
 jint height, jint tex, jobject act,
-        jobject sf, jobject am, jstring internal_data_path_, jstring external_data_path_) {
+        jobject sf, jobject am, jstring internal_data_path_, jstring external_data_path_,
+                                                     jboolean is_en) {
 
     if (g_app == nullptr) {
         g_activity_context = env->NewGlobalRef(act);
@@ -143,7 +144,7 @@ jint height, jint tex, jobject act,
         g_native_window = ANativeWindow_fromSurface(env, sf);
         stateBegeinSession = true;
     }
-
+    BuildConfig::is_en = is_en;
 }
 
 extern "C"

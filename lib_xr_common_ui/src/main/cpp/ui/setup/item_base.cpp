@@ -15,13 +15,27 @@ ItemBase::ItemBase(int group):
     picked_(false),
     group_(group)
 {
-    init();
+    init(glm::vec2(2.37F, 1.55F));
 }
+
+ItemBase::ItemBase(int group, const glm::vec2& size):
+        AABB(id()),
+        bg_color_(0x000530A2),
+        bg_color_active_(0x000530B2),
+        border_up_color_(0xd7e1ffff),
+        aabb_list_(),
+        picked_(false),
+        group_(group)
+{
+    init(size);
+}
+
 
 ItemBase::~ItemBase() = default;
 
-void ItemBase::init() {
-    Base::size_ = glm::vec2(2.37F, 1.55F);
+void ItemBase::init(const glm::vec2& size) {
+    // Base::size_ = glm::vec2(2.37F, 1.55F);
+    Base::size_ = size;
     AABB::SetAABBSize(Base::size_);
 
     bg_ = std::make_shared<ColorBox>();

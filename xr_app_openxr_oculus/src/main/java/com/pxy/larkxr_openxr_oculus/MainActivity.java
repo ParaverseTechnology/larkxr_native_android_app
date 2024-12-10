@@ -32,7 +32,10 @@ public class MainActivity extends android.app.NativeActivity {
     private XrSystem xrSystem = null;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        nativeInit();
+        Log.d(TAG, "lang " + PermissionHelper.isEn());
+
+        nativeInit(PermissionHelper.isEn());
+
         super.onCreate(savedInstanceState);
         Log.d(TAG, "java active onCreate");
         CrashHandler.getInstance().init(this);
@@ -50,6 +53,7 @@ public class MainActivity extends android.app.NativeActivity {
 
         xrSystem = new XrSystem();
         xrSystem.init(this, UniqueIDUtils.getUniqueID(this));
+
     }
 
     @Override
@@ -93,7 +97,7 @@ public class MainActivity extends android.app.NativeActivity {
         }
     };
 
-    private native void nativeInit();
+    private native void nativeInit(boolean isEn);
     private native void nativeNetworkAvaliable();
     private native void nativeNetworkLost();
 }

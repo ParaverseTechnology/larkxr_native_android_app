@@ -16,9 +16,11 @@
 using namespace glm;
 using namespace std;
 
-Image::Image(): load_mutex_()
+Image::Image(const std::string& image_name): load_mutex_(), image_name_(image_name)
 {
+
     name_ = LOG_TAG;
+
     size_ = vec2(0.0F, 0.0F);
     enable_ = false;
 
@@ -44,7 +46,7 @@ Image::~Image() = default;
 
 void Image::LoadTexture(const char *buffer, int len) {
     std::lock_guard<std::mutex> lock(load_mutex_);
-    image_buffer_ = std::vector<char>(buffer, buffer + len);
+    image_buffer_ = std::string(buffer, buffer + len);
     need_load_ = true;
     // clear loclpath.
     path_ = "";
@@ -118,16 +120,23 @@ void Image::Draw(Eye eye, const glm::mat4 &projection, const glm::mat4 &eyeView)
         LOGV("LoadTexture cover need load url");
         lark::BitmapFactory* bitmapFactory = Context::instance()->bitmap_factory();
         EnvWrapper envWrapper = Context::instance()->GetEnv();
-
-        lark::Texture* texture = lark::Texture::LoadTexture(bitmapFactory, envWrapper.get(),
-                &image_buffer_[0], image_buffer_.size(), 0);
+        lark::Texture* texture = nullptr;
+        texture = lark::Texture::LoadTexture(bitmapFactory, envWrapper.get(),
+               image_buffer_.c_str(), image_buffer_.size(), 0);
+        LOGV("LoadTexture cover need load url 2 nulltexture=%d name=%s %p", texture_ == nullptr, image_name_.c_str(), this);
         if (texture != nullptr) {
-            texture_.reset(texture);
+            if (texture_ != nullptr) {
+                LOGV("LoadTexture cover need load url 3 %s %d %d name=%s %p",
+                     texture_->path(), texture_->type(), texture_->texture(), image_name_.c_str()
+                     ,this);
+            }
+            texture_ = std::shared_ptr<lark::Texture>(texture);
             need_update_cover_ = true;
             if (callback_ != nullptr) {
                 callback_->OnImageInited(this);
             }
         }
+        LOGV("LoadTexture cover need load url finish");
         image_buffer_.clear();
         need_load_ = false;
     }

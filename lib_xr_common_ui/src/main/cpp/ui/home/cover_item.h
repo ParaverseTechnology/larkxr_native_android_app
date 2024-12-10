@@ -58,16 +58,16 @@ private:
     bool picked_;
 
     // appli id
-    std::string app_id_;
+    std::string app_id_ = {};
     Text title_;
     Text tail_;
     Text app_type_icon_;
     std::string cover_url_;
     ColorBox bg_color_;
-    std::shared_ptr<Image> cover_;
-    std::shared_ptr<Image> border_;
-    std::shared_ptr<Image> active_border_;
-    std::shared_ptr<Border> test_border_;
+    std::shared_ptr<Image> cover_ = {};
+    std::shared_ptr<Image> border_ = {};
+    std::shared_ptr<Image> active_border_ = {};
+    std::shared_ptr<Border> test_border_ = {};
 
     bool need_update_cover_;
     GLuint cover_texture_id_;

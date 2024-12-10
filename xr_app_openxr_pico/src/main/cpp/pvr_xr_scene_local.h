@@ -29,6 +29,7 @@ public:
     void HomePage();
 
     void SetSkyBox(int index);
+    void SetupSapce(bool isLocal);
 private:
     void OnCloseApp();
 

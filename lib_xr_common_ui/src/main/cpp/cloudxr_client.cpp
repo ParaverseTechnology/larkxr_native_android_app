@@ -43,8 +43,6 @@ void CloudXRClient::GetTrackingState(cxrVRTrackingState *state) {
 }
 
 cxrBool CloudXRClient::RenderAudio(const cxrAudioFrame *audioFrame) {
-    LOGI("RenderAudio %ld %p", audioFrame->streamSizeBytes, playback_stream_.get());
-
     if (!playback_stream_)
     {
         return cxrFalse;
@@ -52,10 +50,8 @@ cxrBool CloudXRClient::RenderAudio(const cxrAudioFrame *audioFrame) {
 
     const uint32_t timeout = audioFrame->streamSizeBytes / CXR_AUDIO_BYTES_PER_MS;
     const uint32_t numFrames = timeout * CXR_AUDIO_SAMPLING_RATE / 1000;
-    auto result = playback_stream_->write(audioFrame->streamBuffer, numFrames,
+    playback_stream_->write(audioFrame->streamBuffer, numFrames,
                             timeout * oboe::kNanosPerMillisecond);
-
-    LOGI("RenderAudio write result %d %d", result.value(), result.error());
 
     return cxrTrue;
 }
@@ -358,6 +354,8 @@ void CloudXRClient::Stats() {
 }
 
 bool CloudXRClient::Render(FrameMask eye) {
+
+
     if (!IsRunning() || !latched_) {
         return false;
     }
@@ -396,7 +394,7 @@ cxrError CloudXRClient::Latch(cxrFramesLatched& framesLatched) {
     }
 
     // Fetch the frame
-    const uint32_t timeout_ms = 150;
+    const uint32_t timeout_ms = 500;
     cxrError status = cxrLatchFrame(cloudxr_receiver_, &frames_latched_, cxrFrameMask_All, timeout_ms);
 
     if (status != cxrError_Success) {
@@ -542,12 +540,12 @@ CloudXRClient::Draw(lark::Object::Eye eye, const glm::mat4 &projection, const gl
 
     // WARNING  GL_SCISSOR_TEST NOT SUPPORT IN CLOUDXR
     // enabel GL_SCISSOR_TEST CLOUDXR draw black
-    glDisable(GL_SCISSOR_TEST);
+    // glDisable(GL_SCISSOR_TEST);
     glDisable(GL_BLEND);
 
     Render(eye == lark::Object::EYE_LEFT ? FrameMask_Left : FrameMask_Right);
 
-    glEnable(GL_SCISSOR_TEST);
+    // glEnable(GL_SCISSOR_TEST);
     // 开启透明同道混合
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -558,12 +556,12 @@ void CloudXRClient::DrawMultiview(const glm::mat4 &projection, const glm::mat4 &
 
     // WARNING  GL_SCISSOR_TEST NOT SUPPORT IN CLOUDXR
     // enabel GL_SCISSOR_TEST CLOUDXR draw black
-    glDisable(GL_SCISSOR_TEST);
+    // glDisable(GL_SCISSOR_TEST);
     glDisable(GL_BLEND);
 
     Render(FrameMask_All);
 
-    glEnable(GL_SCISSOR_TEST);
+    // glEnable(GL_SCISSOR_TEST);
     // 开启透明同道混合
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -610,8 +608,8 @@ cxrVRTrackingState CloudXRClient::VRTrackingStateFrom(const larkxrTrackingDevice
     res.hmd.pose.trackingResult = cxrTrackingResult_Running_OK;
 
     for (int hand = 0; hand < 2; hand ++) {
-        res.controller[hand].pose.poseIsValid = cxrTrue;
-        res.controller[hand].pose.deviceIsConnected = cxrTrue;
+        res.controller[hand].pose.poseIsValid = pxyframe.devicePair.controllerState[hand].pose.isValidPose;
+        res.controller[hand].pose.deviceIsConnected = pxyframe.devicePair.controllerState[hand].pose.isConnected;
         res.controller[hand].pose.trackingResult = cxrTrackingResult_Running_OK;
         res.controller[hand].pose.position.v[0] = pxyframe.devicePair.controllerState[hand].pose.position.x;
         res.controller[hand].pose.position.v[1] = pxyframe.devicePair.controllerState[hand].pose.position.y;

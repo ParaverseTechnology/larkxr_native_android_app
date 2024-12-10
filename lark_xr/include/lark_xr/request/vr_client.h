@@ -12,6 +12,8 @@ namespace lark {
 class LARK_COMMON_API VrClientObserver {
 public:
     virtual void OnClientId(const std::string& clientId) = 0;
+    virtual void OnClinetOnlineSuccess() = 0;
+    virtual void OnClinetOnlineFailed() = 0;
 };
 class VrClientImp;
 class LARK_COMMON_API VrClient {

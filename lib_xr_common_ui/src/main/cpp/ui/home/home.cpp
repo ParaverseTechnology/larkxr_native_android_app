@@ -244,6 +244,16 @@ void Home::Init() {
         AddChild(d);
     }
 
+
+    setup_button_->set_active(lark::XRConfig::show_setup_ui);
+    setup_button_->set_enable(lark::XRConfig::show_setup_ui);
+    advance_setup_button_->set_active(lark::XRConfig::show_setup_ui);
+    advance_setup_button_->set_enable(lark::XRConfig::show_setup_ui);
+    setup_server_button_->set_active(lark::XRConfig::show_server_ui);
+    setup_server_button_->set_enable(lark::XRConfig::show_server_ui);
+
+    LOGV("xr_options ui %d %d", lark::XRConfig::show_setup_ui, lark::XRConfig::show_server_ui);
+
     app_list_task_.SetPageSize(MAX_PAGE_ITEM_NUM);
     View::Init();
 }
@@ -276,18 +286,18 @@ void Home::Leave() {
 void Home::HandleInput(lark::Ray * rays, int rayCount) {
     View::HandleInput(rays, rayCount);
     // handle inputs.
-    if (setup_button_->picked() && Input::IsInputEnter()) {
+    if (setup_button_->active() && setup_button_->picked() && Input::IsInputEnter()) {
         // go to setup page.
         navigation_->SetRouter(Navigation::SETUP);
     }
     //
-    if (setup_server_button_->picked() && Input::IsInputEnter()) {
+    if (setup_server_button_->active() && setup_server_button_->picked() && Input::IsInputEnter()) {
         navigation_->SetRouter(Navigation::SETUP_SERVERADDR);
     }
-    if (page_up_button_->picked() && Input::IsInputEnter()) {
+    if (page_up_button_->active() && page_up_button_->picked() && Input::IsInputEnter()) {
         ChangePage(false);
     }
-    if (page_down_button_->picked() && Input::IsInputEnter()) {
+    if (page_down_button_->active() && page_down_button_->picked() && Input::IsInputEnter()) {
         ChangePage(true);
     }
     if (quit_3d_ui_button_->active() && quit_3d_ui_button_->picked() && Input::IsInputEnter()) {

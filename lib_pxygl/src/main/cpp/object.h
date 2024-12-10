@@ -25,8 +25,8 @@ private:
     static uint64_t objcet_count_;
 public:
     enum Eye {
-        EYE_LEFT,
-        EYE_RIGHT
+        EYE_LEFT  = 0,
+        EYE_RIGHT = 1,
     };
 
     Object();

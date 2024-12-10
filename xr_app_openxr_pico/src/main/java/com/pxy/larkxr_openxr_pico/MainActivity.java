@@ -42,7 +42,7 @@ public class MainActivity extends android.app.NativeActivity {
             s2 = externalFile.getAbsolutePath();
         }
 
-        nativeInit(getResources().getAssets(), s1, s2);
+        nativeInit(getResources().getAssets(), s1, s2, PermissionHelper.isEn());
 
         // shoud init vr system before vr started.
         xrSystem = new XrSystem();
@@ -92,6 +92,6 @@ public class MainActivity extends android.app.NativeActivity {
         nativeDestory();
     }
 
-    private native void nativeInit(AssetManager assetManager, String internalPath, String externalPath);
+    private native void nativeInit(AssetManager assetManager, String internalPath, String externalPath, boolean is_en);
     private native void nativeDestory();
 }

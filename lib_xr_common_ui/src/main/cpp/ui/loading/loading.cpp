@@ -27,12 +27,12 @@ void Loading::Init() {
     if (bg_)
         bg_->set_active(false);
 
-    icon_ = std::make_shared<Image>();
+    icon_ = std::make_shared<Image>("ICON");
     icon_->set_position(glm::vec3(-icon_->GetSize().x / 2.0F, 0, 0));
     icon_->set_callback(this);
     AddChild(icon_);
 
-    footer_ = std::make_shared<Image>();
+    footer_ = std::make_shared<Image>("FOOTER");
     footer_->Move(glm::vec3(1.2, -1.2, 0));
     AddChild(footer_);
 
@@ -64,6 +64,8 @@ void Loading::Init() {
     tips_->Move(-tips_->width() / 2.0F, -0.8F, 0);
     AddChild(tips_);
     View::Init();
+
+    LOGV("loading enter %p icon %p footer %p", this, icon_.get(), footer_.get());
 }
 
 
@@ -74,24 +76,26 @@ void Loading::OnImageInited(Image *img) {
 
 void Loading::OnImageLoadSuccess(lark::CompanyImageLoader::CompanyImageType type, const char *data,
                                  int size) {
+//    load_success_  = true;
+
     if (type == lark::CompanyImageLoader::CompanyImageType_Logo) {
-        LOGV("on load logo success");
+        LOGV("on load logo success %p icon %p", this, icon_.get());
         icon_->LoadTexture(data, size);
     } else if (type == lark::CompanyImageLoader::CompanyImageType_Footer) {
-        LOGV("on load footer logo success");
+        LOGV("on load footer logo success %p footer %p", this, footer_.get());
         footer_->LoadTexture(data, size);
     }
-    load_success_  = true;
 }
 
 void Loading::OnImageLoadFailed(const std::string &err) {
     LOGV("OnImageLoade faield %s", err.c_str());
-    load_success_  = false;
+    load_failed_  = true;
 }
 
 void Loading::Enter() {
     View::Enter();
-    if (first_load_ || !load_success_) {
+    LOGV("loading enter %p icon %p footer %p", this, icon_.get(), footer_.get());
+    if (first_load_ || load_failed_) {
         center_loader_.SendAsync();
         footer_loader_.SendAsync();
         first_load_ = false;

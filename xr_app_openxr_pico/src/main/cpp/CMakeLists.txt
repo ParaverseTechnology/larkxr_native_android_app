@@ -146,11 +146,14 @@ target_link_libraries( # Specifies the target library.
 						lib_lark_xr
 						lib_lark_xr_common_ui
 						# assimp android port
+						lib_assimp
 						lib_assimp_android_jniiosystem
 						# ndk glue
-						#        app_glue
+						app-glue
 						# oboe
 						liboboe
+						# lib_glm
+						lib_freetype
 )
 
 if (ENABLE_CLOUDXR STREQUAL "1")

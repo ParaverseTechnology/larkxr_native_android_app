@@ -13,7 +13,6 @@ class CodeRate : public ItemBase, Slider::Callback {
 public:
     // coderate range 5 - 50 m
     static constexpr float MIN = 5;
-    static constexpr float RANGE = 96;
 
     CodeRate(int group, QuickConfigSetup* setup);
     ~CodeRate() override ;
@@ -32,6 +31,7 @@ public:
     virtual void Leave() override;
 private:
     void SetValueStr();
+    float RANGE = 96;
 
     std::shared_ptr<Image> icon_;
     std::shared_ptr<Image> data_border_;

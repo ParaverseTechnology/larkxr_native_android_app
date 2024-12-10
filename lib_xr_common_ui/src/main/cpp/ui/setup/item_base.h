@@ -19,6 +19,7 @@
 class ItemBase: public lark::Object, public component::Base, public AABB {
 public:
     ItemBase(int group);
+    ItemBase(int group, const glm::vec2& size);
     virtual ~ItemBase();
 
     void set_size(const glm::vec2& size) override;
@@ -32,7 +33,7 @@ public:
     virtual void Leave() = 0;
     inline int group() const { return group_; }
 protected:
-    void init();
+    void init(const glm::vec2& size);
     void resize();
 
     void PushAABB(AABB * aabb);

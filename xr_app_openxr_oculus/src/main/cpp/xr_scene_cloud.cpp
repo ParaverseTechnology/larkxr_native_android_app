@@ -49,7 +49,7 @@ void XrSceneCloud::InitGL() {
     menu_view_ = std::make_shared<MenuView>(this);
     menu_view_->Move(-0.75, -0.75, -1.8);
     menu_view_->set_active(false);
-    AddObject(menu_view_);
+    // AddObject(menu_view_);
     fake_hmd_->AddChild(menu_view_);
 }
 
@@ -133,9 +133,11 @@ void XrSceneCloud::HandleInput(const InputState &input_state) {
         }
     }
 
+    // LOGV("Menu view input state triggerShortPressed=%d", Input::GetCurrentInputState().triggerShortPressed);
+
     if (menu_view_->active()) {
         // update input state.
-        menu_view_->Update();
+        // menu_view_->Update();
         menu_view_->HandleInput(rays, 2);
     }
     // update ui ray.

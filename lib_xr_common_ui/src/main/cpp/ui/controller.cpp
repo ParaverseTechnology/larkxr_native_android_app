@@ -40,6 +40,7 @@ Controller::Controller(bool isLeft, const ControllerConfig& config):
     if (config.modelRotate != 0) {
         model_->Rotate(config.modelRotate, config.modelRotateAxis);
     }
+    // model_->set_active(false);
     AddChild(model_);
     LOGV("model load finish %d", model_ == nullptr);
 

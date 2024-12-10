@@ -54,9 +54,9 @@ public:
 
     inline void BindBitmap(int internalFormat = -1) {
         if (internalFormat != -1)
-            glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width_, height_, 0, format_, type_, bitmap_);
+            glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width_, height_, 0, format_, type_, bitmap_.c_str());
         else
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width_, height_, 0, format_, type_, bitmap_);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width_, height_, 0, format_, type_, bitmap_.c_str());
     }
 
     void CleanBitmap();
@@ -102,7 +102,7 @@ public:
     }
 
     inline uint8_t* bitmap() {
-        return bitmap_;
+        return (uint8_t*)bitmap_.c_str();
     }
 
     inline const std::string & type_name() {
@@ -114,6 +114,8 @@ public:
     }
 
     inline uint64_t id() { return id_; }
+
+    inline const char* path() { return path_.c_str(); }
 private:
     Texture(const std::string& path);
 
@@ -121,16 +123,17 @@ private:
     void set_texture(int texture);
 
     GLuint texture_;
-    uint8_t* bitmap_;
+//    uint8_t* bitmap_ = nullptr;
+    std::string bitmap_ = "";
     size_t width_;
     size_t height_;
     size_t stride_;
     size_t size_;
     size_t type_;
     size_t format_;
-    std::string type_name_;
+    std::string type_name_ = {};
     uint64_t id_;
-    std::string path_;
+    std::string path_ = {};
 };
 }
 

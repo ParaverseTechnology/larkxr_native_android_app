@@ -54,7 +54,7 @@ bool WvrSceneCloud::InitGL(void* left_eye_queue, void* right_eye_qeue,
     menu_view_ = std::make_shared<MenuView>(this);
     menu_view_->Move(-0.75, -0.75, -1.8);
     menu_view_->set_active(false);
-    WvrScene::AddObject(menu_view_);
+    // WvrScene::AddObject(menu_view_);
     fake_hmd_->AddChild(menu_view_);
 
     return WvrScene::InitGL(left_eye_queue, right_eye_qeue, left_eye_fbo, right_eye_fbo);
@@ -323,7 +323,6 @@ bool WvrSceneCloud::HandleInput() {
             } else {
                 controllerDeviceState->inputState.gripValue = 0.0;
             }
-            LOGV("is6DoFPose");
         } else {
             if (WVR_GetInputButtonState(posePair.type, WVR_InputId_Alias1_Trigger)) {
                 controllerDeviceState->inputState.buttons |= LARKXR_BUTTON_FLAG(larkxr_Input_Trigger_Click);

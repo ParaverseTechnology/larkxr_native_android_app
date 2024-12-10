@@ -11,7 +11,7 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_com_pxy_larkxr_1openxr_1pico_MainActivity_nativeInit(JNIEnv *env, jobject thiz,
         jobject asset_manager, jstring internal_data_path_,
-        jstring external_data_path_) {
+        jstring external_data_path_, jboolean is_en) {
     const char *internalDataPath = env->GetStringUTFChars(internal_data_path_, 0);
     const char *externalDataPath = env->GetStringUTFChars(external_data_path_, 0);
 
@@ -25,6 +25,8 @@ Java_com_pxy_larkxr_1openxr_1pico_MainActivity_nativeInit(JNIEnv *env, jobject t
     env->ReleaseStringUTFChars(external_data_path_, externalDataPath);
 
     BuildConfig::init(env, "com/pxy/larkxr_openxr_pico/BuildConfig");
+
+    BuildConfig::is_en = is_en;
 }
 
 extern "C"

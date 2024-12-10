@@ -200,8 +200,8 @@ void SkyBox::Draw(Eye eye, const glm::mat4 &projection, const glm::mat4 &eyeView
     viewClone[3][2] = 0;
     viewClone[3][3] = 1;
 
-    glDisable(GL_DEPTH_TEST);
-    glDepthMask(GL_FALSE);
+    // glDisable(GL_DEPTH_TEST);
+    // glDepthMask(GL_FALSE);
 
     if (!texture_ || !vao_) return;
 
@@ -218,8 +218,10 @@ void SkyBox::Draw(Eye eye, const glm::mat4 &projection, const glm::mat4 &eyeView
     texture_->UnbindTextureCubeMap();
     shader_->UnUseProgram();
 
-    glDepthMask(GL_TRUE);
-    glEnable(GL_DEPTH_TEST);
+    // glActiveTexture(0);
+
+    // glDepthMask(GL_TRUE);
+    // glEnable(GL_DEPTH_TEST);
 
     HasGLError();
 }

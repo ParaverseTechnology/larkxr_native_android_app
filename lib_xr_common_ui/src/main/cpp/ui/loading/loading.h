@@ -24,14 +24,14 @@ public:
 protected:
     virtual void Init() override;
 private:
-    std::shared_ptr<Text> text_;
-    std::shared_ptr<Text> tips_;
-    std::shared_ptr<Image> icon_;
-    std::shared_ptr<Image> footer_;
+    std::shared_ptr<Text> text_= {};
+    std::shared_ptr<Text> tips_= {};
+    std::shared_ptr<Image> icon_ = {};
+    std::shared_ptr<Image> footer_ = {};
     lark::CompanyImageLoader center_loader_;
     lark::CompanyImageLoader footer_loader_;
     bool first_load_ = true;
-    bool load_success_ = false;
+    bool load_failed_ = false;
 };
 
 

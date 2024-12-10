@@ -12,10 +12,11 @@
 #include "check.h"
 #include "pvr_xr_utils.h"
 #include "ui/localization.h"
+#include "build_config.h"
+
 #define LOG_TAG "pvr_xr_application"
 
 #define USE_RENDER_QUEUE = 1;
-//#define OPENXR_FOV_SETUP 1
 
 namespace {
     const float CLOUD_LOCALSPACE_HEIGHT_OFFSET = 1.5f;
@@ -36,29 +37,7 @@ bool PvrXrApplication::InitGL(OpenxrContext *context) {
     XrSystemProperties systemProperties{XR_TYPE_SYSTEM_PROPERTIES};
     CHECK_XRCMD(xrGetSystemProperties(context_->instance(), context_->system_id(), &systemProperties));
 
-    // vendorId 42 pico neo4
-    // systemProperties.vendorId;
-    // Instance RuntimeName=Pico(XRT) by Pico et al 'de86b93' RuntimeVersion=3.0.1
-
-    // neo3
-    // Instance RuntimeName=Pico(XRT) by Pico et al '050e640' RuntimeVersion=3.0.1
-    // System Properties: Name=Pico: PICO HMD VendorId=42
-    // V/XrSystem: device name Pico Neo 3 MANUFACTURER Pico
-    // device name Pico Neo 3 MANUFACTURER Pico
-    //     MODEL Pico Neo 3
-    //     BRAND Pico
-    //     BOARD kona
-    //     DEVICE PICOA7H10
-    //     USER smartcm
-    //     ID 4.8.18
-    //     DISPLAY 4.8.18
-    //     BOOTLOADER unknown
-    //     PRODUCT A7H10
-    //     HOST build20
-    //     TAGS dev-keys
-    //     FINGERPRINT Pico/A7H10/PICOA7H10:10/4.8.18/smartcm.1660654404:user/dev-keys
-    //     HARDWARE qcom
-
+    localization::Loader::load(BuildConfig::is_en);
 
     // load resource
     auto env = Context::instance()->GetEnv();
@@ -69,15 +48,6 @@ bool PvrXrApplication::InitGL(OpenxrContext *context) {
     };
     lark::AssetLoader::instance()->Load(&context_config, Assetlist);
 
-    // TODO
-    // PICO SDK 2.2.0
-    // init xrconfig
-//    if (context_ && context_->GetFPS() != 0) {
-//        lark::XRConfig::fps = context_->GetFPS();
-//    } else {
-//        lark::XRConfig::fps = 72;
-//    }
-
     lark::XRConfig::fps = 72;
     lark::XRConfig::request_pose_fps = 72 * 2;
 
@@ -86,36 +56,9 @@ bool PvrXrApplication::InitGL(OpenxrContext *context) {
     // fov left -0.907414 right 0.907414 up 0.907414 down -0.907414
     // ipd 0.071930
     // viewSwapchain w 1440 h 1584
-#ifdef OPENXR_FOV_SETUP
-    for (int eye = 0; eye < 2; eye++) {
-//        lark::XRConfig::fov[eye] = {
-//                47.4999, 47.4999, 47.4999, 47.4999
-//        };
-//        lark::XRConfig::fov[eye] = {
-//                51.99148, 51.99148, 51.99148, 51.99148
-//        };
-        lark::XRConfig::fov[eye] = {
-                52.5, 52.5, 52.5, 52.5
-        };
-    }
 
-//    lark::XRConfig::render_width = 1440 * 2;
-//    lark::XRConfig::render_height = 1584;
-//    lark::XRConfig::render_width = 4320 * 2;
-//    lark::XRConfig::render_height = 2160;
-//    lark::XRConfig::render_width = 3664;
-//    lark::XRConfig::render_height = 1920;
-
-    lark::XRConfig::render_width = 3664;
-    lark::XRConfig::render_height = 1687;
-#else
     // default 49 for pico neo3
     float fov = 49;
-
-    // vendorId 42 pico 4?
-//    if (systemProperties.vendorId == 42) {
-//        fov = 105.0f / 2.0f;
-//    }
 
     if (lark::XRClient::system_info().platFromType != Larkxr_Platform_PICO_NEO_3) {
         fov = 105.0f / 2.0f;
@@ -132,19 +75,23 @@ bool PvrXrApplication::InitGL(OpenxrContext *context) {
 
     lark::XRConfig::render_width = 3664;
     lark::XRConfig::render_height = 1920;
-#endif
 
 #ifdef USE_RENDER_QUEUE
     lark::XRConfig::use_render_queue = true;
-    lark::XRConfig::render_queue_size = 2;
+    lark::XRConfig::render_queue_size = 1;
 #else
     lark::XRConfig::use_render_queue = false;
 #endif
-    lark::XRConfig::ipd = 0.0694f;
-//    lark::XRConfig::ipd = 0.071930f;
     lark::XRConfig::headset_desc.type = larkHeadSetType_PICO_3;
     lark::XRConfig::use_multiview = true;
-    lark::XRConfig::request_pose_fps = 72;
+
+    if (context->display_refresh_rate() > 0) {
+        lark::XRConfig::fps = context->display_refresh_rate();
+    }
+
+    LOGV("fps %d", context->display_refresh_rate());
+
+    // lark::XRConfig::foveated_rendering.enableFoveateRendering = false;
     // test force hmd to htc
     // lark::XRConfig::set_force_headset_type(larkHeadSetType_HTC);
 
@@ -155,7 +102,7 @@ bool PvrXrApplication::InitGL(OpenxrContext *context) {
     xr_client_ = std::make_shared<lark::XRClient>();
     // gl context not ready. init share context later.
     // init_share_context should be false
-    xr_client_->Init(Context::instance()->vm(), false);
+    xr_client_->Init(Context::instance()->vm(), false, BuildConfig::is_en ? "en" : "zh");
     xr_client_->InitGLShareContext();
     xr_client_->RegisterObserver(this);
     xr_client_->EnableDebugMode(false);
@@ -170,22 +117,6 @@ bool PvrXrApplication::InitGL(OpenxrContext *context) {
     for(auto view: context_->views()) {
         LOGI("fov left %f right %f up %f down %f", view.fov.angleLeft, view.fov.angleRight, view.fov.angleUp, view.fov.angleDown);
     }
-
-    XrSpaceLocation spaceLocation{XR_TYPE_SPACE_LOCATION};
-    XrResult res;
-    res = xrLocateSpace(context_->app_space(), context_->app_space(), 0, &spaceLocation);
-    if (XR_UNQUALIFIED_SUCCESS(res)) {
-        LOGV("xr head space x %f y %f z %f; rx %f ry %f rz %f rw %f",
-                spaceLocation.pose.position.x,spaceLocation.pose.position.x, spaceLocation.pose.position.x,
-                spaceLocation.pose.orientation.x, spaceLocation.pose.orientation.y, spaceLocation.pose.orientation.z, spaceLocation.pose.orientation.w);
-    } else {
-        LOGV("xr head space failed %d", res);
-    }
-
-    //    lark::CopyAssetToInternalPath(Context::instance()->native_activity(),
-    //                                  "model/oculus_quest_controller_left/oculus_quest_controller_left.obj");
-
-//    localization::Loader::load(true);
 
     // init scene
     scene_local_ = std::make_shared<PvrXRSceneLocal>();
@@ -238,39 +169,57 @@ void PvrXrApplication::ShutdownGL() {
 void PvrXrApplication::Update() {
     if (xr_client_->is_connected()) {
         scene_cloud_->HandleInput(context_->input(), context_->session(),  GetSelectedXRSpace());
+#if 0
 // TEST datachannel
-//        {
-//            XrActionStateGetInfo getInfo{XR_TYPE_ACTION_STATE_GET_INFO};
-//            getInfo.action = context_->input().AAction;
-//            XrActionStateBoolean AValue{XR_TYPE_ACTION_STATE_BOOLEAN};
-//            CHECK_XRCMD(xrGetActionStateBoolean(context_->session(), &getInfo, &AValue));
-//            if (AValue.changedSinceLastSync && AValue.isActive) {
-//                if (AValue.currentState) {
-//                    xr_client_->SendData("A press down");
-//                } else {
-//                    xr_client_->SendData("A press up");
-//                }
-//            }
-//            getInfo.action = context_->input().BAction;
-//            XrActionStateBoolean BValue{XR_TYPE_ACTION_STATE_BOOLEAN};
-//            CHECK_XRCMD(xrGetActionStateBoolean(context_->session(), &getInfo, &BValue));
-//            if (BValue.changedSinceLastSync && BValue.isActive) {
-//                if (AValue.currentState) {
-//                    xr_client_->SendData("B press down");
-//                } else {
-//                    xr_client_->SendData("B press up");
-//                }
-//            }
-//        }
+        {
+            XrActionStateGetInfo getInfo{XR_TYPE_ACTION_STATE_GET_INFO};
+            getInfo.action = context_->input().AAction;
+            XrActionStateBoolean AValue{XR_TYPE_ACTION_STATE_BOOLEAN};
+            CHECK_XRCMD(xrGetActionStateBoolean(context_->session(), &getInfo, &AValue));
+            if (AValue.changedSinceLastSync && AValue.isActive) {
+                if (AValue.currentState) {
+                    xr_client_->SendData("A press down");
+                } else {
+                    xr_client_->SendData("A press up");
+                }
+            }
+            getInfo.action = context_->input().BAction;
+            XrActionStateBoolean BValue{XR_TYPE_ACTION_STATE_BOOLEAN};
+            CHECK_XRCMD(xrGetActionStateBoolean(context_->session(), &getInfo, &BValue));
+            if (BValue.changedSinceLastSync && BValue.isActive) {
+                if (AValue.currentState) {
+                    xr_client_->SendData("B press down");
+                } else {
+                    xr_client_->SendData("B press up");
+                }
+            }
+        }
+#endif
     } else {
-        scene_local_->HandleInput(context_->input(), context_->session(), context_->local_space());
+        scene_local_->HandleInput(context_->input(), context_->session(), GetSelectedXRSpace());
     }
 }
 
 void PvrXrApplication::RenderFrame() {
-    larkxrTrackingFrame trackingFrame = {};
-    bool has_new_frame_pxy_stream = false;
-    bool has_new_frame_cloudxr = false;
+    /**
+     * render frame
+     *
+     * xrWaitFrame
+     * xrBeginFrame
+     * wait cloud frame
+     * render cloud frame
+     * xrEndFrame
+     */
+
+    auto session = context_->session();
+    CHECK(session != XR_NULL_HANDLE);
+
+    XrFrameWaitInfo frameWaitInfo{XR_TYPE_FRAME_WAIT_INFO};
+    XrFrameState frameState{XR_TYPE_FRAME_STATE};
+    CHECK_XRCMD(xrWaitFrame(session, &frameWaitInfo, &frameState));
+
+    XrFrameBeginInfo frameBeginInfo{XR_TYPE_FRAME_BEGIN_INFO};
+    CHECK_XRCMD(xrBeginFrame(session, &frameBeginInfo));
 
 #ifdef ENABLE_CLOUDXR
     if (need_recreat_cloudxr_client_) {
@@ -287,97 +236,14 @@ void PvrXrApplication::RenderFrame() {
         need_reconnect_public_ip_ = false;
         prepare_public_ip_ = "";
     }
-    // cloudxr progess
-    if (cloudxr_client_ && cloudxr_client_->IsConnect()) {
-        cxrFramesLatched latched;
-//        LOGV("CLOUDXR start latched");
-        cxrError error = cloudxr_client_->Latch(latched);
-        if (error != cxrError_Success)
-        {
-            LOGV("Latching frame failed.");
-            if (error == cxrError_Frame_Not_Ready)
-            {
-                LOGW("LatchFrame failed, frame not ready for %d ms", 150);
-            }
-            else
-            {
-                LOGE("Error in LatchFrame [%0d] = %s", error, cxrErrorString(error));
-            }
-            return;
-        }
-
-        {
-            uint64_t frameIndex = latched.poseID;
-            std::lock_guard<std::mutex> lock(tracking_frame_mutex_);
-            auto it = tracking_frame_map_.find(frameIndex);
-            if (it != tracking_frame_map_.end()) {
-                trackingFrame = it->second;
-            } else {
-                if (!tracking_frame_map_.empty()) {
-                    LOGW("cant find new tracking frame in map. use old. size %ld; index %ld", tracking_frame_map_.size(), frameIndex);
-                    trackingFrame = tracking_frame_map_.cbegin()->second;
-                } else {
-                    LOGW("cant find tracking frame in map. size %ld; index %ld", tracking_frame_map_.size(), frameIndex);
-                    return;
-                }
-            }
-        }
-//        LOGV("CLOUDXR frame ready %ld %ld", trackingFrame.frameIndex, latched.poseID);
-        has_new_frame_cloudxr = true;
-    }
 #endif
-
-#ifdef USE_RENDER_QUEUE
-    bool cloudmedia_ready = xr_client_->media_ready();
-    lark::XRVideoFrame xrVideoFrame(0);
-
-    if (!has_new_frame_cloudxr && xr_client_->is_connected()) {
-        // block wait frame
-        xr_client_->WaitFroNewFrame(33);
-
-        has_new_frame_pxy_stream = xr_client_->Render(&trackingFrame, &xrVideoFrame);
-
-        cloudmedia_ready = xr_client_->media_ready();
-
-        // skip rendering if no new frame
-        if (cloudmedia_ready && !has_new_frame_pxy_stream) {
-//            LOGV("wait for new frame");
-            usleep(1000);
-            return;
-        }
-
-        if (has_new_frame_pxy_stream) {
-            lark::XRLatencyCollector::Instance().Rendered2(trackingFrame.frameIndex);
-            scene_cloud_->UpdateTexture(xrVideoFrame);
-        }
-    }
-#else
-    bool cloudmedia_ready = xr_client_->media_ready();
-    xr_client_->Render(&trackingFrame);
-#endif
-
-    uint64_t now = utils::GetTimestampUs();
-
-    auto session = context_->session();
-    CHECK(session != XR_NULL_HANDLE);
-
-    XrFrameWaitInfo frameWaitInfo{XR_TYPE_FRAME_WAIT_INFO};
-    XrFrameState frameState{XR_TYPE_FRAME_STATE};
-    CHECK_XRCMD(xrWaitFrame(session, &frameWaitInfo, &frameState));
-
-    if(frameState.predictedDisplayTime <= 0)
-        frameState.predictedDisplayTime = 0;
-
-    XrFrameBeginInfo frameBeginInfo{XR_TYPE_FRAME_BEGIN_INFO};
-    CHECK_XRCMD(xrBeginFrame(session, &frameBeginInfo));
 
     std::vector<XrCompositionLayerBaseHeader*> layers;
     XrCompositionLayerProjection layer{XR_TYPE_COMPOSITION_LAYER_PROJECTION};
     std::vector<XrCompositionLayerProjectionView> projectionLayerViews;
     if (frameState.shouldRender == XR_TRUE) {
 //        LOGV("RENDER %d %d %d", has_new_frame_pxy_stream, has_new_frame_cloudxr, has_new_frame_pxy_stream || has_new_frame_cloudxr);
-        if (RenderLayer(frameState.predictedDisplayTime, projectionLayerViews, layer, trackingFrame,
-                        has_new_frame_pxy_stream || has_new_frame_cloudxr)) {
+        if (RenderLayer(frameState.predictedDisplayTime, projectionLayerViews, layer)) {
             layers.push_back(reinterpret_cast<XrCompositionLayerBaseHeader*>(&layer));
         }
     }
@@ -395,52 +261,41 @@ void PvrXrApplication::RenderFrame() {
     frameEndInfo.layerCount = (uint32_t)layers.size();
     frameEndInfo.layers = layers.data();
     CHECK_XRCMD(xrEndFrame(session, &frameEndInfo));
-
-#ifdef USE_RENDER_QUEUE
-    if (has_new_frame_pxy_stream) {
-        XrSpaceLocation loc = {};
-        loc.type = XR_TYPE_SPACE_LOCATION;
-
-        // get head pose
-        OXR(xrLocateSpace(
-                context_->head_space(), GetSelectedXRSpace(), frameState.predictedDisplayTime, &loc));
-
-        glm::vec3 trackingAng = glm::eulerAngles(pvr::toGlm(loc.pose.orientation));
-        glm::vec3 renderAng = glm::eulerAngles(trackingFrame.tracking.rotation.toGlm());
-
-        float degree = glm::degrees(renderAng.y - trackingAng.y);
-
-        lark::XRLatencyCollector::Instance().Submit(trackingFrame.frameIndex, degree);
-        xr_client_->ReleaseRenderTexture();
-    }
-#endif
-
-#ifdef ENABLE_CLOUDXR
-    if (has_new_frame_cloudxr) {
-        cloudxr_client_->Release();
-        cloudxr_client_->Stats();
-    }
-#endif
 }
 
 bool PvrXrApplication::RenderLayer(XrTime predictedDisplayTime,
                                    std::vector<XrCompositionLayerProjectionView> &projectionLayerViews,
-                                   XrCompositionLayerProjection &layer, const larkxrTrackingFrame& trackingFrame, bool hasNewFrame) {
-    XrSpace space = hasNewFrame ? GetSelectedXRSpace() : context_->local_space();
-    XrPosef xfStageFromHead = {};
-    XrPosef viewTransform[2];
+                                   XrCompositionLayerProjection &layer) {
 
-    if (!GetViewTransform(space, predictedDisplayTime, viewTransform, 2, &xfStageFromHead)) {
-        return false;
+    XrResult res;
+    XrViewState viewState{XR_TYPE_VIEW_STATE};
+    uint32_t viewCapacityInput = (uint32_t)context_->views().size();
+    uint32_t viewCountOutput;
+    XrViewLocateInfo viewLocateInfo{XR_TYPE_VIEW_LOCATE_INFO};
+    viewLocateInfo.viewConfigurationType = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;
+    viewLocateInfo.displayTime = predictedDisplayTime;
+    viewLocateInfo.space = GetSelectedXRSpace();
+
+    res = xrLocateViews(context_->session(), &viewLocateInfo, &viewState, viewCapacityInput, &viewCountOutput, context_->views().data());
+
+    CHECK_XRRESULT(res, "xrLocateViews");
+    if ((viewState.viewStateFlags & XR_VIEW_STATE_POSITION_VALID_BIT) == 0 ||
+        (viewState.viewStateFlags & XR_VIEW_STATE_ORIENTATION_VALID_BIT) == 0) {
+        LOGW("xrLocateViews flag not valid %d", viewState.viewStateFlags);
+        return false;  // There is no valid tracking poses for the views.
     }
 
-    for (int eye = 0; eye < 2; eye++) {
-        viewTransform[eye] = XrPosef_Inverse(viewTransform[eye]);
-    }
+    // get ipd
+//    float ipd = sqrt(pow(abs(context_->views()[1].pose.position.x-context_->views()[0].pose.position.x),2)
+//            +pow(abs(context_->views()[1].pose.position.y-context_->views()[0].pose.position.y),2)
+//            +pow(abs(context_->views()[1].pose.position.z-context_->views()[0].pose.position.z),2));
 
-    // TODO config eyes
-    // only support 2 eyes for now.
-    projectionLayerViews.resize(2);
+    CHECK(viewCountOutput == viewCapacityInput);
+    CHECK(viewCountOutput == 2);
+
+    projectionLayerViews.resize(viewCountOutput);
+
+    // LOGV("render viewCountOutput %d", viewCountOutput);
 
     if (!config_inited_) {
         glm::vec3 position[2] = {};
@@ -492,55 +347,176 @@ bool PvrXrApplication::RenderLayer(XrTime predictedDisplayTime,
         config_inited_ = true;
     }
 
-    XrCompositionLayerProjection projection_layer = {};
-    projection_layer.type = XR_TYPE_COMPOSITION_LAYER_PROJECTION;
-    projection_layer.layerFlags = XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT;
-    projection_layer.layerFlags |= XR_COMPOSITION_LAYER_CORRECT_CHROMATIC_ABERRATION_BIT;
-    if (hasNewFrame) {
-        projection_layer.space = GetSelectedXRSpace();
-    } else {
-        projection_layer.space = context_->local_space();
+    XrPosef pose[Side::COUNT];
+    for (uint32_t i = 0; i < 2; i++) {
+        pose[i] = context_->views()[i].pose;
     }
-    projection_layer.viewCount = projectionLayerViews.size();
-    projection_layer.views = projectionLayerViews.data();
 
-    for (int eye = 0; eye < 2; eye++) {
-        picoxr::FrameBuffer frameBuffer = context_->frame_buffer(eye);
+    lark::XRVideoFrame xrVideoFrame(0);
+    larkxrTrackingFrame xrTrackingFrame = {};
+    bool framevaild = false;
+    bool media_ready = false;
+    bool has_new_frame_cloudxr = false;
 
-        memset(
-                &projectionLayerViews[eye], 0, sizeof(XrCompositionLayerProjectionView));
-        projectionLayerViews[eye].type = XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW;
-
-        if (hasNewFrame) {
-//            LOGV("CLOUDXR frame ready %ld", trackingFrame.frameIndex);
-            projectionLayerViews[eye].pose.position = pvr::fromGlm(trackingFrame.tracking.eye[eye].viewPosition.toGlm());
-            projectionLayerViews[eye].pose.orientation = pvr::fromGlm(trackingFrame.tracking.eye[eye].viewRotation.toGlm());
-        } else {
-            projectionLayerViews[eye].pose = XrPosef_Inverse(viewTransform[eye]);
+#ifdef ENABLE_CLOUDXR
+    // cloudxr progess
+    if (cloudxr_client_ && cloudxr_client_->IsConnect()) {
+        cxrFramesLatched latched;
+//        LOGV("CLOUDXR start latched");
+        cxrError error = cloudxr_client_->Latch(latched);
+        if (error != cxrError_Success)
+        {
+            LOGV("Latching frame failed.");
+            if (error == cxrError_Frame_Not_Ready)
+            {
+                LOGW("LatchFrame failed, frame not ready for %d ms", 150);
+            }
+            else
+            {
+                LOGE("Error in LatchFrame [%0d] = %s", error, cxrErrorString(error));
+            }
         }
 
-        projectionLayerViews[eye].fov = context_->views()[eye].fov;
+        {
+            uint64_t frameIndex = latched.poseID;
+            // LOGV("cloudxr latched poseID %ld", frameIndex);
+            std::lock_guard<std::mutex> lock(tracking_frame_mutex_);
+            auto it = tracking_frame_map_.find(frameIndex);
+            if (it != tracking_frame_map_.end()) {
+                xrTrackingFrame = it->second;
+            } else {
+                if (!tracking_frame_map_.empty()) {
+                    LOGW("cant find new tracking frame in map. use old. size %ld; index %ld", tracking_frame_map_.size(), frameIndex);
+                    xrTrackingFrame = tracking_frame_map_.cbegin()->second;
+                } else {
+                    LOGW("cant find tracking frame in map. size %ld; index %ld", tracking_frame_map_.size(), frameIndex);
+                }
+            }
+        }
+//        LOGV("CLOUDXR frame ready %ld %ld", trackingFrame.frameIndex, latched.poseID);
+        has_new_frame_cloudxr = true;
+        framevaild = true;
+    }
+#endif
 
-        memset(&projectionLayerViews[eye].subImage, 0, sizeof(XrSwapchainSubImage));
-        projectionLayerViews[eye].subImage.swapchain =
-                frameBuffer.color_swapchain().Handle;
-        projectionLayerViews[eye].subImage.imageRect.offset.x = 0;
-        projectionLayerViews[eye].subImage.imageRect.offset.y = 0;
-        projectionLayerViews[eye].subImage.imageRect.extent.width =
-                frameBuffer.color_swapchain().Width;
-        projectionLayerViews[eye].subImage.imageRect.extent.height =
-                frameBuffer.color_swapchain().Height;
-        projectionLayerViews[eye].subImage.imageArrayIndex = 0;
+    if (xr_client_->is_connected() && !has_new_frame_cloudxr) {
+        media_ready = xr_client_->media_ready();
+
+        if (media_ready) {
+            // block wait frame
+            xr_client_->WaitFroNewFrame(500);
+            framevaild = xr_client_->Render(&xrTrackingFrame, &xrVideoFrame);
+
+            if (framevaild) {
+                lark::XRLatencyCollector::Instance().Rendered2(xrTrackingFrame.frameIndex);
+
+                scene_cloud_->SetVideoFrame(xrVideoFrame);
+            } else {
+                LOGV("frame not vaild");
+            }
+        } else {
+            // update.
+            framevaild = xr_client_->Render(&xrTrackingFrame, &xrVideoFrame);
+            media_ready = xr_client_->media_ready();
+        }
+    }
+
+    if (framevaild) {
+        // LOGV("setup cloud pose frameindex[%ld] %f %f %f", xrTrackingFrame.frameIndex, xrTrackingFrame.tracking.rotation.x, xrTrackingFrame.tracking.rotation.y, xrTrackingFrame.tracking.rotation.z);
+        for (uint32_t i = 0; i < 2; i++) {
+            pose[i].position = pvr::fromLarkXR(xrTrackingFrame.tracking.position);
+            pose[i].orientation = pvr::fromLarkXR(xrTrackingFrame.tracking.rotation);
+        }
+    }
+
+    // Render view to the appropriate part of the swapchain image.
+    for (uint32_t i = 0; i < 2; i++) {
+        picoxr::FrameBuffer frameBuffer = framevaild ? context_->frame_buffer_cloud(i) : context_->frame_buffer(i);
+
+        frameBuffer.Acquire();
+
+        projectionLayerViews[i] = {XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW};
+        projectionLayerViews[i].pose = pose[i];
+        projectionLayerViews[i].fov = context_->views()[i].fov;
+        projectionLayerViews[i].subImage.swapchain = frameBuffer.color_swapchain().Handle;
+        projectionLayerViews[i].subImage.imageRect.offset = {0, 0};
+        projectionLayerViews[i].subImage.imageRect.extent = {frameBuffer.width(), frameBuffer.height()};
+
+        frameBuffer.SetCurrent();
+
+        // LOGV("render eye[%d] texture_swapchain_index=%d texture_swapchain_length=%d", i, frameBuffer.texture_swapchain_index(), frameBuffer.texture_swapchain_length());
+
+        glViewport(0, 0, projectionLayerViews[i].subImage.imageRect.extent.width, projectionLayerViews[i].subImage.imageRect.extent.height);
+
+        uint64_t now = utils::GetTimestampUs();
+        // LOGV("start render [%ld]", now);
+
+        glDepthMask(GL_TRUE);
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LEQUAL);
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
+
+        // 开启透明同道混合
+        glEnable( GL_BLEND );
+        //配置混合方程式，默认为 GL_FUNC_ADD 方程
+        glBlendEquation(GL_FUNC_ADD);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+        if (scene_cloud_->IsMenuActive() || has_new_frame_cloudxr || !framevaild) {
+            // LOGV("clear color");
+            glClearColor(0, 0, 0, 1);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        }
 
         if (xr_client_->is_connected()) {
-            scene_cloud_->RenderView((lark::Object::Eye)eye, projectionLayerViews[eye], frameBuffer);
-        } else {
-            scene_local_->RenderView((lark::Object::Eye)eye, projectionLayerViews[eye], frameBuffer);
+            scene_cloud_->RenderView((lark::Object::Eye)i, projectionLayerViews[i]);
+       } else {
+            scene_local_->RenderView((lark::Object::Eye)i, projectionLayerViews[i]);
         }
 
+        // LOGV("cost render [%ld]", utils::GetTimestampUs() - now);
+
+        frameBuffer.SetNone();
+
+        // context_->graphics_plugin()->Swap();
     }
 
-    layer = projection_layer;
+    for (int i = 0; i < 2; i++) {
+        picoxr::FrameBuffer frameBuffer = framevaild ? context_->frame_buffer_cloud(i) : context_->frame_buffer(i);
+        frameBuffer.Release();
+    }
+
+    if (framevaild && !has_new_frame_cloudxr) {
+        XrSpaceLocation loc = {};
+        loc.type = XR_TYPE_SPACE_LOCATION;
+
+        // get head pose
+        OXR(xrLocateSpace(
+                context_->head_space(), GetSelectedXRSpace(), predictedDisplayTime, &loc));
+
+        glm::vec3 trackingAng = glm::eulerAngles(pvr::toGlm(loc.pose.orientation));
+        glm::vec3 renderAng = glm::eulerAngles(xrTrackingFrame.tracking.rotation.toGlm());
+
+        float degree = glm::degrees(renderAng.y - trackingAng.y);
+
+        lark::XRLatencyCollector::Instance().Submit(xrTrackingFrame.frameIndex, degree);
+        xr_client_->ReleaseRenderTexture();
+    }
+
+#ifdef ENABLE_CLOUDXR
+    if (has_new_frame_cloudxr) {
+        cloudxr_client_->Release();
+        cloudxr_client_->Stats();
+    }
+#endif
+
+    layer.space = GetSelectedXRSpace();
+    layer.layerFlags = XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT | XR_COMPOSITION_LAYER_UNPREMULTIPLIED_ALPHA_BIT;
+    // layer.layerFlags = 0;
+    layer.viewCount = (uint32_t)projectionLayerViews.size();
+    layer.views = projectionLayerViews.data();
+
     return true;
 }
 
@@ -570,7 +546,6 @@ void PvrXrApplication::OnClose(int code) {
             Navigation::ShowToast("与渲染服务器代理连接关闭");
             break;
     }
-//    ResetTracking(pvr::PvrTrackingOrigin_EyeLevel);
     scene_cloud_->OnClose();
 }
 
@@ -590,7 +565,9 @@ void PvrXrApplication::OnHapticsFeedback(bool isLeft, uint64_t startTime, float 
 void PvrXrApplication::OnConnected() {
     Application::OnConnected();
     connected_ = true;
+
     scene_cloud_->OnConnect();
+
 }
 
 void PvrXrApplication::OnError(int errCode, const char* msg) {
@@ -618,17 +595,23 @@ void PvrXrApplication::OnError(int errCode, const char* msg) {
 
 void PvrXrApplication::OnMediaReady(int nativeTextrure) {
     Application::OnMediaReady(nativeTextrure);
+
     scene_cloud_->OnMediaReady(nativeTextrure);
+
 }
 
 void PvrXrApplication::OnMediaReady(int nativeTextureLeft, int nativeTextureRight) {
     Application::OnMediaReady(nativeTextureLeft, nativeTextureRight);
+
     scene_cloud_->OnMediaReady(nativeTextureLeft, nativeTextureRight);
+
 }
 
 void PvrXrApplication::OnMediaReady() {
     Application::OnMediaReady();
+
     scene_cloud_->OnMediaReady();
+
 }
 
 void PvrXrApplication::RequestTrackingInfo() {
@@ -636,85 +619,45 @@ void PvrXrApplication::RequestTrackingInfo() {
 
     uint64_t now = utils::GetTimestampNs();
     XrTime predictedDisplayTime = now + 1000 * 1000 * 40;
-    XrSpace space = GetSelectedXRSpace();
-    XrPosef xfStageFromHead = {};
-    XrPosef viewTransform[2];
 
-    if (!GetViewTransform(space, predictedDisplayTime, viewTransform, 2, &xfStageFromHead)) {
-        return;
+    XrSpaceVelocity velocity{XR_TYPE_SPACE_VELOCITY};
+    XrSpaceLocation spaceLocation{XR_TYPE_SPACE_LOCATION, &velocity};
+    XrResult res = xrLocateSpace(context_->head_space(), GetSelectedXRSpace(), predictedDisplayTime, &spaceLocation);
+    CHECK_XRRESULT(res, "xrLocateSpace");
+
+    if (current_cloud_space_ == Space_Local) {
+        spaceLocation.pose.position.y += CLOUD_LOCALSPACE_HEIGHT_OFFSET;
     }
 
     // save hmd pose for pop up menu
-    scene_cloud_->set_headpose(xfStageFromHead);
+    scene_cloud_->set_headpose(spaceLocation.pose);
 
-    if (current_cloud_space_ == Space_Local) {
-        // TODO config height
-        // add fixed height for local space
-        xfStageFromHead.position.y += CLOUD_LOCALSPACE_HEIGHT_OFFSET;
-    }
+    static uint64_t frameIndex = 0;
+    frameIndex++;
 
     larkxrTrackedPose pose = {};
     pose.device = Larkxr_Device_Type_HMD;
     pose.isConnected = true;
     pose.is6Dof = true;
     pose.isValidPose = true;
-    pose.rotation = pvr::toGlm(xfStageFromHead.orientation);
-    pose.position = pvr::toGlm(xfStageFromHead.position);
 
-    for (int i = 0; i < 2; i++) {
-        pose.eye[i].viewPosition = pvr::toGlm(viewTransform[i].position);
-        pose.eye[i].viewRotation = pvr::toGlm(viewTransform[i].orientation);
-    }
-//    LOGV("update pose %f %f %f; %f %f %f",
-//            view_state_pico_.headpose.position.x, view_state_pico_.headpose.position.y, view_state_pico_.headpose.position.z,
-//            hmd_view_pose[0].position.x, hmd_view_pose[0].position.y, hmd_view_pose[0].position.z);
+    pose.rotation = pvr::toLarkXR(spaceLocation.pose.orientation);
+    pose.position = pvr::toLarkXR(spaceLocation.pose.position);
 
     larkxrDevicePair devicePair = {};
     devicePair.hmdPose = pose;
 
     for (auto hand : {Side::LEFT, Side::RIGHT}) {
         devicePair.controllerState[hand] = scene_cloud_->GetControllerState(hand);
-
-        if (current_cloud_space_ == Space_Local) {
-            // TODO config height
-            // add fixed height for local space
-            devicePair.controllerState[hand].pose.position.y += CLOUD_LOCALSPACE_HEIGHT_OFFSET;
-        }
-
-//        devicePair.controllerState[hand].pose.position = {hand * 0.5, 0, 0};
-//        devicePair.controllerState[hand].pose.position = {0, 0, 0};
-//        devicePair.controllerState[hand].pose.rotation = {};
-
-//        devicePair.controllerState[hand].deviceType = hand == Side::LEFT ? Larkxr_Controller_Left : Larkxr_Controller_Right;
-//        devicePair.controllerState[hand].pose.device = hand == Side::LEFT ? Larkxr_Device_Type_Controller_Left : Larkxr_Device_Type_Controller_Right;
-//        devicePair.controllerState[hand].pose.isConnected = true;
-//        devicePair.controllerState[hand].pose.isValidPose = true;
-//        devicePair.controllerState[hand].inputState.deviceType = hand == Side::LEFT ? Larkxr_Device_Type_Controller_Left : Larkxr_Device_Type_Controller_Right;
-//        devicePair.controllerState[hand].inputState.isConnected = true;
-
     }
 
-//    devicePair.controllerState[0].pose.position = {-0.4, ROOM_HEIGHT, 0};
-//    devicePair.controllerState[0].pose.rotation = {};
-//    devicePair.controllerState[1].pose.position = {0.4, ROOM_HEIGHT, 0};
-//    devicePair.controllerState[1].pose.rotation = {};
-
-//    LOGV("request left2 %d %d %d %f %f %f  %frequest right %d %d %d %f %f %f %f;h %f; %d %d",
-//         devicePair.controllerState[0].deviceType, devicePair.controllerState[0].pose.isConnected, devicePair.controllerState[0].inputState.isConnected,
-//         devicePair.controllerState[0].pose.rotation.x, devicePair.controllerState[0].pose.rotation.y, devicePair.controllerState[0].pose.rotation.z, devicePair.controllerState[0].pose.rotation.w,
-//         devicePair.controllerState[1].deviceType, devicePair.controllerState[1].pose.isConnected, devicePair.controllerState[1].inputState.isConnected,
-//         devicePair.controllerState[1].pose.rotation.x, devicePair.controllerState[1].pose.rotation.y, devicePair.controllerState[1].pose.rotation.z, devicePair.controllerState[1].pose.rotation.w,
-//         ROOM_HEIGHT, devicePair.controllerState[0].deviceType, devicePair.controllerState[1].deviceType);
-
-    static uint64_t frame_index = 0;
-    frame_index++;
-
     larkxrTrackingDevicePairFrame devicePairFrame = {
-            frame_index,
-            now,
+            frameIndex,
+            0,
             static_cast<double>(predictedDisplayTime),
             devicePair,
     };
+
     xr_client_->SendDevicePair(devicePairFrame);
 }
 
@@ -741,7 +684,6 @@ PvrXrApplication::OnCloudXRReady(const char* appServerIp, const char* preferOutI
 
     prepare_public_ip_ = preferOutIp;
     cxrError error = cloudxr_client_->Connect(appServerIp);
-//    cxrError error = cloudxr_client_->Connect("222.128.6.137");
 //    cxrError error = cloudxr_client_->Connect("222.128.6.137");
     if (error != cxrError_Success) {
         const char* errorString = cxrErrorString(error);
@@ -802,54 +744,44 @@ void PvrXrApplication::GetTrackingState(cxrVRTrackingState *state) {
         LOGW("cloudxr null tracking state");
         return;
     }
-//    LOGV("cloudxr get tracking state %ld", state->hmd.poseID);
-
-    static uint64_t frameIndex = 0;
-    frameIndex++;
 
     uint64_t now = utils::GetTimestampNs();
     XrTime predictedDisplayTime = now + 1000 * 1000 * 40;
-    XrSpace space = GetSelectedXRSpace();
-    XrPosef xfStageFromHead = {};
-    XrPosef viewTransform[2];
 
-    if (!GetViewTransform(space, predictedDisplayTime, viewTransform, 2, &xfStageFromHead)) {
-        return;
+    XrSpaceVelocity velocity{XR_TYPE_SPACE_VELOCITY};
+    XrSpaceLocation spaceLocation{XR_TYPE_SPACE_LOCATION, &velocity};
+    XrResult res = xrLocateSpace(context_->head_space(), GetSelectedXRSpace(), predictedDisplayTime, &spaceLocation);
+    CHECK_XRRESULT(res, "xrLocateSpace");
+
+    if (current_cloud_space_ == Space_Local) {
+        spaceLocation.pose.position.y += CLOUD_LOCALSPACE_HEIGHT_OFFSET;
     }
 
     // save hmd pose for pop up menu
-    scene_cloud_->set_headpose(xfStageFromHead);
+    scene_cloud_->set_headpose(spaceLocation.pose);
 
-    if (current_cloud_space_ == Space_Local) {
-        // TODO config height
-        // add fixed height for local space
-        xfStageFromHead.position.y += CLOUD_LOCALSPACE_HEIGHT_OFFSET;
-    }
+    static uint64_t frameIndex = 0;
+    frameIndex++;
 
     larkxrTrackedPose pose = {};
     pose.device = Larkxr_Device_Type_HMD;
     pose.isConnected = true;
     pose.is6Dof = true;
     pose.isValidPose = true;
-    pose.rotation = pvr::toGlm(xfStageFromHead.orientation);
-    pose.position = pvr::toGlm(xfStageFromHead.position);
 
-    for (int i = 0; i < 2; i++) {
-        pose.eye[i].viewPosition = pvr::toGlm(viewTransform[i].position);
-        pose.eye[i].viewRotation = pvr::toGlm(viewTransform[i].orientation);
-    }
+    pose.rotation = pvr::toLarkXR(spaceLocation.pose.orientation);
+    pose.position = pvr::toLarkXR(spaceLocation.pose.position);
 
     larkxrDevicePair devicePair = {};
     devicePair.hmdPose = pose;
 
     for (auto hand : {Side::LEFT, Side::RIGHT}) {
         devicePair.controllerState[hand] = scene_cloud_->GetControllerState(hand);
-        devicePair.controllerState[hand].pose.position.y += CLOUD_LOCALSPACE_HEIGHT_OFFSET;
     }
 
     larkxrTrackingDevicePairFrame devicePairFrame = {
             frameIndex,
-            now,
+            0,
             static_cast<double>(predictedDisplayTime),
             devicePair,
     };
@@ -871,7 +803,10 @@ void PvrXrApplication::GetTrackingState(cxrVRTrackingState *state) {
 
     *state = CloudXRClient::VRTrackingStateFrom(devicePairFrame);
 
-//    LOGV("push tracking info %ld %ld", state->hmd.poseID, devicePairFrame.frameIndex);
+//    LOGV("push tracking info %ld %ld %f %f %f", state->hmd.poseID, devicePairFrame.frameIndex,
+//         state->hmd.pose.rotation.x,
+//         state->hmd.pose.rotation.y,
+//         state->hmd.pose.rotation.z);
 }
 #endif
 
@@ -890,6 +825,8 @@ void PvrXrApplication::SetupFPS(int fps) {
 void PvrXrApplication::SetupSapce(Application::Space space) {
     Application::SetupSapce(space);
     current_cloud_space_ = space;
+    scene_local_->SetupSapce(space == Space_Local);
+    scene_cloud_->SetupSapce(space == Space_Local);
 }
 
 void PvrXrApplication::SetupSkyBox(int index) {
@@ -904,63 +841,4 @@ void PvrXrApplication::SetupSkyBox(int index) {
 void PvrXrApplication::OnDataChannelOpen() {
     Application::OnDataChannelOpen();
     LOGV("***************OnDataChannelOpen");
-
-//    xr_client_->SendData("============OnDataChannelOpen");
-//    xr_client_->SendData("============OnDataChannelOpen");
-//    xr_client_->SendData("============OnDataChannelOpen");
-//    xr_client_->SendData("============OnDataChannelOpen");
-//    xr_client_->SendData("============OnDataChannelOpen");
-}
-
-bool PvrXrApplication::GetViewTransform(XrSpace const &space, const XrTime &predictedDisplayTime,
-                                        XrPosef *viewTransform, int viewTransformCount,
-                                        XrPosef *xfStageFromHead) {
-    // only support view count 2
-    assert(viewTransformCount == 2);
-
-    XrSpaceLocation loc = {};
-    loc.type = XR_TYPE_SPACE_LOCATION;
-
-    // get head pose
-    OXR(xrLocateSpace(
-            context_->head_space(), space, predictedDisplayTime, &loc));
-    *xfStageFromHead = loc.pose;
-
-    XrViewLocateInfo projectionInfo = {};
-    projectionInfo.type = XR_TYPE_VIEW_LOCATE_INFO;
-    projectionInfo.viewConfigurationType = context_->viewport_config().viewConfigurationType;
-    projectionInfo.displayTime = predictedDisplayTime;
-    projectionInfo.space = context_->head_space();
-
-    XrViewState viewState = {XR_TYPE_VIEW_STATE, nullptr};
-
-    uint32_t projectionCapacityInput = 2;
-    uint32_t projectionCountOutput = projectionCapacityInput;
-
-    xrLocateViews(
-            context_->session(),
-            &projectionInfo,
-            &viewState,
-            projectionCapacityInput,
-            &projectionCountOutput,
-            context_->views().data());
-
-    // TODO config eyes
-    // only support 2 eyes for now.
-    assert(projectionCountOutput == 2);
-
-    for (int eye = 0; eye < 2; eye++) {
-        XrPosef xfHeadFromEye = context_->views()[eye].pose;
-        // head pose to left and right eye
-        XrPosef xfStageFromEye = XrPosef_Multiply(*xfStageFromHead, xfHeadFromEye);
-        viewTransform[eye] = xfStageFromEye;
-    }
-
-
-    if ((viewState.viewStateFlags & XR_VIEW_STATE_POSITION_VALID_BIT) == 0 ||
-        (viewState.viewStateFlags & XR_VIEW_STATE_ORIENTATION_VALID_BIT) == 0) {
-        return false;  // There is no valid tracking poses for the views.
-    }
-
-    return true;
 }

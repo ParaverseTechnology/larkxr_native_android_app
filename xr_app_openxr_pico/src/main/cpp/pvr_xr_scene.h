@@ -20,7 +20,7 @@ public:
 
     virtual void InitGL(GraphicsDeviceAndroid* device);
     virtual void HandleInput(const InputState& input_state, const XrSession& session, const XrSpace& space);
-    virtual void RenderView(lark::Object::Eye eye, const XrCompositionLayerProjectionView& layerView, picoxr::FrameBuffer& frameBuffer);
+    virtual void RenderView(lark::Object::Eye eye, const XrCompositionLayerProjectionView& layerView);
     virtual void ReleaseGL();
 
 protected:
@@ -30,9 +30,6 @@ protected:
     // objects.
     std::vector<std::shared_ptr<lark::Object>> objects_{};
     GraphicsDeviceAndroid* device_ = nullptr;
-    // test obj
-//    std::shared_ptr<TestObj> test_obj_;
-//    std::shared_ptr<lark::SkyBox> sky_box_ = nullptr;
 };
 
 #endif //CLOUDLARKXR_PVR_XR_SCENE_H

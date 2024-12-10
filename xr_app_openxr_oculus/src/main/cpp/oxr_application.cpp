@@ -7,6 +7,8 @@
 #include <asset_files.h>
 #include <lark_xr/xr_latency_collector.h>
 #include "oxr_application.h"
+#include "ui/localization.h"
+#include "build_config.h"
 
 #define LOG_TAG "oxr_application"
 
@@ -27,6 +29,8 @@ OxrApplication::~OxrApplication() {
 
 bool OxrApplication::InitGL(OpenxrContext *context) {
     context_ = context;
+
+    localization::Loader::load(BuildConfig::is_en);
 
     // 初始化客户端接入凭证
     InitCertificate();
@@ -54,16 +58,11 @@ bool OxrApplication::InitGL(OpenxrContext *context) {
 
     // gl context not ready. init share context later.
     // init_share_context should be false
-    xr_client_->Init(Context::instance()->vm(), false);
+    xr_client_->Init(Context::instance()->vm(), false, BuildConfig::is_en ? "en" : "zh");
 
     xr_client_->InitGLShareContext();
     xr_client_->RegisterObserver(this);
     xr_client_->EnableDebugMode(true);
-
-    if (!xr_client_->InitSdkAuthorization(LARK_SDK_ID)) {
-        LOGV("init sdk auth faild %d %s", xr_client_->last_error_code(), xr_client_->last_error_message().c_str());
-        Navigation::ShowToast(xr_client_->last_error_message());
-    }
 
     // load assets.
     auto env = Context::instance()->GetEnv();
@@ -777,18 +776,4 @@ void OxrApplication::OnNetworkLost() {
         xr_client_->OnPause();
     }
 }
-
-#ifdef TEST_ENTER_APPLI
-void OxrApplication::EnterAppliParams(const lark::EnterAppliParams &params) {
-    Application::EnterAppliParams(params);
-    // cloudxr_client_->Connect("192.168.0.50");
-    // cloudxr_client_->Connect("222.128.6.137");
-}
-
-void OxrApplication::EnterAppli(const std::string &appId) {
-    Application::EnterAppli(appId);
-    // cloudxr_client_->Connect("192.168.0.50");
-    // cloudxr_client_->Connect("222.128.6.137");
-}
-#endif
 }

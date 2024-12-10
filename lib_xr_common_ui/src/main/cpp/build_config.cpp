@@ -15,3 +15,5 @@ std::string BuildConfig::build_type_ = "";
 int BuildConfig::version_code_ = 1;
 
 std::string BuildConfig::version_name_ = "";
+
+bool BuildConfig::is_en = false;

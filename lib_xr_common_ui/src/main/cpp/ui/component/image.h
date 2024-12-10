@@ -27,7 +27,7 @@ public:
         FILL,
     };
 
-    Image();
+    Image(const std::string& image_name = "");
     ~Image() override;
 
     // call on any thread.
@@ -60,10 +60,12 @@ private:
 
     ImageScaleType scale_type_ = FILL;
 
-    std::vector<char> image_buffer_ = {};
+    std::string image_buffer_ = {};
     bool need_load_ = false;
     ImageChangeCallback* callback_ = nullptr;
     std::mutex load_mutex_;
+
+    std::string image_name_ = "";
 };
 
 

@@ -98,6 +98,10 @@ public:
     const void* d3d11_texture_right() const;
 
     larkxrHwRenderTexture GetHwVideoFrame() const;
+
+    void set_frame_buffer(int frame_buffer);
+    void set_frame_buffer_left(int frame_buffer);
+    void set_frame_buffer_right(int frame_buffer);
 private:
     XRVideoFrameImp* xr_video_frame_imp_;
 };

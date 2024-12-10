@@ -8,6 +8,8 @@
 #include <lark_xr/xr_latency_collector.h>
 #include "hxr_application.h"
 #include "hxr_utils.h"
+#include "ui/localization.h"
+#include "build_config.h"
 
 #define LOG_TAG "hxr_application"
 
@@ -36,6 +38,8 @@ bool HxrApplication::InitGL(OpenxrContext *context) {
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
     glDepthMask(true);
+
+    localization::Loader::load(BuildConfig::is_en);
 
     // 初始化客户端接入凭证
     InitCertificate();
@@ -73,7 +77,7 @@ bool HxrApplication::InitGL(OpenxrContext *context) {
 
     // gl context not ready. init share context later.
     // init_share_context should be false
-    xr_client_->Init(Context::instance()->vm(), false);
+    xr_client_->Init(Context::instance()->vm(), false, BuildConfig::is_en ? "en" : "zh");
 
     xr_client_->InitGLShareContext();
     xr_client_->RegisterObserver(this);

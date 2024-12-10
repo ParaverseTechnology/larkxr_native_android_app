@@ -192,9 +192,26 @@ namespace pvr {
     inline XrVector3f fromGlm(const glm::vec3& v) {
         return  { v.x, v.y, v.z };
     }
+
     inline XrQuaternionf fromGlm(const glm::quat& q) {
         return { q.x, q.y, q.z, q.w };
     }
+
+    inline larkxrVec3f toLarkXR(const XrVector3f& v) {
+        return larkxrVec3f(v.x, v.y, v.z);
+    }
+    inline larkxrQuatf toLarkXR(const XrQuaternionf& q) {
+        return larkxrQuatf(q.w, q.x, q.y, q.z);
+    }
+
+    inline XrVector3f fromLarkXR(const larkxrVec3f& v) {
+        return  { v.x, v.y, v.z };
+    }
+
+    inline XrQuaternionf fromLarkXR(const larkxrQuatf& q) {
+        return { q.x, q.y, q.z, q.w };
+    }
+
     inline larkxrControllerInputState toLarkvrInputState(int hand, const XrSession& session, const InputState& input_state) {
         larkxrControllerInputState state = {};
         state.isConnected = true;
@@ -233,9 +250,9 @@ namespace pvr {
         XrActionStateFloat batteryValue{XR_TYPE_ACTION_STATE_FLOAT};
         CHECK_XRCMD(xrGetActionStateFloat(session, &getInfo, &batteryValue));
 
-        getInfo.action = input_state.backAction;
-        XrActionStateBoolean backValue{XR_TYPE_ACTION_STATE_BOOLEAN};
-        CHECK_XRCMD(xrGetActionStateBoolean(session, &getInfo, &backValue));
+//        getInfo.action = input_state.backAction;
+//        XrActionStateBoolean backValue{XR_TYPE_ACTION_STATE_BOOLEAN};
+//        CHECK_XRCMD(xrGetActionStateBoolean(session, &getInfo, &backValue));
 
         getInfo.action = hand == Side::LEFT ? input_state.TriggerTouchLeftAction : input_state.TriggerTouchRightAction;
         XrActionStateBoolean TriggerTouch{XR_TYPE_ACTION_STATE_BOOLEAN};
@@ -281,9 +298,9 @@ namespace pvr {
             state.buttons |= LARKXR_BUTTON_FLAG(larkxrInput::larkxr_Input_Y_Click);
         }
 
-        if (backValue.currentState && backValue.isActive) {
-            state.buttons |= LARKXR_BUTTON_FLAG(larkxrInput::larkxr_Input_System_Click);
-        }
+//        if (backValue.currentState && backValue.isActive) {
+//            state.buttons |= LARKXR_BUTTON_FLAG(larkxrInput::larkxr_Input_System_Click);
+//        }
 
         if (TriggerTouch.currentState && TriggerTouch.isActive) {
             state.buttons |= LARKXR_BUTTON_FLAG(larkxrInput::larkxr_Input_Trigger_Touch);

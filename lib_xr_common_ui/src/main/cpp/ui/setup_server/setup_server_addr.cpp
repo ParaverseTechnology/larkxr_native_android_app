@@ -312,7 +312,7 @@ void SetupServerAddr::GetAppList() {
              LARK_NATIVE_CLIENT_SDK_VERSION_MINOR,
              LARK_NATIVE_CLIENT_SDK_VERSION_REVISE,
              LARK_NATIVE_CLIENT_SDK_VERSION_BUILD);
-        if (info.marjor == LARK_NATIVE_CLIENT_SDK_VERSION_MARJOR && info.minor == LARK_NATIVE_CLIENT_SDK_VERSION_MINOR) {
+        if (info.marjor == LARK_NATIVE_CLIENT_SDK_VERSION_MARJOR && info.minor > 1) {
             // L"检测服务器版本号成功"
             status_messsage_->SetText(localization::Loader::getResource().ui_setup_serveraddr_server_version_success, false);
         } else {

@@ -6,6 +6,9 @@
 #include "lark_xr/xr_config.h"
 #include "coderate.h"
 #include "quick_config_setup.h"
+#include "log.h"
+#define LOG_TAG "CodeRate"
+
 
 namespace {
     constexpr float SLIDER_POSITION_X = 0.22F;
@@ -17,6 +20,10 @@ namespace {
 
 CodeRate::CodeRate(int group, QuickConfigSetup* setup): ItemBase(group), code_rate_(35), quick_config_setup_(setup) {
     setTitle(localization::Loader::getResource().ui_setup_coderate);
+
+    RANGE = lark::XRConfig::bitrate_kbps_ui_max / 1000 - MIN + 1;
+
+    LOGV("CodeRate xr_options max=%d range=%d", lark::XRConfig::bitrate_kbps_ui_max, RANGE);
 
     {
         slider_ = std::make_shared<Slider>((Slider::Callback *)this);

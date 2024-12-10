@@ -90,5 +90,6 @@ target_link_libraries( # Specifies the target library.
     lib_lark_xr_common_ui
     # Links the target library to the log library
     # included in the NDK.
+    lib_assimp
     lib_assimp_android_jniiosystem
 )

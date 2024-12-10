@@ -1,0 +1,15 @@
+{
+  "serverAddress": "",
+  "streamConfig": {
+   },
+  "uiConfig": {
+    "showServerUI": true,
+    "showSetupUI": true,
+    "resolutionScaleMax": 1.0,
+    "bitrateKbpsMax": 100000,
+    "defaultValues": {
+      "quickConfigLevel": 3,
+      "enableResent": false
+    }
+  }
+}

@@ -51,7 +51,7 @@ bool OvrSceneCloud::InitGL(OvrFrameBuffer *frame_buffer, int num_buffers) {
     menu_view_ = std::make_shared<MenuView>(this);
     menu_view_->Move(-0.75, -0.75, -1.8);
     menu_view_->set_active(false);
-    OvrScene::AddObject(menu_view_);
+    //OvrScene::AddObject(menu_view_);
     fake_hmd_->AddChild(menu_view_);
 
     return OvrScene::InitGL(frame_buffer, num_buffers);

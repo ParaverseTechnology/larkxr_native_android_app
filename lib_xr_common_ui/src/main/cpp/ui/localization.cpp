@@ -82,7 +82,8 @@ namespace localization {
             ui_setup_advance: L"Advance Setup",
             ui_setup_normal: L"Normal Setup",
             ui_setup_advance_ffr_title: L"Fixed foveated rendering?",
-            ui_setup_advance_report_fec_title: L"Report fec fail?",
+            ui_setup_advance_report_fec_title: L"Optimized Resend",
+            ui_setup_advance_dynamic_bitrate_title: L"Dynamic bitrate",
             ui_setup_advance_use_h265_title: L"Enable H265?",
             ui_setup_advance_haptics_feedback_title: L"Enable haptics feedback?",
             ui_setup_advance_throttled_udp: L"Throttled udp",
@@ -109,7 +110,7 @@ namespace localization {
 
             ui_menu_view_title: L"Quit CloudApp Now?",
             ui_menu_view_submit: L"Quit",
-            ui_menu_view_cancle: L"Containue",
+            ui_menu_view_cancle: L"Continue",
 
             ui_loading_tips_3d_quest: L"Press trigger and short press B/Y back to applist.",
             ui_loading_tips_3d: L"Press trigger and short press APP button back to applist.",
@@ -189,7 +190,8 @@ namespace localization {
             ui_setup_advance: L"高级设置",
             ui_setup_normal: L"普通设置",
             ui_setup_advance_ffr_title: L"是否开启固定注视点渲染？",
-            ui_setup_advance_report_fec_title: L"开启FEC报告？",
+            ui_setup_advance_report_fec_title: L"启用重传",
+            ui_setup_advance_dynamic_bitrate_title: L"动态码率",
             ui_setup_advance_use_h265_title: L"是否使用H265协议？",
             ui_setup_advance_haptics_feedback_title: L"是否开启手柄震动？",
             ui_setup_advance_throttled_udp: L"调速 UDP",

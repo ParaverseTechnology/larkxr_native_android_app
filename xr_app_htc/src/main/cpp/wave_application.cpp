@@ -19,6 +19,8 @@
 #include <wvr/wvr_system.h>
 #include "math.h"
 #include "wvr_utils.h"
+#include "ui/localization.h"
+#include "build_config.h"
 
 #define LOG_TAG "wave_app"
 
@@ -99,6 +101,8 @@ bool WaveApplication::InitVR() {
     LOGV("WaveRuntimeVersion: %d", version);
     version = WVR_GetWaveSDKVersion();
     LOGV("WaveWaveSDKVersion: %d", version);
+
+    localization::Loader::load(BuildConfig::is_en);
 
     // init scene
     scene_local_ = std::make_shared<WvrSceneLocal>();
@@ -268,7 +272,7 @@ void WaveApplication::InitJava() {
 
     // 初始化 cloudlark sdk
     xr_client_ = std::make_shared<lark::XRClient>();
-    xr_client_->Init(Context::instance()->vm());
+    xr_client_->Init(Context::instance()->vm(), true, BuildConfig::is_en ? "en" : "zh");
     xr_client_->RegisterObserver(this);
 
     if (!xr_client_->InitSdkAuthorization(LARK_SDK_ID)) {

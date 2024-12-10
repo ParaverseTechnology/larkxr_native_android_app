@@ -58,7 +58,7 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_com_pxy_cloudlarkxrhtc_MainActivity_init(JNIEnv *env, jobject thiz, jobject am,
 											  jstring internal_data_path_,
-											  jstring external_data_path_) {
+											  jstring external_data_path_, jboolean is_en) {
 	const char *internalDataPath = env->GetStringUTFChars(internal_data_path_, 0);
 	const char *externalDataPath = env->GetStringUTFChars(external_data_path_, 0);
 
@@ -73,6 +73,8 @@ Java_com_pxy_cloudlarkxrhtc_MainActivity_init(JNIEnv *env, jobject thiz, jobject
 	env->ReleaseStringUTFChars(external_data_path_, externalDataPath);
 
 	BuildConfig::init(env, "com/pxy/cloudlarkxrhtc/BuildConfig");
+
+	BuildConfig::is_en = is_en;
 }
 
 extern "C"

@@ -166,6 +166,7 @@ namespace localization {
         std::wstring ui_setup_normal;
         std::wstring ui_setup_advance_ffr_title;
         std::wstring ui_setup_advance_report_fec_title;
+        std::wstring ui_setup_advance_dynamic_bitrate_title;
         std::wstring ui_setup_advance_use_h265_title;
         std::wstring ui_setup_advance_haptics_feedback_title;
         std::wstring ui_setup_advance_throttled_udp;

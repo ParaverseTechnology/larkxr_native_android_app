@@ -9,55 +9,6 @@
 
 using namespace pxrutils;
 
-namespace {
-    void LogLayersAndExtensions() {
-        // Write out extension properties for a given layer.
-        const auto logExtensions = [](const char* layerName, int indent = 0) {
-            uint32_t instanceExtensionCount;
-            CHECK_XRCMD(xrEnumerateInstanceExtensionProperties(layerName, 0, &instanceExtensionCount, nullptr));
-
-            std::vector<XrExtensionProperties> extensions(instanceExtensionCount);
-            for (XrExtensionProperties& extension : extensions) {
-                extension.type = XR_TYPE_EXTENSION_PROPERTIES;
-            }
-
-            CHECK_XRCMD(xrEnumerateInstanceExtensionProperties(layerName, (uint32_t)extensions.size(), &instanceExtensionCount,
-                                                               extensions.data()));
-
-            const std::string indentStr(indent, ' ');
-            Log::Write(Log::Level::Verbose, Fmt("%sAvailable Extensions: (%d)", indentStr.c_str(), instanceExtensionCount));
-            for (const XrExtensionProperties& extension : extensions) {
-                Log::Write(Log::Level::Verbose, Fmt("%s  Name=%s SpecVersion=%d", indentStr.c_str(), extension.extensionName,
-                                                    extension.extensionVersion));
-            }
-        };
-
-        // Log non-layer extensions (layerName==nullptr).
-        logExtensions(nullptr);
-
-        // Log layers and any of their extensions.
-        {
-            uint32_t layerCount;
-            CHECK_XRCMD(xrEnumerateApiLayerProperties(0, &layerCount, nullptr));
-
-            std::vector<XrApiLayerProperties> layers(layerCount);
-            for (XrApiLayerProperties& layer : layers) {
-                layer.type = XR_TYPE_API_LAYER_PROPERTIES;
-            }
-
-            CHECK_XRCMD(xrEnumerateApiLayerProperties((uint32_t)layers.size(), &layerCount, layers.data()));
-
-            Log::Write(Log::Level::Info, Fmt("Available Layers: (%d)", layerCount));
-            for (const XrApiLayerProperties& layer : layers) {
-                Log::Write(Log::Level::Verbose,
-                           Fmt("  Name=%s SpecVersion=%s LayerVersion=%d Description=%s", layer.layerName,
-                               GetXrVersionString(layer.specVersion).c_str(), layer.layerVersion, layer.description));
-                logExtensions(layer.layerName, 4);
-            }
-        }
-    }
-}
-
 OpenxrContext::OpenxrContext(const std::shared_ptr<Options>& options, const std::shared_ptr<IPlatformPlugin>& platformPlugin)
     :options_(options), platform_plugin_(platformPlugin)
 {
@@ -104,6 +55,12 @@ void OpenxrContext::CreateInstance() {
     const std::vector<std::string> graphicsExtensions = graphics_plugin_->GetInstanceExtensions();
     std::transform(graphicsExtensions.begin(), graphicsExtensions.end(), std::back_inserter(extensions),
                    [](const std::string& ext) { return ext.c_str(); });
+    // pico 5.7+
+    extensions.push_back(XR_FB_DISPLAY_REFRESH_RATE_EXTENSION_NAME);
+
+    if (is_support_epic_view_configuration_fov_extention_) {
+        extensions.push_back(XR_EPIC_VIEW_CONFIGURATION_FOV_EXTENSION_NAME);
+    }
 
     // pico 2.2.0
     // https://developer-cn.pico-interactive.com/document/native/release-notes/
@@ -138,6 +95,56 @@ void OpenxrContext::CreateInstance() {
 //                          reinterpret_cast<PFN_xrVoidFunction *>(&pfn_xr_reset_sensor_pico_));
 
     LogInstanceInfo();
+}
+
+void OpenxrContext::LogLayersAndExtensions() {
+    // Write out extension properties for a given layer.
+    const auto logExtensions = [&](const char* layerName, int indent = 0) {
+        uint32_t instanceExtensionCount;
+        CHECK_XRCMD(xrEnumerateInstanceExtensionProperties(layerName, 0, &instanceExtensionCount, nullptr));
+
+        std::vector<XrExtensionProperties> extensions(instanceExtensionCount);
+        for (XrExtensionProperties& extension : extensions) {
+            extension.type = XR_TYPE_EXTENSION_PROPERTIES;
+        }
+
+        CHECK_XRCMD(xrEnumerateInstanceExtensionProperties(layerName, (uint32_t)extensions.size(), &instanceExtensionCount,
+                                                           extensions.data()));
+
+        const std::string indentStr(indent, ' ');
+        Log::Write(Log::Level::Verbose, Fmt("%sAvailable Extensions: (%d)", indentStr.c_str(), instanceExtensionCount));
+        for (const XrExtensionProperties& extension : extensions) {
+            Log::Write(Log::Level::Verbose, Fmt("%s  Name=%s SpecVersion=%d", indentStr.c_str(), extension.extensionName,
+                                                extension.extensionVersion));
+            if (strstr(extension.extensionName, XR_EPIC_VIEW_CONFIGURATION_FOV_EXTENSION_NAME)) {
+                is_support_epic_view_configuration_fov_extention_ = true;
+            }
+        }
+    };
+
+    // Log non-layer extensions (layerName==nullptr).
+    logExtensions(nullptr);
+
+    // Log layers and any of their extensions.
+    {
+        uint32_t layerCount;
+        CHECK_XRCMD(xrEnumerateApiLayerProperties(0, &layerCount, nullptr));
+
+        std::vector<XrApiLayerProperties> layers(layerCount);
+        for (XrApiLayerProperties& layer : layers) {
+            layer.type = XR_TYPE_API_LAYER_PROPERTIES;
+        }
+
+        CHECK_XRCMD(xrEnumerateApiLayerProperties((uint32_t)layers.size(), &layerCount, layers.data()));
+
+        Log::Write(Log::Level::Info, Fmt("Available Layers: (%d)", layerCount));
+        for (const XrApiLayerProperties& layer : layers) {
+            Log::Write(Log::Level::Verbose,
+                       Fmt("  Name=%s SpecVersion=%s LayerVersion=%d Description=%s", layer.layerName,
+                           GetXrVersionString(layer.specVersion).c_str(), layer.layerVersion, layer.description));
+            logExtensions(layer.layerName, 4);
+        }
+    }
 }
 
 void OpenxrContext::LogInstanceInfo() {
@@ -272,12 +279,44 @@ void OpenxrContext::InitializeSession() {
         CHECK_XRCMD(xrCreateSession(instance_, &createInfo, &session_));
     }
 
+    {
+        // devices info
+        char buffer[64] = {0};
+        __system_property_get("sys.pxr.product.name", buffer);
+
+        std::string data = buffer;
+        std::transform(data.begin(), data.end(), data.begin(),
+                       [](unsigned char c){ return std::tolower(c); });
+
+        Log::Write(Log::Level::Info, Fmt("device is:%s; is [Pico 4]=%d; size=%d",
+                                         data.c_str(), std::string(buffer) == "pico 4", std::string(buffer).size()));
+
+        if (data == "pico neo 3") {
+            device_type_ = DeviceTypeNeo3;
+        } else if (data == "pico neo 3 pro eye") {
+            device_type_ = DeviceTypeNeo3ProEye;
+        } else if (data == "pico 4") {
+            device_type_ = DeviceTypePico4;
+        } else if (data == "pico 4 pro") {
+            device_type_ = DeviceTypePico4Pro;
+        }
+
+        __system_property_get("ro.build.id", buffer);
+        int a, b, c;
+        sscanf(buffer, "%d.%d.%d",&a, &b, &c);
+        device_rom_ = (a << 8) + (b << 4) + c;
+        Log::Write(Log::Level::Info, Fmt("device ROM: %x", device_rom_));
+        if (device_rom_ < 0x540) {
+            //CHECK_XRRESULT(XR_ERROR_VALIDATION_FAILURE, "This demo can only run on devices with ROM version greater than 540");
+        }
+    }
+
     // set eye level
     // PICO 2.2.0
     // pfn_xr_set_config_pico_(session_, TRACKING_ORIGIN, "0");
 
     LogReferenceSpaces();
-    input_.InitializeActions(instance_, session_);
+    input_.InitializeActions(instance_, session_, device_type_, device_rom_);
 
     {
         bool stageSupported = false;
@@ -316,6 +355,10 @@ void OpenxrContext::InitializeSession() {
             LOGV("Created fake stage space from local space with offset");
         }
     }
+
+    CHECK_XRCMD(xrGetInstanceProcAddr(instance_, "xrGetDisplayRefreshRateFB", (PFN_xrVoidFunction*)&pfn_XrGetDisplayRefreshRateFB_));
+    pfn_XrGetDisplayRefreshRateFB_(session_, &display_refresh_rate_);
+    Log::Write(Log::Level::Info, Fmt("device fps:%0.3f", display_refresh_rate_));
 }
 
 void OpenxrContext::CreateSwapchains() {
@@ -345,7 +388,17 @@ void OpenxrContext::CreateSwapchains() {
     // Query and cache view configuration views.
     uint32_t viewCount;
     CHECK_XRCMD(xrEnumerateViewConfigurationViews(instance_, system_id_, view_config_type_, 0, &viewCount, nullptr));
+
     config_views_.resize(viewCount, {XR_TYPE_VIEW_CONFIGURATION_VIEW});
+
+    if (is_support_epic_view_configuration_fov_extention_) {
+        configuration_view_fov_epics_.resize(viewCount);
+        for (int i = 0; i < viewCount; i++) {
+            configuration_view_fov_epics_[i].type = XR_TYPE_VIEW_CONFIGURATION_VIEW_FOV_EPIC;
+            config_views_[i].next = &configuration_view_fov_epics_[i];
+        }
+    }
+
     CHECK_XRCMD(xrEnumerateViewConfigurationViews(instance_, system_id_, view_config_type_, viewCount, &viewCount,
                                                   config_views_.data()));
 
@@ -382,20 +435,26 @@ void OpenxrContext::CreateSwapchains() {
 
         assert(viewCount == ovrMaxNumEyes);
 
+
         for (int eye = 0; eye < ovrMaxNumEyes; eye++) {
 
-            // TODO setup res
-            config_views_[eye].recommendedImageRectWidth = 3644 / 2;
-            config_views_[eye].recommendedImageRectHeight = 1920;
+                // TODO setup res
+                // config_views_[eye].recommendedImageRectWidth = 3644 / 2;
+                // config_views_[eye].recommendedImageRectHeight = 1920;
 
-//                                  GL_SRGB8_ALPHA8,
-//                                  GL_RGBA,
-//                                  GL_RGBA8
-            frame_buffer_[eye].Create(session_,
-                                      color_swapchain_format_,
-                                      config_views_[eye].recommendedImageRectWidth,
-                                      config_views_[eye].recommendedImageRectHeight,
-                                      NUM_MULTI_SAMPLES);
+    //                                  GL_SRGB8_ALPHA8,
+    //                                  GL_RGBA,
+    //                                  GL_RGBA8
+                frame_buffer_[eye].Create(session_,
+                                          color_swapchain_format_,
+                                          config_views_[eye],
+                                          NUM_MULTI_SAMPLES);
+
+                frame_buffer_cloud_[eye].Create(session_,
+                                          color_swapchain_format_,
+                                          config_views_[eye],
+                                          1);
+
         }
     }
 }
@@ -577,6 +636,21 @@ void OpenxrContext::PollActions() {
         CHECK_XRCMD(xrGetActionStatePose(session_, &getInfo, &poseState));
         input_.handActive[hand] = poseState.isActive;
     }
+}
+
+std::vector<XrSwapchainImageBaseHeader *>
+OpenxrContext::AllocateSwapchainImageStructs(uint32_t capacity, const XrSwapchainCreateInfo &) {
+    // Allocate and initialize the buffer of image structs (must be sequential in memory for xrEnumerateSwapchainImages).
+    // Return back an array of pointers to each swapchain image struct so the consumer doesn't need to know the type/size.
+    std::vector<XrSwapchainImageOpenGLESKHR> swapchainImageBuffer(capacity);
+    std::vector<XrSwapchainImageBaseHeader*> swapchainImageBase;
+    for (XrSwapchainImageOpenGLESKHR& image : swapchainImageBuffer) {
+        image.type = XR_TYPE_SWAPCHAIN_IMAGE_OPENGL_ES_KHR;
+        swapchainImageBase.push_back(reinterpret_cast<XrSwapchainImageBaseHeader*>(&image));
+    }
+    // Keep the buffer alive by moving it into the list of buffers.
+    m_swapchainImageBuffers.push_back(std::move(swapchainImageBuffer));
+    return swapchainImageBase;
 }
 
 // PICO 2.2.0

@@ -629,6 +629,8 @@ typedef struct larkxrHwRenderTexture_
     void* textureSlot2;
     int width;
     int height;
+    void* slot1Buffer;
+    void* slot2Buffer;
 } larkxrHwRenderTexture;
 //#pragma pack(pop) // end pack
 #endif //CLOUDLARKVRMODULE_TYPES_H

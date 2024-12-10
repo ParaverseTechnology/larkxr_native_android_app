@@ -16,7 +16,7 @@ android {
 
         externalNativeBuild {
             cmake {
-                arguments "-frtti -fexceptions -std=c++11 -DANDROID_NDK_BUILD=1"
+                arguments "-frtti -fexceptions -std=c++17 -DANDROID_NDK_BUILD=1"
                 targets 'lib_xr_common_ui'
 
                 if (BUILD_WITH_CLOUDXR_SUPPORT) {

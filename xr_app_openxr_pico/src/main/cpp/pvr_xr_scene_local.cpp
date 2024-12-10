@@ -229,3 +229,13 @@ void PvrXRSceneLocal::SetSkyBox(int index) {
     const char *path = index == 0 ? "textures/skybox_8_2k.jpg" : "textures/skybox_9.jpg";
     sky_box_->SetTexture(path);
 }
+
+void PvrXRSceneLocal::SetupSapce(bool isLocal) {
+    if (isLocal) {
+        lark::Transform transform(glm::quat(1, 0, 0, 0), glm::vec3(0, 0, 0));
+        navigation_->set_transform(transform);
+    } else {
+        lark::Transform transform(glm::quat(1, 0, 0, 0), glm::vec3(0, 1.5, 0));
+        navigation_->set_transform(transform);
+    }
+}

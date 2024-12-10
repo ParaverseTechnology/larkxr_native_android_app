@@ -14,6 +14,15 @@ namespace Side {
     const int COUNT = 2;
 }  // namespace Side
 
+typedef enum {
+    DeviceTypeNone        = 0,
+    DeviceTypeNeo3        = 1,
+    DeviceTypeNeo3Pro     = 2,
+    DeviceTypeNeo3ProEye  = 3,
+    DeviceTypePico4       = 4,
+    DeviceTypePico4Pro    = 5,
+} DeviceType;
+
 struct InputState {
     XrActionSet actionSet{XR_NULL_HANDLE};
     XrAction grabAction{XR_NULL_HANDLE};
@@ -24,7 +33,7 @@ struct InputState {
     XrAction AXAction{XR_NULL_HANDLE};
     XrAction homeAction{XR_NULL_HANDLE};
     XrAction BYAction{XR_NULL_HANDLE};
-    XrAction backAction{XR_NULL_HANDLE};
+    // XrAction backAction{XR_NULL_HANDLE};
     XrAction triggerAction{XR_NULL_HANDLE};
     XrAction batteryAction{XR_NULL_HANDLE};
     //---add new----------
@@ -62,6 +71,6 @@ struct InputState {
     std::array<XrSpace, Side::COUNT> handSpace;
     std::array<XrBool32, Side::COUNT> handActive;
 
-    void InitializeActions(const XrInstance& instance, const XrSession& session);
+    void InitializeActions(const XrInstance& instance, const XrSession& session, DeviceType deviceType, uint32_t device_rom);
 };
 #endif //CLOUDLARKXR_XR_INPUT_STATE_H

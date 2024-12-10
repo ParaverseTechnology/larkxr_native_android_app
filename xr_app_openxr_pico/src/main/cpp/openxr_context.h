@@ -74,6 +74,7 @@ public:
 
     inline picoxr::FrameBuffer* frame_buffer() { return frame_buffer_; }
     inline picoxr::FrameBuffer& frame_buffer(int eye) { return frame_buffer_[eye]; }
+    inline picoxr::FrameBuffer& frame_buffer_cloud(int eye) { return frame_buffer_cloud_[eye]; }
 
     inline XrViewConfigurationProperties viewport_config() { return viewport_config_; }
 
@@ -82,12 +83,17 @@ public:
     // PICO 2.2.0
     // float GetFPS();
     // void SetFPS(float fps);
+
+    inline uint32_t device_rom() { return device_rom_; }
+    inline DeviceType device_type() { return device_type_; }
+    inline int display_refresh_rate() { return display_refresh_rate_; }
 private:
     void LogInstanceInfo();
     void LogViewConfigurations();
     void LogEnvironmentBlendMode(XrViewConfigurationType type);
     void LogReferenceSpaces();
     void LogActionSourceName(XrAction action, const std::string& actionName) const;
+    void LogLayersAndExtensions();
 
     // Return event if one is available, otherwise return null.
     const XrEventDataBaseHeader* TryReadNextEvent();
@@ -109,8 +115,9 @@ private:
 
     // views
     XrViewConfigurationProperties viewport_config_ = {};
-    std::vector<XrViewConfigurationView> config_views_;
-    std::vector<XrView> views_;
+    std::vector<XrViewConfigurationView> config_views_ = {};
+    std::vector<XrViewConfigurationViewFovEPIC> configuration_view_fov_epics_ = {};
+    std::vector<XrView> views_ = {};
     int64_t color_swapchain_format_{-1};
 
     // Application's current lifecycle state according to the runtime
@@ -126,6 +133,22 @@ private:
     // PFN_xrSetConfigPICO    pfn_xr_set_config_pico_ = nullptr;
 
     picoxr::FrameBuffer frame_buffer_[ovrMaxNumEyes];
+    picoxr::FrameBuffer frame_buffer_cloud_[ovrMaxNumEyes];
+
+    PFN_xrGetDisplayRefreshRateFB pfn_XrGetDisplayRefreshRateFB_ = nullptr;
+    float display_refresh_rate_ = 0;
+    bool is_support_epic_view_configuration_fov_extention_ = false;
+    DeviceType device_type_ = DeviceTypeNeo3;
+    uint32_t device_rom_ = 0;
+
+// test pico 5.7 sys
+public:
+    std::vector<Swapchain> m_swapchains = {};
+    std::map<XrSwapchain, std::vector<XrSwapchainImageBaseHeader*>> m_swapchainImages = {};
+    std::list<std::vector<XrSwapchainImageOpenGLESKHR>> m_swapchainImageBuffers;
+
+    std::vector<XrSwapchainImageBaseHeader*> AllocateSwapchainImageStructs(
+            uint32_t capacity, const XrSwapchainCreateInfo& /*swapchainCreateInfo*/);
 };
 
 

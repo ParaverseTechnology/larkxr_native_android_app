@@ -17,8 +17,6 @@
 #include "application.h"
 #include "openxr_context.h"
 
-#define TEST_ENTER_APPLI 1
-
 namespace oxr {
 class OxrApplication: public Application
 #ifdef ENABLE_CLOUDXR
@@ -37,12 +35,6 @@ public:
 
     void Update();
     void RenderFrame();
-
-#ifdef TEST_ENTER_APPLI
-    virtual void EnterAppli(const std::string& appId);
-    // 可选区域id等参数进入应用
-    virtual void EnterAppliParams(const lark::EnterAppliParams& params);
-#endif
 
     // call by ui
     // ui 设置帧率

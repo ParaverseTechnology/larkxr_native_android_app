@@ -26,7 +26,7 @@ public:
     FrameBuffer();
     ~FrameBuffer();
 
-    bool Create(XrSession session, const GLenum colorFormat, const int width, const int height, const int multisamples);
+    bool Create(XrSession session, const GLenum colorFormat, const XrViewConfigurationView &vp, const int multisamples);
 
     void SetCurrent();
     void SetNone();
@@ -41,6 +41,10 @@ public:
     inline int width() const { return width_; }
     inline int height() const { return height_; }
     inline const ovrSwapChain color_swapchain() const { return color_swapchain_;}
+
+    inline const XrSwapchainImageOpenGLESKHR* color_swapchain_image() const { return color_swapchain_image_; }
+    inline const uint32_t texture_swapchain_index() const { return texture_swapchain_index_; }
+    inline const uint32_t texture_swapchain_length() const { return texture_swapchain_length_; }
 private:
     int width_;
     int height_;

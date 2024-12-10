@@ -234,7 +234,10 @@ void Mesh::Draw(Eye eye, const glm::mat4& projection, const glm::mat4& eyeView) 
 
     // always good practice to set everything back to defaults once configured.
     glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
     shader_->UnUseProgram();
+
 
     HasGLError();
 }
