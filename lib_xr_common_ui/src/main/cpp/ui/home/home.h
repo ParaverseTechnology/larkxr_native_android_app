@@ -12,6 +12,7 @@
 #include "cover_item.h"
 #include "lark_xr/app_list_task.h"
 #include "lark_xr/request/company_image_loader.h"
+#include "lark_xr/request/http_client.h"
 
 class Navigation;
 class Home: public View, public lark::AppListTask::AppListTaskListener, public lark::CompanyImageLoader::CompanyImageLoaderCallback {
@@ -71,6 +72,8 @@ private:
     // 更新客户端id
     void UpdateClientId();
     void UpdateRunMode();
+    //
+    void TestHttpClient();
 
     std::shared_ptr<Text> title_;
     std::shared_ptr<CoverItem> app_cover_items_[MAX_PAGE_ITEM_NUM] = {};
@@ -124,6 +127,8 @@ private:
     bool support_2d_ui_ = false;
 
     bool need_update_region_info_ = false;
+
+    lark::HttpClient test_http_client_ = {};
 };
 
 

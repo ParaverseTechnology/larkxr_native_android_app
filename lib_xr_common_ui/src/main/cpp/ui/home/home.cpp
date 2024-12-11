@@ -256,6 +256,9 @@ void Home::Init() {
 
     app_list_task_.SetPageSize(MAX_PAGE_ITEM_NUM);
     View::Init();
+
+    // 测试http请求
+    // TestHttpClient();
 }
 
 void Home::setFps(float &fps) {
@@ -539,4 +542,38 @@ void Home::UpdateRegion(const SetupServerAddr::RegionTestResult &result) {
     LOGV("update region %ld %s", result.rtt, result.info.regionName.c_str());
 
     need_update_region_info_ = true;
+}
+
+void Home::TestHttpClient() {
+    test_http_client_.Get("https://postman-echo.com/get?test=1", [=](int code, const char* status_message, const char* body) {
+        LOGI("test http clent get status_code %d status_msg %s body %s", code, status_message, body);
+    });
+
+    test_http_client_.GetAsync("https://postman-echo.com/get?test=2", [=](int code, const char* status_message, const char* body) {
+        LOGI("test http clent get async status_code %d status_msg %s body %s", code, status_message, body);
+    });
+
+    test_http_client_.Post("https://postman-echo.com/post", "testbody=1", "application/x-www-form-urlencoded", [=](int code, const char* status_message, const char* body) {
+        LOGI("test http clent post status_code %d status_msg %s body %s", code, status_message, body);
+    });
+
+    test_http_client_.PostAsync("https://postman-echo.com/post", "testbody=2", "application/x-www-form-urlencoded", [=](int code, const char* status_message, const char* body) {
+        LOGI("test http clent post async status_code %d status_msg %s body %s", code, status_message, body);
+    });
+
+    test_http_client_.Get("https://postman-echo.com/test_notfound?test=1", [=](int code, const char* status_message, const char* body) {
+        LOGI("test http clent get test_notfound status_code %d status_msg %s body %s", code, status_message, body);
+    });
+
+    test_http_client_.GetAsync("https://postman-echo.com/test_notfound?test=2", [=](int code, const char* status_message, const char* body) {
+        LOGI("test http clent get test_notfound async status_code %d status_msg %s body %s", code, status_message, body);
+    });
+
+    test_http_client_.Get("https://test-error-request.com", [=](int code, const char* status_message, const char* body) {
+        LOGI("test http clent test-error-request get sync status_code %d status_msg %s body %s", code, status_message, body);
+    });
+
+    test_http_client_.GetAsync("https://test-error-request.com", [=](int code, const char* status_message, const char* body) {
+        LOGI("test http clent test-error-request get async status_code %d status_msg %s body %s", code, status_message, body);
+    });
 }
