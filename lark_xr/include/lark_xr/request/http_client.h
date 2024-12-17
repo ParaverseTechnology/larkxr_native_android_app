@@ -7,12 +7,23 @@
 #define HTTP_CLIENT_INCLUDE
 
 #include <functional>
+#include <string>
 
 namespace lark
 {
 // HttpClient 类，用于处理 HTTP 请求
 class HttpClient {
 public:
+    /**
+     * 获取签名 
+     * 使用 LarkXR 后台规定的方式生成签名
+     * @param appkey 应用密钥 (对应3.3 版本Larkxr的wsId)
+     * @param secret 密钥
+     * @param utc_millseconds UTC 时间戳（毫秒）
+     * @return 签名
+     */
+    static std::string GetSignature(const std::string& appkey, const std::string& secret, const std::string& utc_millseconds);
+
     // OnResponse，用于处理响应
     // int code：表示响应的状态码
     // const char* status_message：表示响应的状态消息

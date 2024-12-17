@@ -30,7 +30,31 @@ if (ENABLE_CLOUDXR STREQUAL "1")
     add_definitions(-DENABLE_CLOUDXR)
 endif()
 
-# source dir
+#######################################################################
+# json cpp
+set(ENABLE_JSON_CPP ON)
+
+if (ENABLE_JSON_CPP)
+    set(jsoncpp_sources
+            ${project_base_dir}/third_party/json_cpp/json_tool.h
+            ${project_base_dir}/third_party/json_cpp/json_reader.cpp
+            ${project_base_dir}/third_party/json_cpp/json_valueiterator.inl
+            ${project_base_dir}/third_party/json_cpp/json_value.cpp
+            ${project_base_dir}/third_party/json_cpp/json_writer.cpp
+    )
+
+    source_group(TREE
+            "${project_base_dir}/third_party/"
+            FILES
+            ${jsoncpp_sources}
+    )
+
+    add_definitions(-DENABLE_JSON_CPP)
+else()
+    set(jsoncpp_sources )
+endif()
+#######################################################################
+
 # source dir
 set(src_dir ${CMAKE_CURRENT_SOURCE_DIR})
 set(common_dir ${src_dir}/)
@@ -115,6 +139,7 @@ add_library( # Sets the name of the library.
      # Provides a relative path to your source file(s).
      ${src_files}
      ${header_files}
+     ${jsoncpp_sources}
 )
 
 add_library(${LARK_LIBNAME} ALIAS ${LIBNAME})
@@ -138,6 +163,12 @@ target_include_directories(${LIBNAME} PRIVATE
     ${third_party_base_dir}/assimp/include/
     ${third_party_base_dir}/oboe/include/
 )
+
+if(ENABLE_JSON_CPP)
+    target_include_directories(${LIBNAME} PRIVATE
+        ${third_party_base_dir}/json_cpp/
+    )
+endif()
 
 include(${project_base_dir}/cmake/utils.cmake)
 ANDROID_SHARE_OUTPUT(${LIBNAME} ${project_base_dir})

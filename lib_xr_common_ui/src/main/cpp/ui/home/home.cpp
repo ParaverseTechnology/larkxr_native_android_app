@@ -259,6 +259,10 @@ void Home::Init() {
 
     // 测试http请求
     // TestHttpClient();
+    // TestSignature();
+#ifdef ENABLE_JSON_CPP
+    // TestJson();
+#endif
 }
 
 void Home::setFps(float &fps) {
@@ -577,3 +581,62 @@ void Home::TestHttpClient() {
         LOGI("test http clent test-error-request get async status_code %d status_msg %s body %s", code, status_message, body);
     });
 }
+
+void Home::TestSignature() {
+    std::string timestamp = utils::GetTimestampMillStr();
+    std::string testappkey = "testappkey";
+    std::string testappsecret = "testappsecret";
+    std::string signature = lark::HttpClient::GetSignature(testappkey, testappsecret, timestamp);
+    LOGI("test signature=%s; key=%s secret=%s timestamp=%s", signature.c_str(), testappkey.c_str(), testappsecret.c_str(), timestamp.c_str());
+}
+
+#ifdef ENABLE_JSON_CPP
+void Home::TestJson() {
+
+    const char* TEST_JSON = R"({
+        "code": 1000,
+        "message": "test json",
+        "results": [1, 2, 3]
+    })";
+
+    try
+    {
+        // Test read
+        Json::Value root;
+        Json::Reader reader;
+        bool parse_result = reader.parse(TEST_JSON, root);
+
+        if (!parse_result) {
+            LOGW("parse json failed raw str %s", TEST_JSON);
+            return;
+        }
+
+        int code = root["code"].asInt();
+        std::string message = root["message"].asString();
+
+        LOGI("parse json code=%d message=%s", code, message.c_str());
+
+        std::vector<int> results = {};
+        if (root["results"].isArray()) {
+            for(const auto& res : root["results"]) {
+                LOGI("parse json results %d", res.asInt());
+                results.push_back(res.asInt());
+            }
+        }
+
+        Json::Value write_root;
+        write_root["code"] = code;
+        write_root["message"] = message;
+        for(auto i : results) {
+            write_root["results"].append(i);
+        }
+        Json::FastWriter writer;
+        std::string json_str = writer.write(write_root);
+        LOGI("test json write result %s raw %s", json_str.c_str(), TEST_JSON);
+    }
+    catch (std::exception& exception)
+    {
+        LOGW("parse failed %s", exception.what());
+    }
+}
+#endif

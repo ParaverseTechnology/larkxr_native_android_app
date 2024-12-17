@@ -13,6 +13,9 @@
 #include "lark_xr/app_list_task.h"
 #include "lark_xr/request/company_image_loader.h"
 #include "lark_xr/request/http_client.h"
+#ifdef ENABLE_JSON_CPP
+#include "json/json.h"
+#endif
 
 class Navigation;
 class Home: public View, public lark::AppListTask::AppListTaskListener, public lark::CompanyImageLoader::CompanyImageLoaderCallback {
@@ -72,8 +75,13 @@ private:
     // 更新客户端id
     void UpdateClientId();
     void UpdateRunMode();
-    //
+
+    // 测试通用网络请求接口
     void TestHttpClient();
+    void TestSignature();
+#ifdef ENABLE_JSON_CPP
+    void TestJson();
+#endif
 
     std::shared_ptr<Text> title_;
     std::shared_ptr<CoverItem> app_cover_items_[MAX_PAGE_ITEM_NUM] = {};
