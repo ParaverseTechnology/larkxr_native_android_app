@@ -16,6 +16,7 @@
 #endif
 
 void InputState::InitializeActions(const XrInstance& instance, const XrSession& session, DeviceType deviceType, uint32_t device_rom) {
+    // return;
     // Create an action set.
     {
         XrActionSetCreateInfo actionSetInfo{XR_TYPE_ACTION_SET_CREATE_INFO};
@@ -124,12 +125,12 @@ void InputState::InitializeActions(const XrInstance& instance, const XrSession& 
         actionInfo.subactionPaths = handSubactionPath.data();
         CHECK_XRCMD(xrCreateAction(actionSet, &actionInfo, &JoystickValueRightAction));
 
-        actionInfo.actionType = XR_ACTION_TYPE_FLOAT_INPUT;
+/*        actionInfo.actionType = XR_ACTION_TYPE_FLOAT_INPUT;
         strcpy_s(actionInfo.actionName, "battery");
         strcpy_s(actionInfo.localizedActionName, "battery");
         actionInfo.countSubactionPaths = uint32_t(handSubactionPath.size());
         actionInfo.subactionPaths = handSubactionPath.data();
-        CHECK_XRCMD(xrCreateAction(actionSet, &actionInfo, &batteryAction));
+        CHECK_XRCMD(xrCreateAction(actionSet, &actionInfo, &batteryAction));*/
         //------------------------add new---------------------------------
         actionInfo.actionType = XR_ACTION_TYPE_BOOLEAN_INPUT;
         strcpy_s(actionInfo.actionName, "axtouch");
@@ -161,7 +162,7 @@ void InputState::InitializeActions(const XrInstance& instance, const XrSession& 
         actionInfo.subactionPaths = handSubactionPath.data();
         CHECK_XRCMD(xrCreateAction(actionSet, &actionInfo, &TriggerTouchRightAction));
 
-        // trigger left click
+/*        // trigger left click
         actionInfo.actionType = XR_ACTION_TYPE_BOOLEAN_INPUT;
         strcpy_s(actionInfo.actionName, "triggerclickleft");
         strcpy_s(actionInfo.localizedActionName, "TriggerClickLeft");
@@ -175,7 +176,7 @@ void InputState::InitializeActions(const XrInstance& instance, const XrSession& 
         strcpy_s(actionInfo.localizedActionName, "TriggerClickRight");
         actionInfo.countSubactionPaths = uint32_t(handSubactionPath.size());
         actionInfo.subactionPaths = handSubactionPath.data();
-        CHECK_XRCMD(xrCreateAction(actionSet, &actionInfo, &TriggerClickRightAction));
+        CHECK_XRCMD(xrCreateAction(actionSet, &actionInfo, &TriggerClickRightAction));*/
 
         actionInfo.actionType = XR_ACTION_TYPE_BOOLEAN_INPUT;
         strcpy_s(actionInfo.actionName, "thumbresttouch");
@@ -201,20 +202,20 @@ void InputState::InitializeActions(const XrInstance& instance, const XrSession& 
         CHECK_XRCMD(xrCreateAction(actionSet, &actionInfo, &GripValueRightAction));
 
         // grip left click
-        actionInfo.actionType = XR_ACTION_TYPE_BOOLEAN_INPUT;
-        strcpy_s(actionInfo.actionName, "grip_click_left");
-        strcpy_s(actionInfo.localizedActionName, "GripClickLeft");
-        actionInfo.countSubactionPaths = uint32_t(handSubactionPath.size());
-        actionInfo.subactionPaths = handSubactionPath.data();
-        CHECK_XRCMD(xrCreateAction(actionSet, &actionInfo, &GripClickLeftAction));
-
-        // grip right click
-        actionInfo.actionType = XR_ACTION_TYPE_BOOLEAN_INPUT;
-        strcpy_s(actionInfo.actionName, "grip_click_right");
-        strcpy_s(actionInfo.localizedActionName, "GripClickRight");
-        actionInfo.countSubactionPaths = uint32_t(handSubactionPath.size());
-        actionInfo.subactionPaths = handSubactionPath.data();
-        CHECK_XRCMD(xrCreateAction(actionSet, &actionInfo, &GripClickRightAction));
+//        actionInfo.actionType = XR_ACTION_TYPE_BOOLEAN_INPUT;
+//        strcpy_s(actionInfo.actionName, "grip_click_left");
+//        strcpy_s(actionInfo.localizedActionName, "GripClickLeft");
+//        actionInfo.countSubactionPaths = uint32_t(handSubactionPath.size());
+//        actionInfo.subactionPaths = handSubactionPath.data();
+//        CHECK_XRCMD(xrCreateAction(actionSet, &actionInfo, &GripClickLeftAction));
+//
+//        // grip right click
+//        actionInfo.actionType = XR_ACTION_TYPE_BOOLEAN_INPUT;
+//        strcpy_s(actionInfo.actionName, "grip_click_right");
+//        strcpy_s(actionInfo.localizedActionName, "GripClickRight");
+//        actionInfo.countSubactionPaths = uint32_t(handSubactionPath.size());
+//        actionInfo.subactionPaths = handSubactionPath.data();
+//        CHECK_XRCMD(xrCreateAction(actionSet, &actionInfo, &GripClickRightAction));
 
         // joyleft click
         actionInfo.actionType = XR_ACTION_TYPE_BOOLEAN_INPUT;
@@ -402,106 +403,49 @@ void InputState::InitializeActions(const XrInstance& instance, const XrSession& 
     CHECK_XRCMD(xrStringToPath(instance, "/user/hand/left/input/y/touch", &YTouchPath[Side::LEFT]));
     CHECK_XRCMD(xrStringToPath(instance, "/user/hand/right/input/a/touch", &ATouchPath[Side::RIGHT]));
     CHECK_XRCMD(xrStringToPath(instance, "/user/hand/right/input/b/touch", &BTouchPath[Side::RIGHT]));
-    /**************************pico************************************/
-    // Suggest bindings for KHR Simple.
-    /* {
-        XrPath khrSimpleInteractionProfilePath;
-         CHECK_XRCMD(
-             xrStringToPath(up.mInstance, "/interaction_profiles/khr/simple_controller", &khrSimpleInteractionProfilePath));
-         std::vector<XrActionSuggestedBinding> bindings{{// Fall back to a click input for the grab action.
-                                                         {grabAction, selectPath[Side::LEFT]},
-                                                         {grabAction, selectPath[Side::RIGHT]},
-                                                         {poseAction, posePath[Side::LEFT]},
-                                                         {poseAction, posePath[Side::RIGHT]},
-                                                         {quitAction, menuClickPath[Side::LEFT]},
-                                                         {quitAction, menuClickPath[Side::RIGHT]},
-                                                         {vibrateAction, hapticPath[Side::LEFT]},
-                                                         {vibrateAction, hapticPath[Side::RIGHT]}}};
-         XrInteractionProfileSuggestedBinding suggestedBindings{XR_TYPE_INTERACTION_PROFILE_SUGGESTED_BINDING};
-         suggestedBindings.interactionProfile = khrSimpleInteractionProfilePath;
-         suggestedBindings.suggestedBindings = bindings.data();
-         suggestedBindings.countSuggestedBindings = (uint32_t)bindings.size();
-         CHECK_XRCMD(xrSuggestInteractionProfileBindings(instance, &suggestedBindings));
-     }
-     // Suggest bindings for the Oculus Touch.
-     {
-         XrPath oculusTouchInteractionProfilePath;
-         CHECK_XRCMD(
-             xrStringToPath(instance, "/interaction_profiles/oculus/touch_controller", &oculusTouchInteractionProfilePath));
-         std::vector<XrActionSuggestedBinding> bindings{{{grabAction, squeezeValuePath[Side::LEFT]},
-                                                         {grabAction, squeezeValuePath[Side::RIGHT]},
-                                                         {poseAction, posePath[Side::LEFT]},
-                                                         {poseAction, posePath[Side::RIGHT]},
-                                                         {quitAction, menuClickPath[Side::LEFT]},
-                                                         {vibrateAction, hapticPath[Side::LEFT]},
-                                                         {vibrateAction, hapticPath[Side::RIGHT]}}};
-         XrInteractionProfileSuggestedBinding suggestedBindings{XR_TYPE_INTERACTION_PROFILE_SUGGESTED_BINDING};
-         suggestedBindings.interactionProfile = oculusTouchInteractionProfilePath;
-         suggestedBindings.suggestedBindings = bindings.data();
-         suggestedBindings.countSuggestedBindings = (uint32_t)bindings.size();
-         CHECK_XRCMD(xrSuggestInteractionProfileBindings(instance, &suggestedBindings));
-     }
-     // Suggest bindings for the Vive Controller.
-     {
-         XrPath viveControllerInteractionProfilePath;
-         CHECK_XRCMD(
-             xrStringToPath(instance, "/interaction_profiles/htc/vive_controller", &viveControllerInteractionProfilePath));
-         std::vector<XrActionSuggestedBinding> bindings{{{grabAction, squeezeClickPath[Side::LEFT]},
-                                                         {grabAction, squeezeClickPath[Side::RIGHT]},
-                                                         {poseAction, posePath[Side::LEFT]},
-                                                         {poseAction, posePath[Side::RIGHT]},
-                                                         {quitAction, menuClickPath[Side::LEFT]},
-                                                         {quitAction, menuClickPath[Side::RIGHT]},
-                                                         {vibrateAction, hapticPath[Side::LEFT]},
-                                                         {vibrateAction, hapticPath[Side::RIGHT]}}};
-         XrInteractionProfileSuggestedBinding suggestedBindings{XR_TYPE_INTERACTION_PROFILE_SUGGESTED_BINDING};
-         suggestedBindings.interactionProfile = viveControllerInteractionProfilePath;
-         suggestedBindings.suggestedBindings = bindings.data();
-         suggestedBindings.countSuggestedBindings = (uint32_t)bindings.size();
-         CHECK_XRCMD(xrSuggestInteractionProfileBindings(instance, &suggestedBindings));
-     }
 
-     // Suggest bindings for the Microsoft Mixed Reality Motion Controller.
-     {
-         XrPath microsoftMixedRealityInteractionProfilePath;
-         CHECK_XRCMD(xrStringToPath(instance, "/interaction_profiles/microsoft/motion_controller",
-                                    &microsoftMixedRealityInteractionProfilePath));
-         std::vector<XrActionSuggestedBinding> bindings{{{grabAction, squeezeClickPath[Side::LEFT]},
-                                                         {grabAction, squeezeClickPath[Side::RIGHT]},
-                                                         {poseAction, posePath[Side::LEFT]},
-                                                         {poseAction, posePath[Side::RIGHT]},
-                                                         {quitAction, menuClickPath[Side::LEFT]},
-                                                         {quitAction, menuClickPath[Side::RIGHT]},
-                                                         {vibrateAction, hapticPath[Side::LEFT]},
-                                                         {vibrateAction, hapticPath[Side::RIGHT]}}};
-         XrInteractionProfileSuggestedBinding suggestedBindings{XR_TYPE_INTERACTION_PROFILE_SUGGESTED_BINDING};
-         suggestedBindings.interactionProfile = microsoftMixedRealityInteractionProfilePath;
-         suggestedBindings.suggestedBindings = bindings.data();
-         suggestedBindings.countSuggestedBindings = (uint32_t)bindings.size();
-         CHECK_XRCMD(xrSuggestInteractionProfileBindings(instance, &suggestedBindings));
-     }*/
-    // Suggest bindings for the Microsoft Mixed Reality Motion Controller.
     {
-        XrPath picoMixedRealityInteractionProfilePath;
-
         //see https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_BD_controller_interaction
-        const char* interactionProfilePath = nullptr;
-        if (deviceType == DeviceTypeNeo3 || deviceType == DeviceTypeNeo3Pro || deviceType == DeviceTypeNeo3ProEye) {
-            interactionProfilePath = "/interaction_profiles/bytedance/pico_neo3_controller";
-        } else {
-            interactionProfilePath = "/interaction_profiles/bytedance/pico4_controller";
-        }
+
+        // (suggestedBindings->interactionProfile == "/interaction_profiles/bytedance/pico_neo3_controller") is not a supported interaction profile
+        // (suggestedBindings->interactionProfile == "/interaction_profiles/bytedance/pico4_controller") is not a supported interaction profile
+        // (suggestedBindings->suggestedBindings[8]->binding == "/user/hand/left/input/trigger/click") is not a valid path
+
+        // old path for /interaction_profiles/pico/neo3_controller
+        XrPath picoNeo3ControllerInteractionProfilePath;
+
+        XrPath picoNeo3InteractionProfilePath;
+        XrPath picoPico4InteractionProfilePath;
+        XrPath oculusTouchInteractionProfilePath;
+
+        CHECK_XRCMD(xrStringToPath(instance, "/interaction_profiles/pico/neo3_controller",&picoNeo3ControllerInteractionProfilePath));
+        CHECK_XRCMD(xrStringToPath(instance, "/interaction_profiles/bytedance/pico_neo3_controller",&picoNeo3InteractionProfilePath));
+        CHECK_XRCMD(xrStringToPath(instance, "/interaction_profiles/bytedance/pico4_controller",&picoPico4InteractionProfilePath));
+        CHECK_XRCMD(xrStringToPath(instance, "/interaction_profiles/oculus/touch_controller",&oculusTouchInteractionProfilePath));
+
+        XrPath preferInteractionProfilePath = picoPico4InteractionProfilePath;
+
         if (device_rom < 0x540) {
-            interactionProfilePath = "/interaction_profiles/pico/neo3_controller";
+            LOGI("old profile for /interaction_profiles/pico/neo3_controller");
+            preferInteractionProfilePath = picoNeo3ControllerInteractionProfilePath;
+        } else {
+            if (deviceType == DeviceTypeNeo3 || deviceType == DeviceTypeNeo3Pro || deviceType == DeviceTypeNeo3ProEye || deviceType == DeviceTypeNeo3Enterprise) {
+                LOGI("profile for /interaction_profiles/bytedance/pico_neo3_controller");
+                preferInteractionProfilePath = picoNeo3InteractionProfilePath;
+            } else if (deviceType == DeviceTypePico4 || deviceType == DeviceTypePico4Pro || deviceType == DeviceTypePico4Ultra || deviceType == DeviceTypePico4UltraEnterprise) {
+                LOGI("profile for /interaction_profiles/bytedance/pico4_controller");
+                preferInteractionProfilePath = picoPico4InteractionProfilePath;
+            } else {
+                LOGI("cant find device type for profile use pico 4 bytedance/pico4_controller");
+                preferInteractionProfilePath = picoPico4InteractionProfilePath;
+            }
         }
 
-        LOGV("init input %d %d %s", deviceType, device_rom, interactionProfilePath);
-
-        CHECK_XRCMD(xrStringToPath(instance, interactionProfilePath,
-                                   &picoMixedRealityInteractionProfilePath));
+        std::vector<XrPath> profilePaths = {};
+        profilePaths.push_back(preferInteractionProfilePath);
+        profilePaths.push_back(oculusTouchInteractionProfilePath);
 
         std::vector<XrActionSuggestedBinding> bindings{{
-
                                                                {JoystickClickLeftAction, thumbstickClickPath[Side::LEFT]},
                                                                {JoystickClickRightAction, thumbstickClickPath[Side::RIGHT]},
                                                                {JoystickValueLeftAction, thumbstickPosPath[Side::LEFT]},
@@ -511,13 +455,13 @@ void InputState::InitializeActions(const XrInstance& instance, const XrSession& 
 
                                                                {triggerAction, triggerValuePath[Side::LEFT]},
                                                                {triggerAction, triggerValuePath[Side::RIGHT]},
-                                                               {TriggerClickLeftAction, triggerClickPath[Side::LEFT]},
-                                                               {TriggerClickRightAction, triggerClickPath[Side::RIGHT]},
+/*           {TriggerClickLeftAction, triggerClickPath[Side::LEFT]},
+           {TriggerClickRightAction, triggerClickPath[Side::RIGHT]},*/
                                                                {TriggerTouchLeftAction, triggerTouchPath[Side::LEFT]},
                                                                {TriggerTouchRightAction, triggerTouchPath[Side::RIGHT]},
 
-                                                               {GripClickLeftAction, squeezeClickPath[Side::LEFT]},
-                                                               {GripClickRightAction, squeezeClickPath[Side::RIGHT]},
+//           {GripClickLeftAction, squeezeClickPath[Side::LEFT]},
+//           {GripClickRightAction, squeezeClickPath[Side::RIGHT]},
                                                                {GripValueLeftAction, squeezeValuePath[Side::LEFT]},
                                                                {GripValueRightAction, squeezeValuePath[Side::RIGHT]},
                                                                {poseAction, posePath[Side::LEFT]},
@@ -527,8 +471,8 @@ void InputState::InitializeActions(const XrInstance& instance, const XrSession& 
                                                                {homeAction, systemPath[Side::RIGHT]},
                                                                // {backAction, backPath[Side::LEFT]},
                                                                // {backAction, backPath[Side::RIGHT]},
-                                                               {batteryAction, batteryPath[Side::LEFT]},
-                                                               {batteryAction, batteryPath[Side::RIGHT]},
+//           {batteryAction, batteryPath[Side::LEFT]},
+//           {batteryAction, batteryPath[Side::RIGHT]},
 
                                                                {ThumbrestTouchAction, thumbrestPath[Side::LEFT]},
                                                                {ThumbrestTouchAction, thumbrestPath[Side::RIGHT]},
@@ -554,10 +498,25 @@ void InputState::InitializeActions(const XrInstance& instance, const XrSession& 
                                                                {aimAction, aimPath[Side::RIGHT]}
                                                        }};
         XrInteractionProfileSuggestedBinding suggestedBindings{XR_TYPE_INTERACTION_PROFILE_SUGGESTED_BINDING};
-        suggestedBindings.interactionProfile = picoMixedRealityInteractionProfilePath;
+
         suggestedBindings.suggestedBindings = bindings.data();
         suggestedBindings.countSuggestedBindings = (uint32_t)bindings.size();
-        CHECK_XRCMD(xrSuggestInteractionProfileBindings(instance, &suggestedBindings));
+
+        bool foundProfileBinding = false;
+        for(auto path : profilePaths) {
+            suggestedBindings.interactionProfile = path;
+            if (XR_SUCCESS == xrSuggestInteractionProfileBindings(instance, &suggestedBindings)) {
+                char pathbuffer[256] = {};
+                uint32_t pathbuffSize = 0;
+                xrPathToString(instance, path, 256, &pathbuffSize, pathbuffer);
+                LOGI("find profle binding %s", pathbuffer);
+                foundProfileBinding = true;
+                break;
+            }
+        }
+        if (!foundProfileBinding) {
+            LOGE("binding prorile failed");
+        }
     }
 
     XrActionSpaceCreateInfo actionSpaceInfo{XR_TYPE_ACTION_SPACE_CREATE_INFO};

@@ -246,9 +246,9 @@ namespace pvr {
         XrActionStateFloat triggerValue{XR_TYPE_ACTION_STATE_FLOAT};
         CHECK_XRCMD(xrGetActionStateFloat(session, &getInfo, &triggerValue));
 
-        getInfo.action = input_state.batteryAction;
-        XrActionStateFloat batteryValue{XR_TYPE_ACTION_STATE_FLOAT};
-        CHECK_XRCMD(xrGetActionStateFloat(session, &getInfo, &batteryValue));
+//        getInfo.action = input_state.batteryAction;
+//        XrActionStateFloat batteryValue{XR_TYPE_ACTION_STATE_FLOAT};
+//        CHECK_XRCMD(xrGetActionStateFloat(session, &getInfo, &batteryValue));
 
 //        getInfo.action = input_state.backAction;
 //        XrActionStateBoolean backValue{XR_TYPE_ACTION_STATE_BOOLEAN};
@@ -258,13 +258,13 @@ namespace pvr {
         XrActionStateBoolean TriggerTouch{XR_TYPE_ACTION_STATE_BOOLEAN};
         CHECK_XRCMD(xrGetActionStateBoolean(session, &getInfo, &TriggerTouch));
 
-        getInfo.action = hand == Side::LEFT ? input_state.TriggerClickLeftAction : input_state.TriggerClickRightAction;
+/*        getInfo.action = hand == Side::LEFT ? input_state.TriggerClickLeftAction : input_state.TriggerClickRightAction;
         XrActionStateBoolean TriggerClick{XR_TYPE_ACTION_STATE_BOOLEAN};
-        CHECK_XRCMD(xrGetActionStateBoolean(session, &getInfo, &TriggerClick));
+        CHECK_XRCMD(xrGetActionStateBoolean(session, &getInfo, &TriggerClick));*/
 
-        getInfo.action = hand == Side::LEFT ? input_state.GripClickLeftAction : input_state.GripClickRightAction;
-        XrActionStateBoolean gripClick{XR_TYPE_ACTION_STATE_BOOLEAN};
-        CHECK_XRCMD(xrGetActionStateBoolean(session, &getInfo, &gripClick));
+//        getInfo.action = hand == Side::LEFT ? input_state.GripClickLeftAction : input_state.GripClickRightAction;
+//        XrActionStateBoolean gripClick{XR_TYPE_ACTION_STATE_BOOLEAN};
+//        CHECK_XRCMD(xrGetActionStateBoolean(session, &getInfo, &gripClick));
 
         getInfo.action = hand == Side::LEFT ? input_state.GripValueLeftAction : input_state.GripValueRightAction;
         XrActionStateFloat gripValue{XR_TYPE_ACTION_STATE_FLOAT};
@@ -306,11 +306,11 @@ namespace pvr {
             state.buttons |= LARKXR_BUTTON_FLAG(larkxrInput::larkxr_Input_Trigger_Touch);
         }
 
-        if (TriggerClick.currentState && TriggerClick.isActive) {
+        if (triggerValue.currentState == 1) {
             state.buttons |= LARKXR_BUTTON_FLAG(larkxrInput::larkxr_Input_Trigger_Click);
         }
 
-        if (gripClick.currentState && gripClick.isActive) {
+        if (gripValue.currentState == 1) {
             state.buttons |= LARKXR_BUTTON_FLAG(larkxrInput::larkxr_Input_Grip_Click);
             state.buttons |= LARKXR_BUTTON_FLAG(larkxrInput::larkxr_Input_Grip_Touch);
         }
@@ -339,8 +339,8 @@ namespace pvr {
             state.buttons |= LARKXR_BUTTON_FLAG(larkxrInput::larkxr_Input_Joystick_Touch);
         }
 
-        state.batteryPercentRemaining = (batteryValue.currentState * 100 / 5);
-//        state.batteryPercentRemaining = 100;
+//        state.batteryPercentRemaining = (batteryValue.currentState * 100 / 5);
+        state.batteryPercentRemaining = 100;
 
         // update battery info to lark system.
         lark::XRClient::SetControlerBatteryLevel(hand == Side::LEFT, state.batteryPercentRemaining);

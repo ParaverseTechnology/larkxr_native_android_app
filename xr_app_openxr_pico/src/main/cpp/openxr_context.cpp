@@ -10,7 +10,7 @@
 using namespace pxrutils;
 
 OpenxrContext::OpenxrContext(const std::shared_ptr<Options>& options, const std::shared_ptr<IPlatformPlugin>& platformPlugin)
-    :options_(options), platform_plugin_(platformPlugin)
+        :options_(options), platform_plugin_(platformPlugin)
 {
     graphics_plugin_ = std::make_shared<GraphicsDeviceAndroid>();
 }
@@ -60,6 +60,9 @@ void OpenxrContext::CreateInstance() {
 
     if (is_support_epic_view_configuration_fov_extention_) {
         extensions.push_back(XR_EPIC_VIEW_CONFIGURATION_FOV_EXTENSION_NAME);
+    }
+    if (is_support_bd_controller_) {
+        extensions.push_back(XR_BD_CONTROLLER_INTERACTION_EXTENSION_NAME);
     }
 
     // pico 2.2.0
@@ -117,7 +120,14 @@ void OpenxrContext::LogLayersAndExtensions() {
             Log::Write(Log::Level::Verbose, Fmt("%s  Name=%s SpecVersion=%d", indentStr.c_str(), extension.extensionName,
                                                 extension.extensionVersion));
             if (strstr(extension.extensionName, XR_EPIC_VIEW_CONFIGURATION_FOV_EXTENSION_NAME)) {
+                Log::Write(Log::Level::Info, Fmt("support  XR_EPIC_VIEW_CONFIGURATION_FOV_EXTENSION_NAME %s  Name=%s SpecVersion=%d", indentStr.c_str(), extension.extensionName,
+                                                 extension.extensionVersion));
                 is_support_epic_view_configuration_fov_extention_ = true;
+            }
+            if (strstr(extension.extensionName, XR_BD_CONTROLLER_INTERACTION_EXTENSION_NAME)) {
+                Log::Write(Log::Level::Info, Fmt("support  XR_BD_CONTROLLER_INTERACTION_EXTENSION_NAME %s  Name=%s SpecVersion=%d", indentStr.c_str(), extension.extensionName,
+                                                 extension.extensionVersion));
+                is_support_bd_controller_ = true;
             }
         }
     };
@@ -171,7 +181,7 @@ void OpenxrContext::LogViewConfigurations() {
     Log::Write(Log::Level::Info, Fmt("Available View Configuration Types: (%d)", viewConfigTypeCount));
     for (XrViewConfigurationType viewConfigType : viewConfigTypes) {
         Log::Write(Log::Level::Info, Fmt("  View Configuration Type: %s %s", to_string(viewConfigType),
-                                            viewConfigType == view_config_type_ ? "(Selected)" : ""));
+                                         viewConfigType == view_config_type_ ? "(Selected)" : ""));
 
         XrViewConfigurationProperties viewConfigProperties{XR_TYPE_VIEW_CONFIGURATION_PROPERTIES};
         CHECK_XRCMD(xrGetViewConfigurationProperties(instance_, system_id_, viewConfigType, &viewConfigProperties));
@@ -192,8 +202,8 @@ void OpenxrContext::LogViewConfigurations() {
                 const XrViewConfigurationView& view = views[i];
 
                 Log::Write(Log::Level::Info, Fmt("    View [%d]: Recommended Width=%d Height=%d SampleCount=%d", i,
-                                                    view.recommendedImageRectWidth, view.recommendedImageRectHeight,
-                                                    view.recommendedSwapchainSampleCount));
+                                                 view.recommendedImageRectWidth, view.recommendedImageRectHeight,
+                                                 view.recommendedSwapchainSampleCount));
                 Log::Write(Log::Level::Info,
                            Fmt("    View [%d]:     Maximum Width=%d Height=%d SampleCount=%d", i, view.maxImageRectWidth,
                                view.maxImageRectHeight, view.maxSwapchainSampleCount));
@@ -288,17 +298,22 @@ void OpenxrContext::InitializeSession() {
         std::transform(data.begin(), data.end(), data.begin(),
                        [](unsigned char c){ return std::tolower(c); });
 
-        Log::Write(Log::Level::Info, Fmt("device is:%s; is [Pico 4]=%d; size=%d",
-                                         data.c_str(), std::string(buffer) == "pico 4", std::string(buffer).size()));
 
-        if (data == "pico neo 3") {
+
+        if (data == "pico neo 3" || data == "pico neo 3 pro") {
             device_type_ = DeviceTypeNeo3;
         } else if (data == "pico neo 3 pro eye") {
             device_type_ = DeviceTypeNeo3ProEye;
+        } else if (data == "pico neo 3 enterprise") {
+            device_type_ = DeviceTypeNeo3Enterprise;
         } else if (data == "pico 4") {
             device_type_ = DeviceTypePico4;
         } else if (data == "pico 4 pro") {
             device_type_ = DeviceTypePico4Pro;
+        } else if (data == "pico 4 ultra") {
+            device_type_ = DeviceTypePico4Ultra;
+        } else if (data == "pico 4 ultra enterprise") {
+            device_type_ = DeviceTypePico4UltraEnterprise;
         }
 
         __system_property_get("ro.build.id", buffer);
@@ -306,6 +321,9 @@ void OpenxrContext::InitializeSession() {
         sscanf(buffer, "%d.%d.%d",&a, &b, &c);
         device_rom_ = (a << 8) + (b << 4) + c;
         Log::Write(Log::Level::Info, Fmt("device ROM: %x", device_rom_));
+
+        Log::Write(Log::Level::Info, Fmt("device_name is:%s; is [Pico 4]=%d; size=%d ROM:%x",
+                                         data.c_str(), data == "pico 4", data.size(), device_rom_));
         if (device_rom_ < 0x540) {
             //CHECK_XRRESULT(XR_ERROR_VALIDATION_FAILURE, "This demo can only run on devices with ROM version greater than 540");
         }
@@ -438,22 +456,22 @@ void OpenxrContext::CreateSwapchains() {
 
         for (int eye = 0; eye < ovrMaxNumEyes; eye++) {
 
-                // TODO setup res
-                // config_views_[eye].recommendedImageRectWidth = 3644 / 2;
-                // config_views_[eye].recommendedImageRectHeight = 1920;
+            // TODO setup res
+            // config_views_[eye].recommendedImageRectWidth = 3644 / 2;
+            // config_views_[eye].recommendedImageRectHeight = 1920;
 
-    //                                  GL_SRGB8_ALPHA8,
-    //                                  GL_RGBA,
-    //                                  GL_RGBA8
-                frame_buffer_[eye].Create(session_,
-                                          color_swapchain_format_,
-                                          config_views_[eye],
-                                          NUM_MULTI_SAMPLES);
+            //                                  GL_SRGB8_ALPHA8,
+            //                                  GL_RGBA,
+            //                                  GL_RGBA8
+            frame_buffer_[eye].Create(session_,
+                                      color_swapchain_format_,
+                                      config_views_[eye],
+                                      1);
 
-                frame_buffer_cloud_[eye].Create(session_,
-                                          color_swapchain_format_,
-                                          config_views_[eye],
-                                          1);
+            frame_buffer_cloud_[eye].Create(session_,
+                                            color_swapchain_format_,
+                                            config_views_[eye],
+                                            1);
 
         }
     }
@@ -497,8 +515,8 @@ void OpenxrContext::PollEvents(bool *exitRenderLoop, bool *requestRestart) {
                 HandleSessionStateChangedEvent(sessionStateChangedEvent, exitRenderLoop, requestRestart);
                 break;
             }
-            // PICO 2.2.0
-            // https://developer-cn.pico-interactive.com/document/native/release-notes/
+                // PICO 2.2.0
+                // https://developer-cn.pico-interactive.com/document/native/release-notes/
 //            case XR_TYPE_EVENT_CONTROLLER_STATE_CHANGED: {
 //                auto eventDataPerfSettingsEXT = *reinterpret_cast<const XrControllerEventChanged *>(event);
 //                Log::Write(Log::Level::Info, Fmt("controller event callback controller %d, status %d  eventtype %d",

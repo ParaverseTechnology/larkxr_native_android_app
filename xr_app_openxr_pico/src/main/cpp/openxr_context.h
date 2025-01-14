@@ -138,7 +138,8 @@ private:
     PFN_xrGetDisplayRefreshRateFB pfn_XrGetDisplayRefreshRateFB_ = nullptr;
     float display_refresh_rate_ = 0;
     bool is_support_epic_view_configuration_fov_extention_ = false;
-    DeviceType device_type_ = DeviceTypeNeo3;
+    bool is_support_bd_controller_ = false;
+    DeviceType device_type_ = DeviceTypeNone;
     uint32_t device_rom_ = 0;
 
 // test pico 5.7 sys

@@ -15,12 +15,15 @@ namespace Side {
 }  // namespace Side
 
 typedef enum {
-    DeviceTypeNone        = 0,
-    DeviceTypeNeo3        = 1,
-    DeviceTypeNeo3Pro     = 2,
-    DeviceTypeNeo3ProEye  = 3,
-    DeviceTypePico4       = 4,
-    DeviceTypePico4Pro    = 5,
+    DeviceTypeNone                    = 0,
+    DeviceTypeNeo3                    = 1,
+    DeviceTypeNeo3Pro                 = 2,
+    DeviceTypeNeo3ProEye              = 3,
+    DeviceTypeNeo3Enterprise          = 4,
+    DeviceTypePico4                   = 5,
+    DeviceTypePico4Pro                = 6,
+    DeviceTypePico4Ultra              = 7,
+    DeviceTypePico4UltraEnterprise    = 8,
 } DeviceType;
 
 struct InputState {
@@ -35,17 +38,17 @@ struct InputState {
     XrAction BYAction{XR_NULL_HANDLE};
     // XrAction backAction{XR_NULL_HANDLE};
     XrAction triggerAction{XR_NULL_HANDLE};
-    XrAction batteryAction{XR_NULL_HANDLE};
+//    XrAction batteryAction{XR_NULL_HANDLE};
     //---add new----------
     XrAction AXTouchAction{XR_NULL_HANDLE};
     XrAction BYTouchAction{XR_NULL_HANDLE};
     XrAction TriggerTouchLeftAction{XR_NULL_HANDLE};
     XrAction TriggerTouchRightAction{XR_NULL_HANDLE};
-    XrAction TriggerClickLeftAction{XR_NULL_HANDLE};
-    XrAction TriggerClickRightAction{XR_NULL_HANDLE};
+/*    XrAction TriggerClickLeftAction{XR_NULL_HANDLE};
+    XrAction TriggerClickRightAction{XR_NULL_HANDLE};*/
     XrAction ThumbrestTouchAction{XR_NULL_HANDLE};
-    XrAction GripClickLeftAction{XR_NULL_HANDLE};
-    XrAction GripClickRightAction{XR_NULL_HANDLE};
+/*    XrAction GripClickLeftAction{XR_NULL_HANDLE};
+    XrAction GripClickRightAction{XR_NULL_HANDLE};*/
     XrAction GripValueLeftAction{XR_NULL_HANDLE};
     XrAction GripValueRightAction{XR_NULL_HANDLE};
     XrAction JoystickClickLeftAction{XR_NULL_HANDLE};
