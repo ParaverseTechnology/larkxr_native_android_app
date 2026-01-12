@@ -463,6 +463,8 @@ void OpenxrContext::CreateSwapchains() {
             //                                  GL_SRGB8_ALPHA8,
             //                                  GL_RGBA,
             //                                  GL_RGBA8
+
+
             frame_buffer_[eye].Create(session_,
                                       color_swapchain_format_,
                                       config_views_[eye],
